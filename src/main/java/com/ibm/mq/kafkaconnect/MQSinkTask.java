@@ -1,0 +1,139 @@
+/**
+ * Copyright 2017 IBM Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package com.ibm.mq.kafkaconnect;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.sink.SinkTask;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class MQSinkTask extends SinkTask {
+    private static final Logger log = LoggerFactory.getLogger(MQSinkTask.class);
+
+    // Configs
+    private String queueManager;
+    private String connectionNameList;
+    private String channelName;
+    private String queueName;
+    private String userName;
+    private String password;
+    private String timeToLive;
+    private String persistent;
+
+    private JMSWriter writer;
+
+    public MQSinkTask() {
+    }
+
+    /**
+     * Get the version of this task. Usually this should be the same as the corresponding {@link Connector} class's version.
+     *
+     * @return the version, formatted as a String
+     */
+    @Override public String version() {
+        return MQSinkConnector.VERSION;
+    }
+
+    /**
+     * Start the Task. This should handle any configuration parsing and one-time setup of the task.
+     * @param props initial configuration
+     */
+    @Override public void start(Map<String, String> props) {
+        for (final Entry<String, String> entry: props.entrySet()) {
+            log.trace("Task props entry {} : {}", entry.getKey(), entry.getValue());
+        }
+
+        queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
+        connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
+        channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
+        queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
+        userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
+        password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
+        timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
+        persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
+
+        // Construct a writer to interface with MQ
+        writer = new JMSWriter(queueManager, connectionNameList, channelName, queueName, userName, password);
+        if (timeToLive != null) {
+            writer.setTimeToLive(Long.parseLong(timeToLive));
+        }
+        if (persistent != null) {
+            writer.setPersistent(Boolean.parseBoolean(persistent));
+        }
+
+        String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
+        if (mbj != null) {
+            writer.setMessageBodyJms(Boolean.parseBoolean(mbj));
+        }
+
+        // Make a connection as an initial test of the configuration
+        writer.connect();
+    }
+
+    /**
+     * Put the records in the sink. Usually this should send the records to the sink asynchronously
+     * and immediately return.
+     *
+     * If this operation fails, the SinkTask may throw a {@link org.apache.kafka.connect.errors.RetriableException} to
+     * indicate that the framework should attempt to retry the same call again. Other exceptions will cause the task to
+     * be stopped immediately. {@link SinkTaskContext#timeout(long)} can be used to set the maximum time before the
+     * batch will be retried.
+     *
+     * @param records the set of records to send
+     */
+    @Override public void put(Collection<SinkRecord> records) {
+        for (SinkRecord r: records) {
+            log.trace("Putting record to topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
+            writer.send(r);
+        }
+    }
+
+    /**
+     * Flush all records that have been {@link #put(Collection)} for the specified topic-partitions.
+     *
+     * @param currentOffsets the current offset state as of the last call to {@link #put(Collection)}},
+     *                       provided for convenience but could also be determined by tracking all offsets included in the {@link SinkRecord}s
+     *                       passed to {@link #put}.
+     */
+    public void flush(Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
+        for (Map.Entry<TopicPartition, OffsetAndMetadata> entry: currentOffsets.entrySet()) {
+            TopicPartition tp = entry.getKey();
+            OffsetAndMetadata om = entry.getValue();
+            log.trace("Flushing up to topic {}, partition {} and offset {}", tp.topic(), tp.partition(), om.offset());
+        }
+
+        writer.commit();
+    }
+
+    /**
+     * Perform any cleanup to stop this task. In SinkTasks, this method is invoked only once outstanding calls to other
+     * methods have completed (e.g., {@link #put(Collection)} has returned) and a final {@link #flush(Map)} and offset
+     * commit has completed. Implementations of this method should only need to perform final cleanup operations, such
+     * as closing network connections to the sink system.
+     */
+    @Override public void stop() {
+        if (writer != null) {
+            writer.close();
+        }
+    }
+}
