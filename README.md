@@ -1,6 +1,5 @@
 # Kafka Connect sink connector for IBM MQ
-
-kafka-connect-mqsink is a [Kafka Connector](http://kafka.apache.org/documentation.html#connect) for copying data from Apache Kafka into IBM MQ.
+kafka-connect-mqsink is a [Kafka Connect](http://kafka.apache.org/documentation.html#connect) sink connector for copying data from Apache Kafka into IBM MQ.
 
 The connector is supplied as source code which you can easily build into a JAR file.
 
@@ -23,11 +22,11 @@ Change directory into the `kafka-connect-mq-sink` directory:
 cd kafka-connect-mq-sink
 ```
 
-Copy the JAR file `allclient-9.0.0.1.jar` that you unpacked from the ZIP file earlier into the `kafka-connect-mq-sink` directory.
+Copy the JAR file `com.ibm.mq.allclient.jar` that you unpacked from the ZIP file earlier into the `kafka-connect-mq-sink` directory.
 
 Run the following command to create a local Maven repository containing just this file so that it can be used to build the connector:
 ```shell
-mvn deploy:deploy-file -Durl=file://local-maven-repo -Dfile=allclient-9.0.0.1.jar -DgroupId=com.ibm.mq -DartifactId=allclient -Dpackaging=jar -Dversion=9.0.0.1
+mvn deploy:deploy-file -Durl=file://local-maven-repo -Dfile=com.ibm.mq.allclient.jar -DgroupId=com.ibm.mq -DartifactId=allclient -Dpackaging=jar -Dversion=9.0.0.1
 ```
 
 Build the connector using Maven:
@@ -144,12 +143,16 @@ The configuration options for the MQ Sink Connector are as follows:
 
 
 ## Future enhancements
-The first version of the connector is intentionally basic. The idea is to enhance it with additional features to make it more capable. Some possible future enhancements are:
+The connector is intentionally basic. The idea is to enhance it over time with additional features to make it more capable. Some possible future enhancements are:
 * TLS connections
 * Message key support
 * JMX metrics
 * Improved JSON support
 * Testing with the Confluent Platform Avro converter and Schema Registry
+
+
+## Issues and contributions
+For issues relating specifically to this connect, please use the [GitHub issue tracker](https://github.com/ibm-messaging/kafka-connect-mq-sink/issues). If you do submit a Pull Request related to this connector, please indicate in the Pull Request that you accept and agree to be bound by the terms of the [IBM Contributor License Agreement](CLA.md).
 
 
 ## License
