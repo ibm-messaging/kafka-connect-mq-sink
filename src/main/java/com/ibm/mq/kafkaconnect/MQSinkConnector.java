@@ -72,6 +72,14 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_PERSISTENT = "Send persistent or non-persistent messages to MQ.";
     public static final String CONFIG_DISPLAY_MQ_PERSISTENT = "Send persistent messages";
 
+    public static final String CONFIG_NAME_MQ_SSL_CIPHER_SUITE = "mq.ssl.cipher.suite"; 
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE = "The name of the cipher suite for the TLS (SSL) connection.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE = "SSL cipher suite";
+
+    public static final String CONFIG_NAME_MQ_SSL_PEER_NAME = "mq.ssl.peer.name"; 
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
+
     public static String VERSION = "0.1";
 
     private Map<String, String> configProps;
@@ -171,6 +179,14 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 9, Width.SHORT,
                       CONFIG_DISPLAY_MQ_PERSISTENT);
                       
+        config.define(CONFIG_NAME_MQ_SSL_CIPHER_SUITE, Type.STRING, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 10, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE);
+
+        config.define(CONFIG_NAME_MQ_SSL_PEER_NAME, Type.STRING, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 11, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_SSL_PEER_NAME);
+
         return config;
     }
 }

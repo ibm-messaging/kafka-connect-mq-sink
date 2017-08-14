@@ -39,6 +39,8 @@ public class MQSinkTask extends SinkTask {
     private String password;
     private String timeToLive;
     private String persistent;
+    private String sslCipherSuite;
+    private String sslPeerName;
 
     private JMSWriter writer;
 
@@ -71,6 +73,8 @@ public class MQSinkTask extends SinkTask {
         password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
         timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
         persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
+        sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
+        sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
 
         // Construct a writer to interface with MQ
         writer = new JMSWriter(queueManager, connectionNameList, channelName, queueName, userName, password);
@@ -80,6 +84,11 @@ public class MQSinkTask extends SinkTask {
         if (persistent != null) {
             writer.setPersistent(Boolean.parseBoolean(persistent));
         }
+
+        if (sslCipherSuite != null) {
+            writer.setSSLConfiguration(sslCipherSuite, sslPeerName);
+        }
+
 
         String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
         if (mbj != null) {

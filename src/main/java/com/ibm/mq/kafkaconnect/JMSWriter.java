@@ -47,6 +47,8 @@ public class JMSWriter {
     // Configs
     private String userName;
     private String password;
+    private String sslCipherSuite;
+    private String sslPeerName;
     private boolean messageBodyJms;
 
     // JMS factory and context
@@ -124,6 +126,30 @@ public class JMSWriter {
     public void setPersistent(boolean persistent)
     {
         this.deliveryMode = persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+    }
+
+    /**
+     * Setter for SSL-related configuration.
+     * 
+     * @param sslCipherSuite     The name of the cipher suite for TLS (SSL) connection
+     * @param sslPeerName        The distinguished name pattern of the TLS (SSL) peer
+     */
+    public void setSSLConfiguration(String sslCipherSuite, String sslPeerName)
+    {
+        this.sslCipherSuite = sslCipherSuite;
+        if (this.sslCipherSuite != null)
+        {
+            mqConnFactory.setSSLCipherSuite(this.sslCipherSuite);
+            if (this.sslPeerName != null)
+            {
+                try {
+                    mqConnFactory.setSSLPeerName(sslPeerName);
+                }
+                catch (JMSException jmse) {
+                    ;
+                }
+            }
+        }
     }
 
     /**
