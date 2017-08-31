@@ -18,9 +18,9 @@ package com.ibm.mq.kafkaconnect;
 import com.ibm.mq.MQException;
 import com.ibm.mq.constants.MQConstants;
 import com.ibm.mq.jms.*;
+import com.ibm.mq.kafkaconnect.builders.MessageBuilder;
 import com.ibm.msg.client.wmq.WMQConstants;
-
-import javax.jms.BytesMessage;
+import java.util.Map;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
@@ -28,7 +28,6 @@ import javax.jms.JMSProducer;
 import javax.jms.JMSRuntimeException;
 import javax.jms.Message;
 
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -47,9 +46,6 @@ public class JMSWriter {
     // Configs
     private String userName;
     private String password;
-    private String sslCipherSuite;
-    private String sslPeerName;
-    private boolean messageBodyJms;
 
     // JMS factory and context
     private MQConnectionFactory mqConnFactory;
@@ -62,21 +58,31 @@ public class JMSWriter {
     private boolean connected = false;  // Whether connected to MQ
     private boolean inflight = false;   // Whether messages in-flight in current transaction
 
+    private MessageBuilder builder;
+
+    public JMSWriter() {
+    }
+
     /**
-     * Constructor.
-     *
-     * @param queueManager       Queue manager name
-     * @param connectionNameList Connection name list, comma-separated list of host(port) entries
-     * @param channelName        Server-connection channel name
-     * @param queueName          Queue name
-     * @param userName           User name for authenticating to MQ, can be null
-     * @param password           Password for authenticating to MQ, can be null
+     * Configure this class.
+     * 
+     * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
      */
-    public JMSWriter(String queueManager, String connectionNameList, String channelName, String queueName, String userName, String password) throws ConnectException {
-        this.userName = userName;
-        this.password = password;
+    public void configure(Map<String, String> props) {
+        String queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
+        String connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
+        String channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
+        String queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
+        String userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
+        String password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
+        String builderClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER);
+        String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
+        String timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
+        String persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
+        String sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
+        String sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
 
         try {
             mqConnFactory = new MQConnectionFactory();
@@ -86,80 +92,45 @@ public class JMSWriter {
             mqConnFactory.setChannel(channelName);
 
             queue = new MQQueue(queueName);
-            messageBodyJms = false;
+
+            this.userName = userName;
+            this.password = password;
+    
             queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_MQ);
+            if (mbj != null) {
+                if (Boolean.parseBoolean(mbj)) {
+                    queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_JMS);
+                }
+            }
+
+            if (timeToLive != null) {
+                this.timeToLive = Long.parseLong(timeToLive);
+            }
+            if (persistent != null) {
+                this.deliveryMode = Boolean.parseBoolean(persistent) ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+            }
+
+            if (sslCipherSuite != null) {
+                mqConnFactory.setSSLCipherSuite(sslCipherSuite);
+                if (sslPeerName != null)
+                {
+                    mqConnFactory.setSSLPeerName(sslPeerName);
+                }
+            }
         }
         catch (JMSException | JMSRuntimeException jmse) {
             log.debug("JMS exception {}", jmse);
             throw new ConnectException(jmse);
         }
-    }
 
-    /**
-     * Setter for message body as JMS.
-     *
-     * @param messageBodyJms     Whether to interpret the message body as a JMS message type
-     */
-    public void setMessageBodyJms(boolean messageBodyJms)
-    {
-        if (messageBodyJms != this.messageBodyJms) {
-            this.messageBodyJms = messageBodyJms;
-            try {
-                if (!messageBodyJms) {
-                    queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_MQ);
-                }
-                else {
-                    queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_JMS);
-                }
-            }
-            catch (JMSException jmse) {
-                ;
-            }
+        try {
+            Class<? extends MessageBuilder> c = Class.forName(builderClass).asSubclass(MessageBuilder.class);
+            builder = c.newInstance();
         }
-    }
-
-    /**
-     * Setter for message persistence.
-     *
-     * @param persistent         true for persistent, false for non-persistent
-     */
-    public void setPersistent(boolean persistent)
-    {
-        this.deliveryMode = persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
-    }
-
-    /**
-     * Setter for SSL-related configuration.
-     * 
-     * @param sslCipherSuite     The name of the cipher suite for TLS (SSL) connection
-     * @param sslPeerName        The distinguished name pattern of the TLS (SSL) peer
-     */
-    public void setSSLConfiguration(String sslCipherSuite, String sslPeerName)
-    {
-        this.sslCipherSuite = sslCipherSuite;
-        if (this.sslCipherSuite != null)
-        {
-            mqConnFactory.setSSLCipherSuite(this.sslCipherSuite);
-            if (this.sslPeerName != null)
-            {
-                try {
-                    mqConnFactory.setSSLPeerName(sslPeerName);
-                }
-                catch (JMSException jmse) {
-                    ;
-                }
-            }
+        catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
+            log.debug("Could not instantiate message builder {}", builderClass);
+            throw new ConnectException("Could not instantiate message builder", exc);
         }
-    }
-
-    /**
-     * Setter for message time-to-live.
-     *
-     * @param timeToLive         Time-to-live in milliseconds, 0 for unlimited
-     */
-    public void setTimeToLive(long timeToLive)
-    {
-        this.timeToLive = timeToLive;
     }
 
     /**
@@ -185,48 +156,16 @@ public class JMSWriter {
         connectInternal();
 
         try {
-            Message m;
-            Schema s = r.valueSchema();
-
-            log.trace("Value schema {}", s);
-            if (s == null) {
-                log.trace("No schema info {}", r.value());
-                if (r.value() != null) {
-                    m = jmsCtxt.createTextMessage(r.value().toString());
-                }
-                else {
-                    m = jmsCtxt.createTextMessage();
-                }
-            }
-            else if (s.type().isPrimitive())
-            {
-                switch(s.type()) {
-                    case STRING:
-                        m = jmsCtxt.createTextMessage((String)(r.value()));
-                        break;
-                    case BYTES:
-                        BytesMessage bm = jmsCtxt.createBytesMessage();
-                        bm.writeBytes((byte[])(r.value()));
-                        m = bm;
-                        break;
-                    default:
-                        log.debug("Unsupported primitive data type", s);
-                        throw new ConnectException("Unsupported primitive data type");
-                }
-            }
-            else {
-                log.trace("Compound schema {}", s);
-                m = jmsCtxt.createTextMessage(r.value().toString());
-            }
-
+            Message m = builder.fromSinkRecord(jmsCtxt, r);
             inflight = true;
             jmsProd.send(queue, m);
         }
-        catch (JMSException | JMSRuntimeException jmse) {
+        catch (JMSRuntimeException jmse) {
             log.debug("JMS exception {}", jmse);
             handleException(jmse);
         }
     }
+
 
     /**
      * Commits the current transaction.
@@ -303,6 +242,9 @@ public class JMSWriter {
     /**
      * Handles exceptions from MQ. Some JMS exceptions are treated as retriable meaning that the
      * connector can keep running and just trying again is likely to fix things.
+     *
+     * @throws RetriableException Operation failed, but connector should continue to retry.
+     * @throws ConnectException   Operation failed and connector should stop.
      */
     private void handleException(Throwable exc) throws ConnectException, RetriableException {
         boolean isRetriable = false;

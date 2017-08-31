@@ -34,7 +34,7 @@ Build the connector using Maven:
 mvn clean package
 ```
 
-Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.1-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
+Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.2-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
 
 
 ## Running the connector
@@ -62,67 +62,83 @@ Kafka Connect is very flexible but it's important to understand the way that it 
 
 Each message in Kafka Connect is associated with a representation of the message format known as a *schema*. Each Kafka message actually has two parts, key and value, and each part has its own schema. The MQ sink connector does not currently use message keys, but some of the configuration options use the word *Value* because they refer to the Kafka message value.
 
-When the MQ sink connector reads a message from Kafka, it is processed using a *converter* which chooses a schema to represent the message format and creates a Java object containing the message value. The MQ sink connector then converts this internal format into the message it sends to MQ.
+When the MQ sink connector reads a message from Kafka, it is processed using a *converter* which chooses a schema to represent the message format and creates a Java object containing the message value. The MQ sink connector then converts this internal format into the message it sends to MQ using a *message builder*.
+
+There are three converters built into Apache Kafka and another which is part of the Confluent Platform. The following table shows which converters to use based on the incoming message encoding.
+
+| Incoming Kafka message | Converter class                                        |
+| ---------------------- | ------------------------------------------------------ |
+| Any                    | org.apache.kafka.connect.converters.ByteArrayConverter |
+| String                 | org.apache.kafka.connect.storage.StringConverter       |
+| JSON, may have schema  | org.apache.kafka.connect.json.JsonConverter            |
+| Binary-encoded Avro    | io.confluent.connect.avro.AvroConverter                |
+
+There are two message builders built into the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
+
+| Converter class                                        | Message builder class                                  |  Outgoing MQ message   |
+| ------------------------------------------------------ | ------------------------------------------------------ | ---------------------- |
+| org.apache.kafka.connect.converters.ByteArrayConverter | com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder | **Binary data**        |
+| org.apache.kafka.connect.storage.StringConverter       | com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder | **String data**        |
+| org.apache.kafka.connect.json.JsonConverter            | com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder    | **JSON, no schema**    |
+| io.confluent.connect.avro.AvroConverter                | com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder    | **JSON**               |
+
+When you set *mq.message.body.jms=true*, the MQ messages are generated as JMS messages. This is appropriate if the applications receiving the messages are themselves using JMS.
 
 There's no single configuration that will always be right, but here are some high-level suggestions.
 
-* Message values are treated as byte arrays, pass byte array into MQ message with format MQFMT_NONE
+* Message values are treated as byte arrays, pass byte array into MQ message
 ```
 value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
 ```
-* Message values are treated as strings, pass string into MQ message with format MQFMT_STRING
+* Message values are treated as strings, pass string into MQ message
 ```
 value.converter=org.apache.kafka.connect.storage.StringConverter
 ```
-* Message values are treated as byte arrays, pass byte array into JMS BytesMessage with MQRFH2 header
+* Message schemas are stored in the Schema Registry and values are binary-encoded Avro, pass into MQ message as JSON
 ```
-mq.message.body.jms=true
-value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
-```
-* Message values are treated as strings, pass string into JMS TextMessage with MQRFH2 header
-```
-mq.message.body.jms=true
-value.converter=org.apache.kafka.connect.storage.StringConverter
+value.converter=io.confluent.connect.avro.AvroConverter
+mq.message.builder=com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder
 ```
 
 ### The gory detail
-The messages received from Kafka are processed by a converter which chooses a schema to represent the message format and creates a Java object containing the message value. There are three basic converters built into Apache Kafka.
+The messages received from Kafka are processed by a converter which chooses a schema to represent the message and creates a Java object containing the message value. There are three basic converters built into Apache Kafka. In addition, there is another converter for the Avro format that is part of the Confluent Platform that works with the Schema Registry and the Avro-encoded message format.
 
-| Converter class                                        | Value schema        | Value class        |
-| ------------------------------------------------------ | ------------------- | ------------------ |
-| org.apache.kafka.connect.converters.ByteArrayConverter | OPTIONAL_BYTES      | byte[]             |
-| org.apache.kafka.connect.storage.StringConverter       | OPTIONAL_STRING     | java.lang.String   |
-| org.apache.kafka.connect.json.JsonConverter            | Depends on message  | Depends on message |
+| Converter class                                        | Kafka message encoding | Value schema        | Value class        |
+| ------------------------------------------------------ | ---------------------- | ------------------- | ------------------ |
+| org.apache.kafka.connect.converters.ByteArrayConverter | Any                    | OPTIONAL_BYTES      | byte[]             |
+| org.apache.kafka.connect.storage.StringConverter       | String                 | OPTIONAL_STRING     | java.lang.String   |
+| org.apache.kafka.connect.json.JsonConverter            | JSON, may have schema  | Depends on message  | Depends on message |
+| io.confluent.connect.avro.AvroConverter                | Binary-encoded Avro    | Depends on message  | Depends on message |
 
-The MQ sink connector has a configuration option *mq.message.body.jms* that controls whether it generates the MQ messages as JMS message types. By default, *mq.message.body.jms=false* which gives the following behaviour.
+The MQ sink connector uses a message builder to build the MQ messsages from the schema and value. There are two built-in message builders.
 
-| Value schema    | Value class      | Outgoing message format | Outgoing message body           |
-| --------------- | ---------------- | ----------------------- | ------------------------------- |
-| null            | Any              | MQFMT_STRING            | Java Object.toString() of value |
-| OPTIONAL_BYTES  | byte[]           | MQFMT_NONE              | Byte array                      |
-| OPTIONAL_STRING | java.lang.String | MQFMT_STRING            | String                          |
-| Other primitive | Any              | *EXCEPTION*             | *EXCEPTION*                     |
-| Compound        | Any              | MQFMT_STRING            | Java Object.toString() of value |
+The DefaultMessageBuilder is best when the schema is very simple, such as when the ByteArrayConverter or StringConverter are being used.
 
-When you set *mq.message.body.jms=true*, the MQ messages are generated as JMS messages. This is appropriate if the applications receiving the messages are themselves using JMS. This gives the following behaviour.
+| Value schema    | Value class      | Outgoing message format | JMS message type | Outgoing message body           |
+| --------------- | ---------------- | ----------------------- | ---------------- | ------------------------------- |
+| null            | Any              | MQFMT_STRING            | TextMessage      | Java Object.toString() of value |
+| BYTES           | byte[]           | MQFMT_NONE              | BytesMessage     | Byte array                      |
+| STRING          | java.lang.String | MQFMT_STRING            | TextMessage      | String                          |
+| Everything else | Any              | MQFMT_STRING            | TextMessage      | Java Object.toString() of value |
 
-| Value schema    | Value class      | Outgoing message format | Outgoing message body  |
-| --------------- | ---------------- | ----------------------- | ---------------------- |
-| null            | Any              | JMS TextMessage         | Java toString of value |
-| OPTIONAL_BYTES  | byte[]           | JMS BytesMessage        | Byte array             |
-| OPTIONAL_STRING | java.lang.String | JMS TextMessage         | String                 |
-| Other primitive | Any              | *EXCEPTION*             | *EXCEPTION*            |
-| Compound        | Any              | JMS TextMessage         | Java toString of value |
+If you use the JsonConverter with the DefaultMessageBuilder, the output message will not be JSON; it will be a Java string representation of the value instead. That's why there's a JsonMessageBuilder too which behaves like this:
 
-There are three basic converters built into Apache Kafka, with the likely useful combinations in **bold**.
+| Value schema    | Value class      | Outgoing message format | JMS message type | Outgoing message body            |
+| --------------- | ---------------- | ----------------------- | ---------------- | -------------------------------- |
+| Any             | Any              | MQFMT_STRING            | TextMessage      | JSON representation of the value |
 
-| Converter class                                        | MQ message                  |
-| ------------------------------------------------------ | --------------------------- |
-| org.apache.kafka.connect.converters.ByteArrayConverter | **Binary data**             |
-| org.apache.kafka.connect.storage.StringConverter       | **String data**             |
-| org.apache.kafka.connect.json.JsonConverter            | String data, but not useful |
+To make the differences clear, here are some examples.
 
-In addition, there is another converter for the Avro format that is part of the Confluent Platform. This has not been tested with the MQ sink connector at this time.
+| Input message | Converter       | Value schema      | Message builder       | Output message body | Comment                            |
+| ------------- | --------------- | ----------------- | --------------------- | ------------------- | ---------------------------------- |
+| ABC           | StringConverter | STRING            | DefaultMessageBuilder | ABC                 | OK                                 |
+| ABC           | StringConverter | STRING            | JsonMessageBuilder    | "ABC"               | Quotes added to give a JSON string |
+| "ABC"         | JsonConverter   | STRING            | DefaultMessageBuilder | ABC                 | Quotes removed, not a JSON string  |
+| "ABC"         | JsonConverter   | STRING            | JsonMessageBuilder    | "ABC"               | OK                                 |
+| {"A":"B"}     | JsonConverter   | Compound (STRUCT) | DefaultMessageBuilder | STRUCT{A=B}         | Probably not helpful               |
+| {"A":"B"}     | JsonConverter   | Compound (STRUCT) | JsonMessageBuilder    | {"A":"B"}           | OK                                 |
+
+Note that the order of JSON structures is not fixed and fields may be reordered.
 
 
 ## Security
@@ -143,28 +159,27 @@ For troubleshooting, or to better understand the handshake performed by the IBM 
 ## Configuration
 The configuration options for the MQ Sink Connector are as follows:
 
-| Name                    | Description                                                 | Type    | Default       | Valid values                |
-| ----------------------- | ----------------------------------------------------------- | ------- | ------------- | --------------------------- |
-| topics                  | List of Kafka source topics                                 | string  |               | topic1[,topic2,...]         |
-| mq.queue.manager        | The name of the MQ queue manager                            | string  |               | MQ queue manager name       |
-| mq.connection.name.list | List of connection names for queue manager                  | string  |               | host(port)[,host(port),...] |
-| mq.channel.name         | The name of the server-connection channel                   | string  |               | MQ channel name             |
-| mq.queue                | The name of the target MQ queue                             | string  |               | MQ queue name               |
-| mq.user.name            | The user name for authenticating with the queue manager     | string  |               | User name                   |
-| mq.password             | The password for authenticating with the queue manager      | string  |               | Password                    |
-| mq.message.body.jms     | Whether to generate the message body as a JMS message type  | boolean | false         |                             |
-| mq.time.to.live         | Time-to-live in milliseconds for messages sent to MQ        | long    | 0 (unlimited) | [0,...]                     |
-| mq.persistent           | Send persistent or non-persistent messages to MQ            | boolean | true          |                             |
-| mq.ssl.cipher.suite     | The name of the cipher suite for TLS (SSL) connection       | string  |               | Blank or valid cipher suite |
-| mq.ssl.peer.name        | The distinguished name pattern of the TLS (SSL) peer        | string  |               | Blank or DN pattern         |
+| Name                    | Description                                                 | Type    | Default       | Valid values                      |
+| ----------------------- | ----------------------------------------------------------- | ------- | ------------- | --------------------------------- |
+| topics                  | List of Kafka source topics                                 | string  |               | topic1[,topic2,...]               |
+| mq.queue.manager        | The name of the MQ queue manager                            | string  |               | MQ queue manager name             |
+| mq.connection.name.list | List of connection names for queue manager                  | string  |               | host(port)[,host(port),...]       |
+| mq.channel.name         | The name of the server-connection channel                   | string  |               | MQ channel name                   |
+| mq.queue                | The name of the target MQ queue                             | string  |               | MQ queue name                     |
+| mq.user.name            | The user name for authenticating with the queue manager     | string  |               | User name                         |
+| mq.password             | The password for authenticating with the queue manager      | string  |               | Password                          |
+| mq.message.builder      | The class used to build the MQ message                      | string  |               | Class implementing MessageBuilder |
+| mq.message.body.jms     | Whether to generate the message body as a JMS message type  | boolean | false         |                                   |
+| mq.time.to.live         | Time-to-live in milliseconds for messages sent to MQ        | long    | 0 (unlimited) | [0,...]                           |
+| mq.persistent           | Send persistent or non-persistent messages to MQ            | boolean | true          |                                   |
+| mq.ssl.cipher.suite     | The name of the cipher suite for TLS (SSL) connection       | string  |               | Blank or valid cipher suite       |
+| mq.ssl.peer.name        | The distinguished name pattern of the TLS (SSL) peer        | string  |               | Blank or DN pattern               |
 
 
 ## Future enhancements
 The connector is intentionally basic. The idea is to enhance it over time with additional features to make it more capable. Some possible future enhancements are:
 * Message key support
 * JMX metrics
-* Improved JSON support
-* Testing with the Confluent Platform Avro converter and Schema Registry
 * Separate TLS configuration for the connector so that keystore location and so on can be specified as configurations
 
 

@@ -30,18 +30,6 @@ import org.slf4j.LoggerFactory;
 public class MQSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MQSinkTask.class);
 
-    // Configs
-    private String queueManager;
-    private String connectionNameList;
-    private String channelName;
-    private String queueName;
-    private String userName;
-    private String password;
-    private String timeToLive;
-    private String persistent;
-    private String sslCipherSuite;
-    private String sslPeerName;
-
     private JMSWriter writer;
 
     public MQSinkTask() {
@@ -65,35 +53,9 @@ public class MQSinkTask extends SinkTask {
             log.trace("Task props entry {} : {}", entry.getKey(), entry.getValue());
         }
 
-        queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
-        connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
-        channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
-        queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
-        userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
-        password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
-        timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
-        persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
-        sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
-        sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
-
         // Construct a writer to interface with MQ
-        writer = new JMSWriter(queueManager, connectionNameList, channelName, queueName, userName, password);
-        if (timeToLive != null) {
-            writer.setTimeToLive(Long.parseLong(timeToLive));
-        }
-        if (persistent != null) {
-            writer.setPersistent(Boolean.parseBoolean(persistent));
-        }
-
-        if (sslCipherSuite != null) {
-            writer.setSSLConfiguration(sslCipherSuite, sslPeerName);
-        }
-
-
-        String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
-        if (mbj != null) {
-            writer.setMessageBodyJms(Boolean.parseBoolean(mbj));
-        }
+        writer = new JMSWriter();
+        writer.configure(props);
 
         // Make a connection as an initial test of the configuration
         writer.connect();

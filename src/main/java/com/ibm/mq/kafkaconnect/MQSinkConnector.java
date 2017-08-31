@@ -60,6 +60,10 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_PASSWORD = "The password for authenticating with the queue manager.";
     public static final String CONFIG_DISPLAY_MQ_PASSWORD = "Password";
 
+    public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER = "mq.message.builder";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER = "The class used to build the MQ messages.";
+    public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER = "Message builder";
+
     public static final String CONFIG_NAME_MQ_MESSAGE_BODY_JMS = "mq.message.body.jms"; 
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BODY_JMS = "Whether to generate the message body as a JMS message type.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BODY_JMS = "Message body as JMS";
@@ -80,7 +84,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
-    public static String VERSION = "0.1";
+    public static String VERSION = "0.2";
 
     private Map<String, String> configProps;
 
@@ -167,24 +171,28 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_PASSWORD, CONFIG_GROUP_MQ, 6, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_PASSWORD);
 
+        config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER, CONFIG_GROUP_MQ, 7, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_MESSAGE_BUILDER);
+
         config.define(CONFIG_NAME_MQ_MESSAGE_BODY_JMS, Type.BOOLEAN, Boolean.FALSE, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BODY_JMS, CONFIG_GROUP_MQ, 7, Width.SHORT,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BODY_JMS, CONFIG_GROUP_MQ, 8, Width.SHORT,
                       CONFIG_DISPLAY_MQ_MESSAGE_BODY_JMS);
 
         config.define(CONFIG_NAME_MQ_TIME_TO_LIVE, Type.LONG, 0, Range.between(0L, 99999999900L), Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_TIME_TO_LIVE, CONFIG_GROUP_MQ, 8, Width.SHORT,
+                      CONFIG_DOCUMENTATION_MQ_TIME_TO_LIVE, CONFIG_GROUP_MQ, 9, Width.SHORT,
                       CONFIG_DISPLAY_MQ_TIME_TO_LIVE);
 
         config.define(CONFIG_NAME_MQ_PERSISTENT, Type.BOOLEAN, "true", Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 9, Width.SHORT,
+                      CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 10, Width.SHORT,
                       CONFIG_DISPLAY_MQ_PERSISTENT);
                       
         config.define(CONFIG_NAME_MQ_SSL_CIPHER_SUITE, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 10, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 11, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE);
 
         config.define(CONFIG_NAME_MQ_SSL_PEER_NAME, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 11, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 12, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_PEER_NAME);
 
         return config;
