@@ -73,9 +73,9 @@ There are three converters built into Apache Kafka and another which is part of 
 | JSON, may have schema  | org.apache.kafka.connect.json.JsonConverter            |
 | Binary-encoded Avro    | io.confluent.connect.avro.AvroConverter                |
 
-There are two message builders built into the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
+There are two message builders supplied with the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
 
-| Converter class                                        | Message builder class                                  |  Outgoing MQ message   |
+| Converter class                                        | Message builder class                                  | Outgoing MQ message    |
 | ------------------------------------------------------ | ------------------------------------------------------ | ---------------------- |
 | org.apache.kafka.connect.converters.ByteArrayConverter | com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder | **Binary data**        |
 | org.apache.kafka.connect.storage.StringConverter       | com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder | **String data**        |
