@@ -10,8 +10,6 @@ To build the connector, you must have the following installed:
 * [Maven](https://maven.apache.org)
 * Java 7 or later
 
-Download the MQ client JAR by following the instructions in [Getting the IBM MQ classes for Java and JMS](https://www-01.ibm.com/support/docview.wss?uid=swg21683398). Once you've accepted the license, download the *IBM MQ JMS and Java redistributable client* file (currently called `9.0.0.1-IBM-MQC-Redist-Java.zip`). Unpack the ZIP file.
-
 Clone the repository with the following command:
 ```shell
 git clone https://github.com/ibm-messaging/kafka-connect-mq-sink.git
@@ -22,19 +20,12 @@ Change directory into the `kafka-connect-mq-sink` directory:
 cd kafka-connect-mq-sink
 ```
 
-Copy the JAR file `com.ibm.mq.allclient.jar` that you unpacked from the ZIP file earlier into the `kafka-connect-mq-sink` directory.
-
-Run the following command to create a local Maven repository containing just this file so that it can be used to build the connector:
-```shell
-mvn deploy:deploy-file -Durl=file://local-maven-repo -Dfile=com.ibm.mq.allclient.jar -DgroupId=com.ibm.mq -DartifactId=allclient -Dpackaging=jar -Dversion=9.0.0.1
-```
-
 Build the connector using Maven:
 ```shell
 mvn clean package
 ```
 
-Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.2-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
+Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.3-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
 
 
 ## Running the connector
@@ -188,7 +179,7 @@ For issues relating specifically to this connect, please use the [GitHub issue t
 
 
 ## License
-Copyright 2017 IBM Corporation
+Copyright 2017, 2018 IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

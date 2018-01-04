@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
-    public static String VERSION = "0.2";
+    public static String VERSION = "0.3";
 
     private Map<String, String> configProps;
 
