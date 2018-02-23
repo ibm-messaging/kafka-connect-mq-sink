@@ -1,5 +1,5 @@
 # Kafka Connect sink connector for IBM MQ
-kafka-connect-mqsink is a [Kafka Connect](http://kafka.apache.org/documentation.html#connect) sink connector for copying data from Apache Kafka into IBM MQ.
+kafka-connect-mq-sink is a [Kafka Connect](http://kafka.apache.org/documentation.html#connect) sink connector for copying data from Apache Kafka into IBM MQ.
 
 The connector is supplied as source code which you can easily build into a JAR file.
 
@@ -33,7 +33,7 @@ To run the connector, you must have:
 * The JAR from building the connector
 * A properties file containing the configuration for the connector
 * Apache Kafka
-* IBM MQ v8.0 or later
+* IBM MQ v7.5 or later
 
 The connector can be run in a Kafka Connect worker in either standalone (single process) or distributed mode. It's a good idea to start in standalone mode.
 
@@ -150,27 +150,29 @@ For troubleshooting, or to better understand the handshake performed by the IBM 
 ## Configuration
 The configuration options for the MQ Sink Connector are as follows:
 
-| Name                    | Description                                                 | Type    | Default       | Valid values                      |
-| ----------------------- | ----------------------------------------------------------- | ------- | ------------- | --------------------------------- |
-| topics                  | List of Kafka source topics                                 | string  |               | topic1[,topic2,...]               |
-| mq.queue.manager        | The name of the MQ queue manager                            | string  |               | MQ queue manager name             |
-| mq.connection.name.list | List of connection names for queue manager                  | string  |               | host(port)[,host(port),...]       |
-| mq.channel.name         | The name of the server-connection channel                   | string  |               | MQ channel name                   |
-| mq.queue                | The name of the target MQ queue                             | string  |               | MQ queue name                     |
-| mq.user.name            | The user name for authenticating with the queue manager     | string  |               | User name                         |
-| mq.password             | The password for authenticating with the queue manager      | string  |               | Password                          |
-| mq.message.builder      | The class used to build the MQ message                      | string  |               | Class implementing MessageBuilder |
-| mq.message.body.jms     | Whether to generate the message body as a JMS message type  | boolean | false         |                                   |
-| mq.time.to.live         | Time-to-live in milliseconds for messages sent to MQ        | long    | 0 (unlimited) | [0,...]                           |
-| mq.persistent           | Send persistent or non-persistent messages to MQ            | boolean | true          |                                   |
-| mq.ssl.cipher.suite     | The name of the cipher suite for TLS (SSL) connection       | string  |               | Blank or valid cipher suite       |
-| mq.ssl.peer.name        | The distinguished name pattern of the TLS (SSL) peer        | string  |               | Blank or DN pattern               |
+| Name                    | Description                                                | Type    | Default       | Valid values                      |
+| ----------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
+| topics                  | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
+| mq.queue.manager        | The name of the MQ queue manager                           | string  |               | MQ queue manager name             |
+| mq.connection.name.list | List of connection names for queue manager                 | string  |               | host(port)[,host(port),...]       |
+| mq.channel.name         | The name of the server-connection channel                  | string  |               | MQ channel name                   |
+| mq.queue                | The name of the target MQ queue                            | string  |               | MQ queue name                     |
+| mq.user.name            | The user name for authenticating with the queue manager    | string  |               | User name                         |
+| mq.password             | The password for authenticating with the queue manager     | string  |               | Password                          |
+| mq.message.builder      | The class used to build the MQ message                     | string  |               | Class implementing MessageBuilder |
+| mq.message.body.jms     | Whether to generate the message body as a JMS message type | boolean | false         |                                   |
+| mq.time.to.live         | Time-to-live in milliseconds for messages sent to MQ       | long    | 0 (unlimited) | [0,...]                           |
+| mq.persistent           | Send persistent or non-persistent messages to MQ           | boolean | true          |                                   |
+| mq.ssl.cipher.suite     | The name of the cipher suite for TLS (SSL) connection      | string  |               | Blank or valid cipher suite       |
+| mq.ssl.peer.name        | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
 
 
 ## Future enhancements
 The connector is intentionally basic. The idea is to enhance it over time with additional features to make it more capable. Some possible future enhancements are:
+* Simplification of handling message formats
 * Message key support
 * JMX metrics
+* Testing with the Confluent Platform Avro converter and Schema Registry
 * Separate TLS configuration for the connector so that keystore location and so on can be specified as configurations
 
 
