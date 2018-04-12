@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import com.ibm.mq.constants.MQConstants;
 import com.ibm.mq.jms.*;
 import com.ibm.mq.kafkaconnect.builders.MessageBuilder;
 import com.ibm.msg.client.wmq.WMQConstants;
+
 import java.util.Map;
+
 import javax.jms.DeliveryMode;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
@@ -135,13 +137,28 @@ public class JMSWriter {
 
     /**
      * Connects to MQ.
-     *
-     * @throws RetriableException Operation failed, but connector should continue to retry.
-     * @throws ConnectException   Operation failed and connector should stop.
      */
-    public void connect() throws ConnectException, RetriableException {
-        connectInternal();
-        log.info("Connection to MQ established");
+    public void connect() {
+        try {
+            if (userName != null) {
+                jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
+            }
+            else {
+                jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
+            }            
+
+            jmsProd = jmsCtxt.createProducer();
+            jmsProd.setDeliveryMode(deliveryMode);
+            jmsProd.setTimeToLive(timeToLive);
+            connected = true;
+
+            log.info("Connection to MQ established");
+        }
+        catch (JMSRuntimeException jmse) {
+            log.info("Connection to MQ could not be established");
+            log.debug("JMS exception {}", jmse);
+            handleException(jmse);
+        }
     }
 
     /**
@@ -162,7 +179,7 @@ public class JMSWriter {
         }
         catch (JMSRuntimeException jmse) {
             log.debug("JMS exception {}", jmse);
-            handleException(jmse);
+            throw handleException(jmse);
         }
     }
 
@@ -184,7 +201,7 @@ public class JMSWriter {
         }
         catch (JMSRuntimeException jmse) {
             log.debug("JMS exception {}", jmse);
-            handleException(jmse);
+            throw handleException(jmse);
         }
     }
 
@@ -206,6 +223,7 @@ public class JMSWriter {
         finally
         {
             jmsCtxt = null;
+            log.debug("Connection to MQ closed");
         }
     }
 
@@ -235,18 +253,15 @@ public class JMSWriter {
         }
         catch (JMSRuntimeException jmse) {
             log.debug("JMS exception {}", jmse);
-            handleException(jmse);
+            throw handleException(jmse);
         }
     }
 
     /**
      * Handles exceptions from MQ. Some JMS exceptions are treated as retriable meaning that the
      * connector can keep running and just trying again is likely to fix things.
-     *
-     * @throws RetriableException Operation failed, but connector should continue to retry.
-     * @throws ConnectException   Operation failed and connector should stop.
      */
-    private void handleException(Throwable exc) throws ConnectException, RetriableException {
+    private ConnectException handleException(Throwable exc) {
         boolean isRetriable = false;
         boolean mustClose = true;
         int reason = -1;
@@ -293,8 +308,9 @@ public class JMSWriter {
         }
 
         if (isRetriable) {
-            throw new RetriableException(exc);
+            return new RetriableException(exc);
         }
-        throw new ConnectException(exc);
+
+        return new ConnectException(exc);
     }
 }
