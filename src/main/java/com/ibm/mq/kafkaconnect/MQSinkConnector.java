@@ -84,7 +84,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
-    public static String VERSION = "0.3";
+    public static String VERSION = "0.4";
 
     private Map<String, String> configProps;
 
