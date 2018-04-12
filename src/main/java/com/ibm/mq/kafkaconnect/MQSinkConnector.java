@@ -84,6 +84,10 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
+    public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "mq.message.builder.value.converter";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Prefix for configuring message builder's value converter";
+    public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Message builder's value converter";
+
     public static String VERSION = "0.5";
 
     private Map<String, String> configProps;
@@ -194,6 +198,10 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_SSL_PEER_NAME, Type.STRING, null, Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 12, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_PEER_NAME);
+
+        config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, Type.STRING, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         return config;
     }

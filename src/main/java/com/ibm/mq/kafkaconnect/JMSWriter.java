@@ -128,6 +128,7 @@ public class JMSWriter {
         try {
             Class<? extends MessageBuilder> c = Class.forName(builderClass).asSubclass(MessageBuilder.class);
             builder = c.newInstance();
+            builder.configure(props);
         }
         catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
             log.debug("Could not instantiate message builder {}", builderClass);

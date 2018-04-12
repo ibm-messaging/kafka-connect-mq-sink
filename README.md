@@ -101,7 +101,7 @@ The messages received from Kafka are processed by a converter which chooses a sc
 | org.apache.kafka.connect.json.JsonConverter            | JSON, may have schema  | Depends on message  | Depends on message |
 | io.confluent.connect.avro.AvroConverter                | Binary-encoded Avro    | Depends on message  | Depends on message |
 
-The MQ sink connector uses a message builder to build the MQ messsages from the schema and value. There are two built-in message builders.
+The MQ sink connector uses a message builder to build the MQ messsages from the schema and value. There are three built-in message builders.
 
 The DefaultMessageBuilder is best when the schema is very simple, such as when the ByteArrayConverter or StringConverter are being used.
 
@@ -131,6 +131,14 @@ To make the differences clear, here are some examples.
 
 Note that the order of JSON structures is not fixed and fields may be reordered.
 
+To handle the situation in which you already have a Kafka converter that you want to use to build the MQ message payload, the ConverterMessageBuilder is the one to use. Then you would end up using two Converters - one to convert the Kafka message to the internal SinkRecord, and the second to convert that into the MQ message. Since the Converter might also have its own configuration options, you can specify them using a prefix of `mq.message.builder.value.converter`. For example, the following configuration gets the ConverterMessageBuilder to work the same as the JsonMessageBuilder.
+
+```
+mq.message.builder=com.ibm.mq.kafkaconnect.builders.ConverterMessageBuilder
+mq.message.builder.value.converter=org.apache.kafka.connect.json.JsonConverter
+mq.message.builder.value.converter.schemas.enable=false
+```
+
 
 ## Security
 The connector supports authentication with user name and password and also connections secured with TLS using a server-side certificate and mutual authentication with client-side certificates.
@@ -150,29 +158,28 @@ For troubleshooting, or to better understand the handshake performed by the IBM 
 ## Configuration
 The configuration options for the MQ Sink Connector are as follows:
 
-| Name                    | Description                                                | Type    | Default       | Valid values                      |
-| ----------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
-| topics or topics.regex  | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
-| mq.queue.manager        | The name of the MQ queue manager                           | string  |               | MQ queue manager name             |
-| mq.connection.name.list | List of connection names for queue manager                 | string  |               | host(port)[,host(port),...]       |
-| mq.channel.name         | The name of the server-connection channel                  | string  |               | MQ channel name                   |
-| mq.queue                | The name of the target MQ queue                            | string  |               | MQ queue name                     |
-| mq.user.name            | The user name for authenticating with the queue manager    | string  |               | User name                         |
-| mq.password             | The password for authenticating with the queue manager     | string  |               | Password                          |
-| mq.message.builder      | The class used to build the MQ message                     | string  |               | Class implementing MessageBuilder |
-| mq.message.body.jms     | Whether to generate the message body as a JMS message type | boolean | false         |                                   |
-| mq.time.to.live         | Time-to-live in milliseconds for messages sent to MQ       | long    | 0 (unlimited) | [0,...]                           |
-| mq.persistent           | Send persistent or non-persistent messages to MQ           | boolean | true          |                                   |
-| mq.ssl.cipher.suite     | The name of the cipher suite for TLS (SSL) connection      | string  |               | Blank or valid cipher suite       |
-| mq.ssl.peer.name        | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
+| Name                               | Description                                                | Type    | Default       | Valid values                      |
+| ---------------------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
+| topics or topics.regex             | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
+| mq.queue.manager                   | The name of the MQ queue manager                           | string  |               | MQ queue manager name             |
+| mq.connection.name.list            | List of connection names for queue manager                 | string  |               | host(port)[,host(port),...]       |
+| mq.channel.name                    | The name of the server-connection channel                  | string  |               | MQ channel name                   |
+| mq.queue                           | The name of the target MQ queue                            | string  |               | MQ queue name                     |
+| mq.user.name                       | The user name for authenticating with the queue manager    | string  |               | User name                         |
+| mq.password                        | The password for authenticating with the queue manager     | string  |               | Password                          |
+| mq.message.builder                 | The class used to build the MQ message                     | string  |               | Class implementing MessageBuilder |
+| mq.message.body.jms                | Whether to generate the message body as a JMS message type | boolean | false         |                                   |
+| mq.time.to.live                    | Time-to-live in milliseconds for messages sent to MQ       | long    | 0 (unlimited) | [0,...]                           |
+| mq.persistent                      | Send persistent or non-persistent messages to MQ           | boolean | true          |                                   |
+| mq.ssl.cipher.suite                | The name of the cipher suite for TLS (SSL) connection      | string  |               | Blank or valid cipher suite       |
+| mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
+| mq.message.builder.value.converter | The class and prefix for message builder's value converter | string  |               | Class implementing Converter      |
 
 
 ## Future enhancements
 The connector is intentionally basic. The idea is to enhance it over time with additional features to make it more capable. Some possible future enhancements are:
-* Simplification of handling message formats
 * Message key support
 * JMX metrics
-* Testing with the Confluent Platform Avro converter and Schema Registry
 * Separate TLS configuration for the connector so that keystore location and so on can be specified as configurations
 
 

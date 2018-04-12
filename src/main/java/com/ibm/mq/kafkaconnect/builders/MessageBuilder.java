@@ -15,6 +15,8 @@
  */
 package com.ibm.mq.kafkaconnect.builders;
 
+import java.util.Map;
+
 import javax.jms.JMSContext;
 import javax.jms.Message;
 
@@ -24,6 +26,16 @@ import org.apache.kafka.connect.sink.SinkRecord;
  * Builds messages from Kafka Connect SinkRecords.
  */
 public interface MessageBuilder {
+    /**
+     * Configure this class.
+     * 
+     * @param props initial configuration
+     *
+     * @throws ConnectException   Operation failed and connector should stop.
+     */
+    default public void configure(Map<String, String> props) {
+    }
+
     /**
      * Convert a Kafka Connect SinkRecord into a message.
      * 
