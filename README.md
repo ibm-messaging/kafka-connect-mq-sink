@@ -152,7 +152,7 @@ The configuration options for the MQ Sink Connector are as follows:
 
 | Name                    | Description                                                | Type    | Default       | Valid values                      |
 | ----------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
-| topics                  | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
+| topics or topics.regex  | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
 | mq.queue.manager        | The name of the MQ queue manager                           | string  |               | MQ queue manager name             |
 | mq.connection.name.list | List of connection names for queue manager                 | string  |               | host(port)[,host(port),...]       |
 | mq.channel.name         | The name of the server-connection channel                  | string  |               | MQ channel name                   |
