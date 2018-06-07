@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static java.nio.charset.StandardCharsets.*;
  * Builds messages from Kafka Connect SinkRecords. It creates a JMS TextMessage containing
  * a JSON string representation of the value.
  */
-public class JsonMessageBuilder implements MessageBuilder {
+public class JsonMessageBuilder extends BaseMessageBuilder {
     private static final Logger log = LoggerFactory.getLogger(JsonMessageBuilder.class);
 
     private JsonConverter converter;
@@ -50,14 +50,14 @@ public class JsonMessageBuilder implements MessageBuilder {
     }
 
     /**
-     * Convert a Kafka Connect SinkRecord into a message.
+     * Gets the JMS message for the Kafka Connect SinkRecord.
      * 
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
-     * @return the message
+     * @return the JMS message
      */
-    @Override public Message fromSinkRecord(JMSContext jmsCtxt, SinkRecord record) {
+    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
         byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
         return jmsCtxt.createTextMessage(new String(payload, UTF_8));
     }

@@ -37,7 +37,7 @@ import static java.nio.charset.StandardCharsets.*;
  * Builds messages from Kafka Connect SinkRecords. It creates a JMS TextMessage containing
  * a string representation of the payload created by a Converter.
  */
-public class ConverterMessageBuilder implements MessageBuilder {
+public class ConverterMessageBuilder extends BaseMessageBuilder {
     private static final Logger log = LoggerFactory.getLogger(ConverterMessageBuilder.class);
 
     private Converter converter;
@@ -54,6 +54,8 @@ public class ConverterMessageBuilder implements MessageBuilder {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     public void configure(Map<String, String> props) {
+        super.configure(props);
+
         String converterClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         try {
@@ -74,14 +76,14 @@ public class ConverterMessageBuilder implements MessageBuilder {
     }
 
     /**
-     * Convert a Kafka Connect SinkRecord into a message.
+     * Gets the JMS message for the Kafka Connect SinkRecord.
      * 
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
-     * @return the message
+     * @return the JMS message
      */
-    @Override public Message fromSinkRecord(JMSContext jmsCtxt, SinkRecord record) {
+    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
         byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
         return jmsCtxt.createTextMessage(new String(payload, UTF_8));
     }

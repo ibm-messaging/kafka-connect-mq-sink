@@ -25,7 +25,7 @@ Build the connector using Maven:
 mvn clean package
 ```
 
-Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.5-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
+Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.6-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
 
 
 ## Running the connector
@@ -64,7 +64,7 @@ There are three converters built into Apache Kafka and another which is part of 
 | JSON, may have schema  | org.apache.kafka.connect.json.JsonConverter            |
 | Binary-encoded Avro    | io.confluent.connect.avro.AvroConverter                |
 
-There are two message builders supplied with the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
+There are three message builders supplied with the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
 
 | Converter class                                        | Message builder class                                  | Outgoing MQ message    |
 | ------------------------------------------------------ | ------------------------------------------------------ | ---------------------- |
@@ -139,6 +139,16 @@ mq.message.builder.value.converter=org.apache.kafka.connect.json.JsonConverter
 mq.message.builder.value.converter.schemas.enable=false
 ```
 
+### Key support and partitioning
+By default, the connector does not use the keys for the Kafka messages it reads. It can be configured to set the JMS correlation ID using the key of the Kafka records. To configure this behavior, set the `mq.message.builder.key.header` configuration value.
+
+| mq.message.builder.key.header | Key schema | Key class | Recommended value for key.converter                    |
+| ----------------------------- |----------- | --------- | ------------------------------------------------------ |
+| JMSCorrelationID              | STRING     | String    | org.apache.kafka.connect.storage.StringConverter       |
+| JMSCorrelationID              | BYTES      | byte[]    | org.apache.kafka.connect.converters.ByteArrayConverter |
+
+In MQ, the correlation ID is a 24-byte array. As a string, the connector represents it using a sequence of 48 hexadecimal characters. The Kafka key will be truncated to fit into this size.
+
 
 ## Security
 The connector supports authentication with user name and password and also connections secured with TLS using a server-side certificate and mutual authentication with client-side certificates.
@@ -173,18 +183,18 @@ The configuration options for the MQ Sink Connector are as follows:
 | mq.persistent                      | Send persistent or non-persistent messages to MQ           | boolean | true          |                                   |
 | mq.ssl.cipher.suite                | The name of the cipher suite for TLS (SSL) connection      | string  |               | Blank or valid cipher suite       |
 | mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
+| mq.message.builder.key.header      | The JMS message header to set from the Kafka record key    | string  |               | JMSCorrelationID                  |
 | mq.message.builder.value.converter | The class and prefix for message builder's value converter | string  |               | Class implementing Converter      |
 
 
 ## Future enhancements
 The connector is intentionally basic. The idea is to enhance it over time with additional features to make it more capable. Some possible future enhancements are:
-* Message key support
 * JMX metrics
 * Separate TLS configuration for the connector so that keystore location and so on can be specified as configurations
 
 
 ## Issues and contributions
-For issues relating specifically to this connect, please use the [GitHub issue tracker](https://github.com/ibm-messaging/kafka-connect-mq-sink/issues). If you do submit a Pull Request related to this connector, please indicate in the Pull Request that you accept and agree to be bound by the terms of the [IBM Contributor License Agreement](CLA.md).
+For issues relating specifically to this connector, please use the [GitHub issue tracker](https://github.com/ibm-messaging/kafka-connect-mq-sink/issues). If you do submit a Pull Request related to this connector, please indicate in the Pull Request that you accept and agree to be bound by the terms of the [IBM Contributor License Agreement](CLA.md).
 
 
 ## License

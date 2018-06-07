@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * <li>Otherwise, it creates a JMS TextMessage using java.lang.Object.toString() for the value.
  * </ul>
  */
-public class DefaultMessageBuilder implements MessageBuilder {
+public class DefaultMessageBuilder extends BaseMessageBuilder {
     private static final Logger log = LoggerFactory.getLogger(DefaultMessageBuilder.class);
 
     public DefaultMessageBuilder() {
@@ -46,14 +46,14 @@ public class DefaultMessageBuilder implements MessageBuilder {
     }
 
     /**
-     * Convert a Kafka Connect SinkRecord into a JMS message.
+     * Gets the JMS message for the Kafka Connect SinkRecord.
      * 
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
      */
-    @Override public Message fromSinkRecord(JMSContext jmsCtxt, SinkRecord record) {
+    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
         Schema s = record.valueSchema();
         Object v = record.value();
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 IBM Corporation
+ * Copyright 2017, 2018 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,7 @@ public interface MessageBuilder {
      *
      * @throws ConnectException   Operation failed and connector should stop.
      */
-    default public void configure(Map<String, String> props) {
-    }
+    default void configure(Map<String, String> props) {}
 
     /**
      * Convert a Kafka Connect SinkRecord into a message.

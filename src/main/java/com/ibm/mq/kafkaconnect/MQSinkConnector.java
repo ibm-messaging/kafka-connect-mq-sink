@@ -84,11 +84,16 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
+    public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER = "mq.message.builder.key.header";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER = "The JMS message header to set from the Kafka record key.";
+    public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_KEY_HEADER = "Record builder key header";
+    public static final String CONFIG_VALUE_MQ_MESSAGE_BUILDER_KEY_HEADER_JMSCORRELATIONID = "JMSCorrelationID";
+
     public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "mq.message.builder.value.converter";
-    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Prefix for configuring message builder's value converter";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Prefix for configuring message builder's value converter.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Message builder's value converter";
 
-    public static String VERSION = "0.5";
+    public static String VERSION = "0.6";
 
     private Map<String, String> configProps;
 
@@ -199,8 +204,12 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 12, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_PEER_NAME);
 
+        config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER, Type.STRING, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_KEY_HEADER);
+
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, Type.STRING, null, Importance.LOW,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 14, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         return config;
