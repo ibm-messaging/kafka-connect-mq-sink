@@ -1,5 +1,5 @@
 # Using IBM MQ with Kafka Connect
-Many organizations use both IBM MQ and Apache Kafka for their messaging needs. Although they're often used to solve different kinds of messaging problems, people often want to connect them together. When connecting Apache Kafka to other systems, the technology of choice is the Kafka Connect framework.
+Many organizations use both IBM MQ and Apache Kafka for their messaging needs. Although they're typically used to solve different kinds of messaging problems, people often want to connect them together. When connecting Apache Kafka to other systems, the technology of choice is the Kafka Connect framework.
 
 A pair of basic connectors for IBM MQ are available as source code available on GitHub. The source connector (https://github.com/ibm-messaging/kafka-connect-mq-source) is used to take messages from an MQ queue and transfer them to a Kafka topic, while the sink connector (https://github.com/ibm-messaging/kafka-connect-mq-sink) goes the other way. The GitHub projects have instructions for building the connectors, but once you've successfully built the JAR files, what next?
 
@@ -154,7 +154,7 @@ topic=TSOURCE
 
 Change directory to the Kafka root directory. Start the connector worker replacing `<connector-root-directory>`:
 ``` shell
-CLASSPATH=<connector-root-directory>/target/kafka-connect-mq-source-0.6-SNAPSHOT-jar-with-dependencies.jar bin/connect-standalone.sh config/connect-standalone.properties ~/mq-source.properties
+CLASSPATH=<connector-root-directory>/target/kafka-connect-mq-source-0.7-SNAPSHOT-jar-with-dependencies.jar bin/connect-standalone.sh config/connect-standalone.properties ~/mq-source.properties
 ```
 
 Wait while the worker starts and then prints:
