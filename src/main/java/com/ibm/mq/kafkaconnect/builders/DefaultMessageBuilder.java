@@ -57,12 +57,12 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
         Schema s = record.valueSchema();
         Object v = record.value();
 
-        log.trace("Value schema {}", s);
+        log.debug("Value schema {}", s);
         if (v == null) {
             return jmsCtxt.createMessage();
         }
         else if (s == null) {
-            log.trace("No schema info {}", v);
+            log.debug("No schema info {}", v);
             if (v instanceof byte[]) {
                 try {
                     BytesMessage bm = jmsCtxt.createBytesMessage();

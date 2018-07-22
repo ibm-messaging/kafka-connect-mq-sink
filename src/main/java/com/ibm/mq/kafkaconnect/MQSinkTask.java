@@ -49,8 +49,10 @@ public class MQSinkTask extends SinkTask {
      * @param props initial configuration
      */
     @Override public void start(Map<String, String> props) {
+        log.trace("[{}] Entry {}.start, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
+
         for (final Entry<String, String> entry: props.entrySet()) {
-            log.trace("Task props entry {} : {}", entry.getKey(), entry.getValue());
+            log.debug("Task props entry {} : {}", entry.getKey(), entry.getValue());
         }
 
         // Construct a writer to interface with MQ
@@ -59,6 +61,8 @@ public class MQSinkTask extends SinkTask {
 
         // Make a connection as an initial test of the configuration
         writer.connect();
+
+        log.trace("[{}]  Exit {}.start", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -73,10 +77,14 @@ public class MQSinkTask extends SinkTask {
      * @param records the set of records to send
      */
     @Override public void put(Collection<SinkRecord> records) {
+        log.trace("[{}] Entry {}.put", Thread.currentThread().getId(), this.getClass().getName());
+
         for (SinkRecord r: records) {
-            log.trace("Putting record to topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
+            log.debug("Putting record for topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
             writer.send(r);
         }
+
+        log.trace("[{}]  Exit {}.put", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -87,13 +95,16 @@ public class MQSinkTask extends SinkTask {
      *                       passed to {@link #put}.
      */
     public void flush(Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
+        log.trace("[{}] Entry {}.flush", Thread.currentThread().getId(), this.getClass().getName());
+
         for (Map.Entry<TopicPartition, OffsetAndMetadata> entry: currentOffsets.entrySet()) {
             TopicPartition tp = entry.getKey();
             OffsetAndMetadata om = entry.getValue();
-            log.trace("Flushing up to topic {}, partition {} and offset {}", tp.topic(), tp.partition(), om.offset());
+            log.debug("Flushing up to topic {}, partition {} and offset {}", tp.topic(), tp.partition(), om.offset());
         }
 
         writer.commit();
+        log.trace("[{}]  Exit {}.flush", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -103,8 +114,12 @@ public class MQSinkTask extends SinkTask {
      * as closing network connections to the sink system.
      */
     @Override public void stop() {
+        log.trace("[{}] Entry {}.stop", Thread.currentThread().getId(), this.getClass().getName());
+
         if (writer != null) {
             writer.close();
         }
+
+        log.trace("[{}]  Exit {}.stop", Thread.currentThread().getId(), this.getClass().getName());
     }
 }

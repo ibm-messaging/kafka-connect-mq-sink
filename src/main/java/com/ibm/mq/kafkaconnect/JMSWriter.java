@@ -73,6 +73,8 @@ public class JMSWriter {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     public void configure(Map<String, String> props) {
+        log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
+
         String queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
         String connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
         String channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
@@ -92,6 +94,7 @@ public class JMSWriter {
             mqConnFactory.setQueueManager(queueManager);
             mqConnFactory.setConnectionNameList(connectionNameList);
             mqConnFactory.setChannel(channelName);
+            mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, true);
 
             queue = new MQQueue(queueName);
 
@@ -121,7 +124,7 @@ public class JMSWriter {
             }
         }
         catch (JMSException | JMSRuntimeException jmse) {
-            log.debug("JMS exception {}", jmse);
+            log.error("JMS exception {}", jmse);
             throw new ConnectException(jmse);
         }
 
@@ -131,15 +134,19 @@ public class JMSWriter {
             builder.configure(props);
         }
         catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
-            log.debug("Could not instantiate message builder {}", builderClass);
+            log.error("Could not instantiate message builder {}", builderClass);
             throw new ConnectException("Could not instantiate message builder", exc);
         }
+
+        log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
      * Connects to MQ.
      */
     public void connect() {
+        log.trace("[{}] Entry {}.connect", Thread.currentThread().getId(), this.getClass().getName());
+
         try {
             if (userName != null) {
                 jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
@@ -157,9 +164,11 @@ public class JMSWriter {
         }
         catch (JMSRuntimeException jmse) {
             log.info("Connection to MQ could not be established");
-            log.debug("JMS exception {}", jmse);
+            log.error("JMS exception {}", jmse);
             handleException(jmse);
         }
+
+        log.trace("[{}]  Exit {}.connect", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -171,6 +180,8 @@ public class JMSWriter {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     public void send(SinkRecord r) throws ConnectException, RetriableException {
+        log.trace("[{}] Entry {}.send", Thread.currentThread().getId(), this.getClass().getName());
+
         connectInternal();
 
         try {
@@ -179,9 +190,11 @@ public class JMSWriter {
             jmsProd.send(queue, m);
         }
         catch (JMSRuntimeException jmse) {
-            log.debug("JMS exception {}", jmse);
+            log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
+
+        log.trace("[{}]  Exit {}.send", Thread.currentThread().getId(), this.getClass().getName());
     }
 
 
@@ -192,6 +205,8 @@ public class JMSWriter {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     public void commit() throws ConnectException, RetriableException {
+        log.trace("[{}] Entry {}.commit", Thread.currentThread().getId(), this.getClass().getName());
+
         connectInternal();
         try {
             if (inflight) {
@@ -201,15 +216,19 @@ public class JMSWriter {
             jmsCtxt.commit();
         }
         catch (JMSRuntimeException jmse) {
-            log.debug("JMS exception {}", jmse);
+            log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
+
+        log.trace("[{}]  Exit {}.commit", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
      * Closes the connection.
      */
     public void close() {
+        log.trace("[{}] Entry {}.close", Thread.currentThread().getId(), this.getClass().getName());
+
         try {
             inflight = false;
             connected = false;
@@ -226,6 +245,8 @@ public class JMSWriter {
             jmsCtxt = null;
             log.debug("Connection to MQ closed");
         }
+
+        log.trace("[{}]  Exit {}.close", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -235,6 +256,8 @@ public class JMSWriter {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     private void connectInternal() throws ConnectException, RetriableException {
+        log.trace("[{}] Entry {}.connectInternal", Thread.currentThread().getId(), this.getClass().getName());
+
         if (connected) {
             return;
         }
@@ -253,9 +276,11 @@ public class JMSWriter {
             connected = true;
         }
         catch (JMSRuntimeException jmse) {
-            log.debug("JMS exception {}", jmse);
+            log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
+
+        log.trace("[{}]  Exit {}.connectInternal", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**

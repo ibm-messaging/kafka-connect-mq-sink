@@ -51,6 +51,8 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     @Override public void configure(Map<String, String> props) {
+        log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
+
         String kh = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER);
         if (kh != null) {
             if (kh.equals(MQSinkConnector.CONFIG_VALUE_MQ_MESSAGE_BUILDER_KEY_HEADER_JMSCORRELATIONID)) {
@@ -63,6 +65,8 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                 throw new ConnectException("Unsupported MQ message builder key header value");
             }
         }
+
+        log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -92,7 +96,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
             if (k != null) {
                 if (s == null) {
-                    log.trace("No schema info {}", k);
+                    log.debug("No schema info {}", k);
                     if (k instanceof byte[]) {
                         try {
                             m.setJMSCorrelationIDAsBytes((byte[])k);
@@ -141,7 +145,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                         m.setJMSCorrelationID((String)k);
                     }
                     catch (JMSException jmse) {
-                        throw new ConnectException("Failed to write bytes", jmse);
+                        throw new ConnectException("Failed to write string", jmse);
                     }
                 }
             }

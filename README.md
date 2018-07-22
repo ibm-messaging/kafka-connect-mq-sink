@@ -8,7 +8,7 @@ The connector is supplied as source code which you can easily build into a JAR f
 To build the connector, you must have the following installed:
 * [git](https://git-scm.com/)
 * [Maven](https://maven.apache.org)
-* Java 7 or later
+* Java 8 or later
 
 Clone the repository with the following command:
 ```shell
@@ -25,15 +25,15 @@ Build the connector using Maven:
 mvn clean package
 ```
 
-Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.6-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
+Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.7-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
 
 
 ## Running the connector
 To run the connector, you must have:
 * The JAR from building the connector
 * A properties file containing the configuration for the connector
-* Apache Kafka
-* IBM MQ v7.5 or later
+* Apache Kafka, either standalone or included as part of an offering such as IBM Event Streams
+* IBM MQ v8 or later, or the IBM MQ on Cloud service
 
 The connector can be run in a Kafka Connect worker in either standalone (single process) or distributed mode. It's a good idea to start in standalone mode.
 

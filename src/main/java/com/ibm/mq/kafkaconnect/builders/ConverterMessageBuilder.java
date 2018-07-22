@@ -54,6 +54,8 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
      * @throws ConnectException   Operation failed and connector should stop.
      */
     public void configure(Map<String, String> props) {
+        log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
+
         super.configure(props);
 
         String converterClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
@@ -70,9 +72,11 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
             converter.configure(ac.originalsWithPrefix(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER + "."), false);
         }
         catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
-            log.debug("Could not instantiate converter for message builder {}", converterClass);
+            log.error("Could not instantiate converter for message builder {}", converterClass);
             throw new ConnectException("Could not instantiate converter for message builder", exc);
         }
+
+        log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
