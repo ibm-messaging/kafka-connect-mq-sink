@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.ibm.mq.kafkaconnect;
+package com.ibm.eventstreams.connect.mqsink;
 
 import com.ibm.mq.MQException;
 import com.ibm.mq.constants.MQConstants;
 import com.ibm.mq.jms.*;
-import com.ibm.mq.kafkaconnect.builders.MessageBuilder;
+import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
 import com.ibm.msg.client.wmq.WMQConstants;
 
 import java.util.Map;

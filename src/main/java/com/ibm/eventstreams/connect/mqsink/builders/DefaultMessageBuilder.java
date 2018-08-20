@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.ibm.mq.kafkaconnect.builders;
+package com.ibm.eventstreams.connect.mqsink.builders;
 
 import java.nio.ByteBuffer;
 
@@ -42,7 +42,7 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
     private static final Logger log = LoggerFactory.getLogger(DefaultMessageBuilder.class);
 
     public DefaultMessageBuilder() {
-        log.info("Building messages using com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder");
+        log.info("Building messages using com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder");
     }
 
     /**

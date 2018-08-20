@@ -66,12 +66,12 @@ There are three converters built into Apache Kafka and another which is part of 
 
 There are three message builders supplied with the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
 
-| Converter class                                        | Message builder class                                  | Outgoing MQ message    |
-| ------------------------------------------------------ | ------------------------------------------------------ | ---------------------- |
-| org.apache.kafka.connect.converters.ByteArrayConverter | com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder | **Binary data**        |
-| org.apache.kafka.connect.storage.StringConverter       | com.ibm.mq.kafkaconnect.builders.DefaultMessageBuilder | **String data**        |
-| org.apache.kafka.connect.json.JsonConverter            | com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder    | **JSON, no schema**    |
-| io.confluent.connect.avro.AvroConverter                | com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder    | **JSON**               |
+| Converter class                                        | Message builder class                                              | Outgoing MQ message    |
+| ------------------------------------------------------ | ------------------------------------------------------------------ | ---------------------- |
+| org.apache.kafka.connect.converters.ByteArrayConverter | com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder | **Binary data**        |
+| org.apache.kafka.connect.storage.StringConverter       | com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder | **String data**        |
+| org.apache.kafka.connect.json.JsonConverter            | com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder    | **JSON, no schema**    |
+| io.confluent.connect.avro.AvroConverter                | com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder    | **JSON**               |
 
 When you set *mq.message.body.jms=true*, the MQ messages are generated as JMS messages. This is appropriate if the applications receiving the messages are themselves using JMS.
 
@@ -88,7 +88,7 @@ value.converter=org.apache.kafka.connect.storage.StringConverter
 * Message schemas are stored in the Schema Registry and values are binary-encoded Avro, pass into MQ message as JSON
 ```
 value.converter=io.confluent.connect.avro.AvroConverter
-mq.message.builder=com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder
+mq.message.builder=com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder
 ```
 
 ### The gory detail
@@ -134,7 +134,7 @@ Note that the order of JSON structures is not fixed and fields may be reordered.
 To handle the situation in which you already have a Kafka converter that you want to use to build the MQ message payload, the ConverterMessageBuilder is the one to use. Then you would end up using two Converters - one to convert the Kafka message to the internal SinkRecord, and the second to convert that into the MQ message. Since the Converter might also have its own configuration options, you can specify them using a prefix of `mq.message.builder.value.converter`. For example, the following configuration gets the ConverterMessageBuilder to work the same as the JsonMessageBuilder.
 
 ```
-mq.message.builder=com.ibm.mq.kafkaconnect.builders.ConverterMessageBuilder
+mq.message.builder=com.ibm.eventstreams.connect.mqsink.builders.ConverterMessageBuilder
 mq.message.builder.value.converter=org.apache.kafka.connect.json.JsonConverter
 mq.message.builder.value.converter.schemas.enable=false
 ```
@@ -154,7 +154,7 @@ In MQ, the correlation ID is a 24-byte array. As a string, the connector represe
 The connector supports authentication with user name and password and also connections secured with TLS using a server-side certificate and mutual authentication with client-side certificates.
 
 ### Setting up TLS using a server-side certificate
-To enable use of TLS, set the configuration `mq.ssl.cipher.suite` to the name of the cipher suite which matches the CipherSpec in the SSLCIPH attribute of the MQ server-connection channel. Use the table of supported cipher suites for MQ 9.0.x [here](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.0.0/com.ibm.mq.dev.doc/q113220_.htm) as a reference. Note that the names of the CipherSpecs as used in the MQ configuration are not necessarily the same as the cipher suite names that the connector uses. The connector uses the JMS interface so it follows the Java conventions.
+To enable use of TLS, set the configuration `mq.ssl.cipher.suite` to the name of the cipher suite which matches the CipherSpec in the SSLCIPH attribute of the MQ server-connection channel. Use the table of supported cipher suites for MQ 9.1 [here](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.dev.doc/q113220_.htm) as a reference. Note that the names of the CipherSpecs as used in the MQ configuration are not necessarily the same as the cipher suite names that the connector uses. The connector uses the JMS interface so it follows the Java conventions.
 
 You will need to put the public part of the queue manager's certificate in the JSSE truststore used by the Kafka Connect worker that you're using to run the connector. If you need to specify extra arguments to the worker's JVM, you can use the EXTRA_ARGS environment variable.
 

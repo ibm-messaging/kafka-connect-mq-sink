@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.ibm.mq.kafkaconnect.builders;
+package com.ibm.eventstreams.connect.mqsink.builders;
 
 import java.util.HashMap;
 
@@ -38,7 +38,7 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
     private JsonConverter converter;
 
     public JsonMessageBuilder() {
-        log.info("Building messages using com.ibm.mq.kafkaconnect.builders.JsonMessageBuilder");
+        log.info("Building messages using com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder");
         converter = new JsonConverter();
         
         // We just want the payload, not the schema in the output message
