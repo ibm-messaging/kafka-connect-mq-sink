@@ -57,10 +57,14 @@ public class JMSWriter {
     private int deliveryMode = Message.DEFAULT_DELIVERY_MODE;
     private long timeToLive = Message.DEFAULT_TIME_TO_LIVE;
 
-    private boolean connected = false;  // Whether connected to MQ
-    private boolean inflight = false;   // Whether messages in-flight in current transaction
-
     private MessageBuilder builder;
+
+    private boolean connected = false;                              // Whether connected to MQ
+    private boolean inflight = false;                               // Whether messages in-flight in current transaction
+    private long reconnectDelayMillis = RECONNECT_DELAY_MILLIS_MIN; // Delay between repeated reconnect attempts
+
+    private static long RECONNECT_DELAY_MILLIS_MIN = 64l;
+    private static long RECONNECT_DELAY_MILLIS_MAX = 8192l;
 
     public JMSWriter() {
     }
@@ -273,9 +277,23 @@ public class JMSWriter {
             jmsProd = jmsCtxt.createProducer();
             jmsProd.setDeliveryMode(deliveryMode);
             jmsProd.setTimeToLive(timeToLive);
+            reconnectDelayMillis = RECONNECT_DELAY_MILLIS_MIN;
             connected = true;
         }
         catch (JMSRuntimeException jmse) {
+            // Delay slightly so that repeated reconnect loops don't run too fast
+            try {
+                Thread.sleep(reconnectDelayMillis);
+            }
+            catch (InterruptedException ie) {
+                ;
+            }
+
+            if (reconnectDelayMillis < RECONNECT_DELAY_MILLIS_MAX)
+            {
+                reconnectDelayMillis = reconnectDelayMillis * 2;
+            }
+
             log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
