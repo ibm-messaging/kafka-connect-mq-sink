@@ -55,14 +55,13 @@ Each message in Kafka Connect is associated with a representation of the message
 
 When the MQ sink connector reads a message from Kafka, it is processed using a *converter* which chooses a schema to represent the message format and creates a Java object containing the message value. The MQ sink connector then converts this internal format into the message it sends to MQ using a *message builder*.
 
-There are three converters built into Apache Kafka and another which is part of the Confluent Platform. The following table shows which converters to use based on the incoming message encoding.
+There are three converters built into Apache Kafka. The following table shows which converters to use based on the incoming message encoding.
 
 | Incoming Kafka message | Converter class                                        |
 | ---------------------- | ------------------------------------------------------ |
 | Any                    | org.apache.kafka.connect.converters.ByteArrayConverter |
 | String                 | org.apache.kafka.connect.storage.StringConverter       |
 | JSON, may have schema  | org.apache.kafka.connect.json.JsonConverter            |
-| Binary-encoded Avro    | io.confluent.connect.avro.AvroConverter                |
 
 There are three message builders supplied with the connector, although you can write your own. The basic rule is that if you're using a converter that uses a very simple schema, the default message builder is probably the best choice. If you're using a converter that uses richer schemas to represent complex messages, the JSON message builder is good for generating a JSON representation of the complex data. The following table shows some likely combinations.
 
@@ -71,7 +70,6 @@ There are three message builders supplied with the connector, although you can w
 | org.apache.kafka.connect.converters.ByteArrayConverter | com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder | **Binary data**        |
 | org.apache.kafka.connect.storage.StringConverter       | com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder | **String data**        |
 | org.apache.kafka.connect.json.JsonConverter            | com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder    | **JSON, no schema**    |
-| io.confluent.connect.avro.AvroConverter                | com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder    | **JSON**               |
 
 When you set *mq.message.body.jms=true*, the MQ messages are generated as JMS messages. This is appropriate if the applications receiving the messages are themselves using JMS.
 
@@ -85,21 +83,15 @@ value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
 ```
 value.converter=org.apache.kafka.connect.storage.StringConverter
 ```
-* Message schemas are stored in the Schema Registry and values are binary-encoded Avro, pass into MQ message as JSON
-```
-value.converter=io.confluent.connect.avro.AvroConverter
-mq.message.builder=com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder
-```
 
 ### The gory detail
-The messages received from Kafka are processed by a converter which chooses a schema to represent the message and creates a Java object containing the message value. There are three basic converters built into Apache Kafka. In addition, there is another converter for the Avro format that is part of the Confluent Platform that works with the Schema Registry and the Avro-encoded message format.
+The messages received from Kafka are processed by a converter which chooses a schema to represent the message and creates a Java object containing the message value. There are three basic converters built into Apache Kafka.
 
 | Converter class                                        | Kafka message encoding | Value schema        | Value class        |
 | ------------------------------------------------------ | ---------------------- | ------------------- | ------------------ |
 | org.apache.kafka.connect.converters.ByteArrayConverter | Any                    | OPTIONAL_BYTES      | byte[]             |
 | org.apache.kafka.connect.storage.StringConverter       | String                 | OPTIONAL_STRING     | java.lang.String   |
 | org.apache.kafka.connect.json.JsonConverter            | JSON, may have schema  | Depends on message  | Depends on message |
-| io.confluent.connect.avro.AvroConverter                | Binary-encoded Avro    | Depends on message  | Depends on message |
 
 The MQ sink connector uses a message builder to build the MQ messsages from the schema and value. There are three built-in message builders.
 
@@ -166,7 +158,7 @@ For troubleshooting, or to better understand the handshake performed by the IBM 
 
 
 ## Configuration
-The configuration options for the MQ Sink Connector are as follows:
+The configuration options for the Kafka Connect sink connector for IBM MQ are as follows:
 
 | Name                               | Description                                                | Type    | Default       | Valid values                      |
 | ---------------------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
@@ -185,12 +177,6 @@ The configuration options for the MQ Sink Connector are as follows:
 | mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
 | mq.message.builder.key.header      | The JMS message header to set from the Kafka record key    | string  |               | JMSCorrelationID                  |
 | mq.message.builder.value.converter | The class and prefix for message builder's value converter | string  |               | Class implementing Converter      |
-
-
-## Future enhancements
-The connector is intentionally basic. The idea is to enhance it over time with additional features to make it more capable. Some possible future enhancements are:
-* JMX metrics
-* Separate TLS configuration for the connector so that keystore location and so on can be specified as configurations
 
 
 ## Issues and contributions
