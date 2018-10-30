@@ -60,6 +60,10 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_PASSWORD = "The password for authenticating with the queue manager.";
     public static final String CONFIG_DISPLAY_MQ_PASSWORD = "Password";
 
+    public static final String CONFIG_NAME_MQ_CCDT_URL = "mq.ccdt.url"; 
+    public static final String CONFIG_DOCUMENTATION_MQ_CCDT_URL = "The CCDT URL to use to establish a connection to the queue manager.";
+    public static final String CONFIG_DISPLAY_MQ_CCDT_URL = "CCDT URL";
+
     public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER = "mq.message.builder";
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER = "The class used to build the MQ messages.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER = "Message builder";
@@ -169,56 +173,60 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_QUEUE_MANAGER, CONFIG_GROUP_MQ, 1, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_QUEUE_MANAGER);
 
-        config.define(CONFIG_NAME_MQ_CONNECTION_NAME_LIST, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        config.define(CONFIG_NAME_MQ_CONNECTION_NAME_LIST, Type.STRING, null, Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_CONNNECTION_NAME_LIST, CONFIG_GROUP_MQ, 2, Width.LONG,
                       CONFIG_DISPLAY_MQ_CONNECTION_NAME_LIST);
 
-        config.define(CONFIG_NAME_MQ_CHANNEL_NAME, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        config.define(CONFIG_NAME_MQ_CHANNEL_NAME, Type.STRING, null, Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_CHANNEL_NAME, CONFIG_GROUP_MQ, 3, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_CHANNEL_NAME);
 
+        config.define(CONFIG_NAME_MQ_CCDT_URL, Type.STRING, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_CCDT_URL, CONFIG_GROUP_MQ, 4, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_CCDT_URL);
+
         config.define(CONFIG_NAME_MQ_QUEUE, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
-                      CONFIG_DOCUMENTATION_MQ_QUEUE, CONFIG_GROUP_MQ, 4, Width.LONG,
+                      CONFIG_DOCUMENTATION_MQ_QUEUE, CONFIG_GROUP_MQ, 5, Width.LONG,
                       CONFIG_DISPLAY_MQ_QUEUE);
 
         config.define(CONFIG_NAME_MQ_USER_NAME, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_USER_NAME, CONFIG_GROUP_MQ, 5, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_USER_NAME, CONFIG_GROUP_MQ, 6, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_USER_NAME);
 
         config.define(CONFIG_NAME_MQ_PASSWORD, Type.PASSWORD, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_PASSWORD, CONFIG_GROUP_MQ, 6, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_PASSWORD, CONFIG_GROUP_MQ, 7, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_PASSWORD);
 
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER, CONFIG_GROUP_MQ, 7, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER, CONFIG_GROUP_MQ, 8, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER);
 
         config.define(CONFIG_NAME_MQ_MESSAGE_BODY_JMS, Type.BOOLEAN, Boolean.FALSE, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BODY_JMS, CONFIG_GROUP_MQ, 8, Width.SHORT,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BODY_JMS, CONFIG_GROUP_MQ, 9, Width.SHORT,
                       CONFIG_DISPLAY_MQ_MESSAGE_BODY_JMS);
 
         config.define(CONFIG_NAME_MQ_TIME_TO_LIVE, Type.LONG, 0, Range.between(0L, 99999999900L), Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_TIME_TO_LIVE, CONFIG_GROUP_MQ, 9, Width.SHORT,
+                      CONFIG_DOCUMENTATION_MQ_TIME_TO_LIVE, CONFIG_GROUP_MQ, 10, Width.SHORT,
                       CONFIG_DISPLAY_MQ_TIME_TO_LIVE);
 
         config.define(CONFIG_NAME_MQ_PERSISTENT, Type.BOOLEAN, "true", Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 10, Width.SHORT,
+                      CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 11, Width.SHORT,
                       CONFIG_DISPLAY_MQ_PERSISTENT);
                       
         config.define(CONFIG_NAME_MQ_SSL_CIPHER_SUITE, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 11, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 12, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE);
 
         config.define(CONFIG_NAME_MQ_SSL_PEER_NAME, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 12, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_PEER_NAME);
 
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER, CONFIG_GROUP_MQ, 14, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_KEY_HEADER);
 
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, Type.STRING, null, Importance.LOW,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 14, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 15, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         return config;
