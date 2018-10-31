@@ -1,0 +1,73 @@
+language: generic
+dist: trusty
+
+matrix:
+  include:
+  - language: java
+    jdk: oraclejdk8
+    env:
+    - JOBNAME=MVN_TEST
+
+    install: 
+      - mvn test
+
+  - language: python
+    env:
+    - JOBNAME=GIT_LINT
+    
+    install:
+    # Install the linter used for checking git commit messages
+    - pip install gitlint
+    
+    script:
+    # Check that the commit messages not yet merged to master conform to team guidelines
+    - |
+        #!/bin/bash
+        gitlint --config=config/gitlint/gitlint.cfg --debug --commits origin/$TRAVIS_BRANCH..HEAD
+
+
+  - language: node_js
+    env:
+    - JOBNAME=OSSC_SCAN
+    
+    node_js:
+      - '8'
+
+    install:
+    # Install helm (for qp-tools)
+    - curl -O https://kubernetes-helm.storage.googleapis.com/helm-v2.7.2-linux-amd64.tar.gz
+    # validate sha - note that apline requires 2 spaces between the hash and the file name
+    - echo "9f04c4824fc751d6c932ae5b93f7336eae06e78315352aa80241066aa1d66c49  helm-v2.7.2-linux-amd64.tar.gz" > sum.txt
+    - sha256sum -cw sum.txt
+    # install and unzip
+    - tar -xvf helm-v2.7.2-linux-amd64.tar.gz
+    - sudo mv ./linux-amd64/helm /usr/local/bin
+
+    # Install qp-tools
+    - git clone https://$GITHUB_TOKEN@github.ibm.com/mhub/qp-tools.git
+    - cd qp-tools/ossc
+    - pwd
+    - npm install
+    - cd ../../
+    - pwd
+
+
+    script:
+    - REPO="qp-kafkaconnect-mqsink"
+    # Run the qp-tools, ossc tool
+    - node qp-tools/ossc/index.js scan
+    - node qp-tools/ossc/index.js report scan-results.json "${REPO}-scan-report"
+    # Upload the report to artifactory
+    - TAG=$(date +"%Y-%m-%d-%H:%M:%S")
+    - curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD -X PUT https://hyc-qp-docker-local.artifactory.swg-devops.com/artifactory/hyc-qp-artifacts-generic-local/reports/${REPO}/${TAG}/ -T "${REPO}-scan-report"
+    - curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD -X PUT https://hyc-qp-docker-local.artifactory.swg-devops.com/artifactory/hyc-qp-artifacts-generic-local/scans/${REPO}/${TAG}/ -T scan-results.json
+    # Generate or check report checksum
+    - qp-tools/ossc/checkOrCreateReportHash.sh "${REPO}"
+
+notifications:
+  # Report build failures to the #qp-build Slack channel in ibm-cloud.slack.com
+  slack:
+    on_success: never
+    on_failure: always
+    rooms:
+    - secure: "qdFMCrCmK7cYzMl5RVNgNvbzB4iRzw00ouYRyfsgp7uzj8905g7zqW2q83ARo3bDmPc+E0DcT5nahMfitpmJho/j0lMza6oxN2Db6mPoN/RkR8GIPZbF+qsmxExmbuCxbp5/Qtbl4d5dTGT6XEs6KdBpjXNSzprBOPgHl48BZroZIGv8KHY51LZA573oeyZOeYr/85VN225E0YDbQIIG9lhZ7zHcXKMpRCNWPMTvxXR2Mun5bUqK4mCYQ6OX27z7MxZiWFjIGsHF0mbFGzGBH9gNPQPSjbWBOWj6ziw2VjgtEQDzYrAEzoxZzfcjjC8SbiRO50SUB6MnETYo90OhW2Q9yKeTSDbbJ7wOiKSAayHN8UwIJCna7xL2dWYFL4tOhcYKgWm9MxmtYHTctJyoIiZNhLcNUU9etwjX1NFJebZzjvvYsSZb3r6zUDTxW2K8rSAwf/UHA7700MKejAmaETcK+01LQ57czqi7unCnWymkd1PSVDoZzZxPH1LK9EV17/qouaQpugTqgiSUqEWvrWMTdY/+EuG6eK3cr3vuVd6KYEgEqCCYMVuJLxf3YgKAonpzMnYDtw0+snhpNPwMxnflsJ16fgMiSHE+sILsUAo7O8cyLLGGKGEtZ4eb4sDHzkHY2OoGG9Wti9Lp28Db9NhMvlx9ykorDUD6Ist/TU8="
