@@ -169,6 +169,7 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.queue                           | The name of the target MQ queue                            | string  |               | MQ queue name                     |
 | mq.user.name                       | The user name for authenticating with the queue manager    | string  |               | User name                         |
 | mq.password                        | The password for authenticating with the queue manager     | string  |               | Password                          |
+| mq.ccdt.url                        | The URL for the CCDT file containing MQ connection details | string  |               | URL for obtaining a CCDT file     |
 | mq.message.builder                 | The class used to build the MQ message                     | string  |               | Class implementing MessageBuilder |
 | mq.message.body.jms                | Whether to generate the message body as a JMS message type | boolean | false         |                                   |
 | mq.time.to.live                    | Time-to-live in milliseconds for messages sent to MQ       | long    | 0 (unlimited) | [0,...]                           |
@@ -177,6 +178,48 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
 | mq.message.builder.key.header      | The JMS message header to set from the Kafka record key    | string  |               | JMSCorrelationID                  |
 | mq.message.builder.value.converter | The class and prefix for message builder's value converter | string  |               | Class implementing Converter      |
+
+
+### Using a CCDT file
+Some of the connection details for MQ can be provided in a [CCDT file](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.0.0/com.ibm.mq.con.doc/q016730_.htm) by setting `mq.ccdt.url` in the Kafka Connect sink connector configuration file. If using a CCDT file the `mq.connection.name.list` and `mq.channel.name` configuration options are not required.
+
+### Externalizing secrets
+[KIP 297](https://cwiki.apache.org/confluence/display/KAFKA/KIP-297%3A+Externalizing+Secrets+for+Connect+Configurations) introduced a mechanism to externalize secrets to be used as configuration for Kafka connectors.
+
+#### Example: externalizing secrets with FileConfigProvider
+
+Given a file `secrets.properties` with the contents:
+```
+secret-key=password
+```
+
+Update the worker configuration file to specify the FileConfigProvider which is included by default:
+
+```
+# Additional properties for the worker configuration to enable use of ConfigProviders
+# multiple comma-separated provider types can be specified here
+config.providers=file
+config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider
+```
+
+Update the connector configuration file to reference `secret-key` in the file:
+
+```
+mq.password=${file:mq-secret.properties:secret-key}
+```
+
+#### Using custom Config Providers
+
+Custom config providers can also be enabled in the worker configuration file:
+```
+# Additional properties for the worker configuration to enable use of ConfigProviders
+# multiple comma-separated provider types can be specified here
+config.providers=file,other-provider
+config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider
+# Other ConfigProvider implementations might require parameters passed in to configure() as follows:
+config.providers.other-provider.param.foo=value1
+config.providers.other-provider.param.bar=value2
+```
 
 
 ## Issues and contributions

@@ -21,6 +21,8 @@ import com.ibm.mq.jms.*;
 import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
 import com.ibm.msg.client.wmq.WMQConstants;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 
 import javax.jms.DeliveryMode;
@@ -85,6 +87,7 @@ public class JMSWriter {
         String queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
         String userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
         String password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
+        String ccdtUrl = props.get(MQSinkConnector.CONFIG_NAME_MQ_CCDT_URL);
         String builderClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER);
         String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
         String timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
@@ -96,9 +99,21 @@ public class JMSWriter {
             mqConnFactory = new MQConnectionFactory();
             mqConnFactory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
             mqConnFactory.setQueueManager(queueManager);
-            mqConnFactory.setConnectionNameList(connectionNameList);
-            mqConnFactory.setChannel(channelName);
             mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, true);
+
+            if (ccdtUrl != null) {
+                URL ccdtUrlObject;
+                try {
+                    ccdtUrlObject = new URL(ccdtUrl);
+                } catch (MalformedURLException e) {
+                    log.error("MalformedURLException exception {}", e);
+                    throw new ConnectException("CCDT file url invalid.");
+                }
+                mqConnFactory.setCCDTURL(ccdtUrlObject);
+            } else {
+                mqConnFactory.setConnectionNameList(connectionNameList);
+                mqConnFactory.setChannel(channelName);
+            }
 
             queue = new MQQueue(queueName);
 
