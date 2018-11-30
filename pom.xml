@@ -20,7 +20,7 @@
   <groupId>com.ibm.eventstreams.connect</groupId>
   <artifactId>kafka-connect-mq-sink</artifactId>
   <packaging>jar</packaging>
-  <version>0.7-SNAPSHOT</version>
+  <version>1.0.1</version>
   <name>kafka-connect-mq-sink</name>
   <organization>
     <name>IBM Corporation</name>
@@ -99,6 +99,15 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M1</version>
+        <configuration>
+          <systemPropertyVariables>
+            <connectorVersion>${project.version}</connectorVersion>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>

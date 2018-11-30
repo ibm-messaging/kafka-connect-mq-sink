@@ -3,11 +3,24 @@ kafka-connect-mq-sink is a [Kafka Connect](http://kafka.apache.org/documentation
 
 The connector is supplied as source code which you can easily build into a JAR file.
 
+**Note**: A source connector for IBM MQ is also available on [GitHub](https://github.com/ibm-messaging/kafka-connect-mq-source).
+
+## Contents
+
+ - [Building the connector](#building-the-connector)
+ - [Running the connector](#running-the-connector)
+ - [Data formats](#data-formats)
+ - [Security](#security)
+ - [Configuration](#configuration)
+ - [Troubleshooting](#troubleshooting)
+ - [Support](#support)
+ - [Issues and contributions](#issues-and-contributions)
+ - [License](#license)
 
 ## Building the connector
 To build the connector, you must have the following installed:
 * [git](https://git-scm.com/)
-* [Maven](https://maven.apache.org)
+* [Maven 3.0 or later](https://maven.apache.org)
 * Java 8 or later
 
 Clone the repository with the following command:
@@ -25,21 +38,26 @@ Build the connector using Maven:
 mvn clean package
 ```
 
-Once built, the output is a single JAR `target/kafka-connect-mq-sink-0.7-SNAPSHOT-jar-with-dependencies.jar` which contains all of the required dependencies.
+Once built, the output is a single JAR `target/kafka-connect-mq-sink-<version>-jar-with-dependencies.jar` which contains all of the required dependencies.
 
 
 ## Running the connector
+
+For step-by-step instructions, see the following guides for running the connector:
+ - connecting to Apache Kafka [running locally](UsingMQWithKafkaConnect.md)
+ - connecting to an installation of [IBM Event Streams](https://ibm.github.io/event-streams/connecting/mq/sink)
+
 To run the connector, you must have:
 * The JAR from building the connector
 * A properties file containing the configuration for the connector
-* Apache Kafka 1.0 or later, either standalone or included as part of an offering such as IBM Event Streams
+* Apache Kafka 2.0.0 or later, either standalone or included as part of an offering such as IBM Event Streams
 * IBM MQ v8 or later, or the IBM MQ on Cloud service
 
 The connector can be run in a Kafka Connect worker in either standalone (single process) or distributed mode. It's a good idea to start in standalone mode.
 
 You need two configuration files, one for the configuration that applies to all of the connectors such as the Kafka bootstrap servers, and another for the configuration specific to the MQ sink connector such as the connection information for your queue manager. For the former, the Kafka distribution includes a file called `connect-standalone.properties` that you can use as a starting point. For the latter, you can use `config/mq-sink.properties` in this repository.
 
-The connector connects to MQ using a client connection. You must provide the name of the queue manager, the connection name (one or more host/port pairs) and the channel name. In addition, you can provide a user name and password if the queue manager is configured to require them for client connections. If you look at the supplied `config/mq-sink.properties`, you'll see how to specify the configuration required.
+The connector connects to MQ using either a client or a bindings connection. For a client connection, you must provide the name of the queue manager, the connection name (one or more host/port pairs) and the channel name. In addition, you can provide a user name and password if the queue manager is configured to require them for client connections. If you look at the supplied `config/mq-sink.properties`, you'll see how to specify the configuration required. For a bindings connection, you must provide provide the name of the queue manager and also run the Kafka Connect worker on the same system as the queue manager.
 
 To run the connector in standalone mode from the directory into which you installed Apache Kafka, you use a command like this:
 
@@ -164,6 +182,7 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | ---------------------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
 | topics or topics.regex             | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
 | mq.queue.manager                   | The name of the MQ queue manager                           | string  |               | MQ queue manager name             |
+| mq.connection.mode                 | The connection mode - bindings or client                   | string  | client        | client, bindings                  |
 | mq.connection.name.list            | List of connection names for queue manager                 | string  |               | host(port)[,host(port),...]       |
 | mq.channel.name                    | The name of the server-connection channel                  | string  |               | MQ channel name                   |
 | mq.queue                           | The name of the target MQ queue                            | string  |               | MQ queue name                     |
@@ -181,14 +200,14 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 
 
 ### Using a CCDT file
-Some of the connection details for MQ can be provided in a [CCDT file](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.0.0/com.ibm.mq.con.doc/q016730_.htm) by setting `mq.ccdt.url` in the Kafka Connect sink connector configuration file. If using a CCDT file the `mq.connection.name.list` and `mq.channel.name` configuration options are not required.
+Some of the connection details for MQ can be provided in a [CCDT file](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.con.doc/q016730_.htm) by setting `mq.ccdt.url` in the Kafka Connect sink connector configuration file. If using a CCDT file the `mq.connection.name.list` and `mq.channel.name` configuration options are not required.
 
 ### Externalizing secrets
 [KIP 297](https://cwiki.apache.org/confluence/display/KAFKA/KIP-297%3A+Externalizing+Secrets+for+Connect+Configurations) introduced a mechanism to externalize secrets to be used as configuration for Kafka connectors.
 
 #### Example: externalizing secrets with FileConfigProvider
 
-Given a file `secrets.properties` with the contents:
+Given a file `mq-secrets.properties` with the contents:
 ```
 secret-key=password
 ```
@@ -208,19 +227,14 @@ Update the connector configuration file to reference `secret-key` in the file:
 mq.password=${file:mq-secret.properties:secret-key}
 ```
 
-#### Using custom Config Providers
+## Troubleshooting
 
-Custom config providers can also be enabled in the worker configuration file:
-```
-# Additional properties for the worker configuration to enable use of ConfigProviders
-# multiple comma-separated provider types can be specified here
-config.providers=file,other-provider
-config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider
-# Other ConfigProvider implementations might require parameters passed in to configure() as follows:
-config.providers.other-provider.param.foo=value1
-config.providers.other-provider.param.bar=value2
-```
+### Unable to connect to Kafka
 
+You may receive an `org.apache.kafka.common.errors.SslAuthenticationException: SSL handshake failed` error when trying to run the MQ Sink Connector using SSL to connect to your Kafka cluster. In the case that the error is caused by the following exception: `Caused by: java.security.cert.CertificateException: No subject alternative DNS name matching XXXXX found.`, Java may be replacing the IP address of your cluster with the corresponding hostname in your `/etc/hosts` file. For example, to push Docker images to a custom Docker repository, you may add an entry in this file which corresponds to the IP of your repository e.g. `123.456.78.90    mycluster.icp`. To fix this, you can comment out this line in your `/etc/hosts` file.
+
+## Support
+A commercially supported version of this connector is available for customers with a support entitlement for [IBM Event Streams](https://www.ibm.com/cloud/event-streams).
 
 ## Issues and contributions
 For issues relating specifically to this connector, please use the [GitHub issue tracker](https://github.com/ibm-messaging/kafka-connect-mq-sink/issues). If you do submit a Pull Request related to this connector, please indicate in the Pull Request that you accept and agree to be bound by the terms of the [IBM Contributor License Agreement](CLA.md).
