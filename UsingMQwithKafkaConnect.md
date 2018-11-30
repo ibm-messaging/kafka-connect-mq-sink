@@ -147,7 +147,7 @@ Configure and run the connector:
 
 1. Change directory to the Kafka root directory. Start the connector worker replacing `<connector-root-directory>` and `<version>` with your directory and the connector version:
     ``` shell
-    CLASSPATH=<connector-root-directory>/target/kafka-connect-mq-sink-<version>-jar-with-dependencies.jar bin/kafka-connect-standalone config/connect-standalone.properties ~/mq-sink.properties
+    CLASSPATH=<connector-root-directory>/target/kafka-connect-mq-sink-<version>-jar-with-dependencies.jar ./bin/connect-standalone.sh config/connect-standalone.properties ~/mq-sink.properties
     ```
     The log output will include the following messages that indicate the connector worker has started and successfully connected to IBM MQ:
     ```

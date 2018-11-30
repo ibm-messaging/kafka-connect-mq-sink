@@ -44,7 +44,7 @@ Once built, the output is a single JAR `target/kafka-connect-mq-sink-<version>-j
 ## Running the connector
 
 For step-by-step instructions, see the following guides for running the connector:
- - connecting to Apache Kafka [running locally](UsingMQWithKafkaConnect.md)
+ - connecting to Apache Kafka [running locally](UsingMQwithKafkaConnect.md)
  - connecting to an installation of [IBM Event Streams](https://ibm.github.io/event-streams/connecting/mq/sink)
 
 To run the connector, you must have:
