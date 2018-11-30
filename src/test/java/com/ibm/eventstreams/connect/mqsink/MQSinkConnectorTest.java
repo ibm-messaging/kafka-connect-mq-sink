@@ -19,16 +19,15 @@ import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
 
 public class MQSinkConnectorTest {
     @Test
     public void testVersion() {
         String version = new MQSinkConnector().version();
-        assertNotNull(version);
-        assertFalse(version.isEmpty());
+        String expectedVersion = System.getProperty("connectorVersion");
+        assertEquals("Expected connector version to match version of built jar file.", expectedVersion, version);
     }
 
     @Test
