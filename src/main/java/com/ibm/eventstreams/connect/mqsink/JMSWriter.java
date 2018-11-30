@@ -82,6 +82,7 @@ public class JMSWriter {
         log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
         String queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
+        String connectionMode = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_MODE);
         String connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
         String channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
         String queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
@@ -95,24 +96,49 @@ public class JMSWriter {
         String sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
         String sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
 
+        int transportType = WMQConstants.WMQ_CM_CLIENT;
+        if (connectionMode != null) {
+            if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_CLIENT)) {
+                transportType = WMQConstants.WMQ_CM_CLIENT;
+            } 
+            else if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_BINDINGS)) {
+                transportType = WMQConstants.WMQ_CM_BINDINGS;
+            } 
+            else {
+                log.error("Unsupported MQ connection mode {}", connectionMode);
+                throw new ConnectException("Unsupported MQ connection mode");
+            }               
+        }
+
         try {
             mqConnFactory = new MQConnectionFactory();
-            mqConnFactory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
+            mqConnFactory.setTransportType(transportType);
             mqConnFactory.setQueueManager(queueManager);
             mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, true);
 
-            if (ccdtUrl != null) {
-                URL ccdtUrlObject;
-                try {
-                    ccdtUrlObject = new URL(ccdtUrl);
-                } catch (MalformedURLException e) {
-                    log.error("MalformedURLException exception {}", e);
-                    throw new ConnectException("CCDT file url invalid.");
+            if (transportType == WMQConstants.WMQ_CM_CLIENT) {
+                if (ccdtUrl != null) {
+                    URL ccdtUrlObject;
+                    try {
+                        ccdtUrlObject = new URL(ccdtUrl);
+                    }
+                    catch (MalformedURLException e) {
+                        log.error("MalformedURLException exception {}", e);
+                        throw new ConnectException("CCDT file url invalid", e);
+                    }
+                    mqConnFactory.setCCDTURL(ccdtUrlObject);
+                } else {
+                    mqConnFactory.setConnectionNameList(connectionNameList);
+                    mqConnFactory.setChannel(channelName);
                 }
-                mqConnFactory.setCCDTURL(ccdtUrlObject);
-            } else {
-                mqConnFactory.setConnectionNameList(connectionNameList);
-                mqConnFactory.setChannel(channelName);
+
+                if (sslCipherSuite != null) {
+                    mqConnFactory.setSSLCipherSuite(sslCipherSuite);
+                    if (sslPeerName != null)
+                    {
+                        mqConnFactory.setSSLPeerName(sslPeerName);
+                    }
+                }
             }
 
             queue = new MQQueue(queueName);
@@ -132,14 +158,6 @@ public class JMSWriter {
             }
             if (persistent != null) {
                 this.deliveryMode = Boolean.parseBoolean(persistent) ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
-            }
-
-            if (sslCipherSuite != null) {
-                mqConnFactory.setSSLCipherSuite(sslCipherSuite);
-                if (sslPeerName != null)
-                {
-                    mqConnFactory.setSSLPeerName(sslPeerName);
-                }
             }
         }
         catch (JMSException | JMSRuntimeException jmse) {
