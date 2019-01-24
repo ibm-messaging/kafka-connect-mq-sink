@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018 IBM Corporation
+ * Copyright 2017, 2018, 2019 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Prefix for configuring message builder's value converter.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Message builder's value converter";
 
-    public static String VERSION = "1.0.1";
+    public static String VERSION = "1.0.2";
 
     private Map<String, String> configProps;
 
