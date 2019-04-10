@@ -47,10 +47,10 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
@@ -107,6 +107,6 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
             }
         }
 
-        return jmsCtxt.createTextMessage(v.toString());     
+        return jmsCtxt.createTextMessage(v.toString());
     }
 }

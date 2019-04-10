@@ -48,7 +48,7 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Configure this class.
-     * 
+     *
      * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
@@ -81,10 +81,10 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {

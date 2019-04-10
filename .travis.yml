@@ -8,17 +8,17 @@ matrix:
     env:
     - JOBNAME=MVN_TEST
 
-    install: 
+    install:
       - mvn test
 
   - language: python
     env:
     - JOBNAME=GIT_LINT
-    
+
     install:
     # Install the linter used for checking git commit messages
     - pip install gitlint
-    
+
     script:
     # Check that the commit messages not yet merged to master conform to team guidelines
     - |
@@ -29,7 +29,7 @@ matrix:
   - language: node_js
     env:
     - JOBNAME=OSSC_SCAN
-    
+
     node_js:
       - '8'
 

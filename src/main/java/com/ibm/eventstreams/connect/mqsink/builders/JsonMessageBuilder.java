@@ -40,7 +40,7 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
     public JsonMessageBuilder() {
         log.info("Building messages using com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder");
         converter = new JsonConverter();
-        
+
         // We just want the payload, not the schema in the output message
         HashMap<String, String> m = new HashMap<>();
         m.put("schemas.enable", "false");
@@ -51,10 +51,10 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {

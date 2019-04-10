@@ -62,11 +62,11 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_USER_NAME = "The user name for authenticating with the queue manager.";
     public static final String CONFIG_DISPLAY_MQ_USER_NAME = "User name";
 
-    public static final String CONFIG_NAME_MQ_PASSWORD = "mq.password"; 
+    public static final String CONFIG_NAME_MQ_PASSWORD = "mq.password";
     public static final String CONFIG_DOCUMENTATION_MQ_PASSWORD = "The password for authenticating with the queue manager.";
     public static final String CONFIG_DISPLAY_MQ_PASSWORD = "Password";
 
-    public static final String CONFIG_NAME_MQ_CCDT_URL = "mq.ccdt.url"; 
+    public static final String CONFIG_NAME_MQ_CCDT_URL = "mq.ccdt.url";
     public static final String CONFIG_DOCUMENTATION_MQ_CCDT_URL = "The CCDT URL to use to establish a connection to the queue manager.";
     public static final String CONFIG_DISPLAY_MQ_CCDT_URL = "CCDT URL";
 
@@ -74,23 +74,23 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER = "The class used to build the MQ messages.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER = "Message builder";
 
-    public static final String CONFIG_NAME_MQ_MESSAGE_BODY_JMS = "mq.message.body.jms"; 
+    public static final String CONFIG_NAME_MQ_MESSAGE_BODY_JMS = "mq.message.body.jms";
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BODY_JMS = "Whether to generate the message body as a JMS message type.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BODY_JMS = "Message body as JMS";
 
-    public static final String CONFIG_NAME_MQ_TIME_TO_LIVE = "mq.time.to.live"; 
+    public static final String CONFIG_NAME_MQ_TIME_TO_LIVE = "mq.time.to.live";
     public static final String CONFIG_DOCUMENTATION_MQ_TIME_TO_LIVE = "Time-to-live in milliseconds for messages sent to MQ.";
     public static final String CONFIG_DISPLAY_MQ_TIME_TO_LIVE = "Message time-to-live (ms)";
 
-    public static final String CONFIG_NAME_MQ_PERSISTENT = "mq.persistent"; 
+    public static final String CONFIG_NAME_MQ_PERSISTENT = "mq.persistent";
     public static final String CONFIG_DOCUMENTATION_MQ_PERSISTENT = "Send persistent or non-persistent messages to MQ.";
     public static final String CONFIG_DISPLAY_MQ_PERSISTENT = "Send persistent messages";
 
-    public static final String CONFIG_NAME_MQ_SSL_CIPHER_SUITE = "mq.ssl.cipher.suite"; 
+    public static final String CONFIG_NAME_MQ_SSL_CIPHER_SUITE = "mq.ssl.cipher.suite";
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE = "The name of the cipher suite for the TLS (SSL) connection.";
     public static final String CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE = "SSL cipher suite";
 
-    public static final String CONFIG_NAME_MQ_SSL_PEER_NAME = "mq.ssl.peer.name"; 
+    public static final String CONFIG_NAME_MQ_SSL_PEER_NAME = "mq.ssl.peer.name";
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
@@ -144,7 +144,7 @@ public class MQSinkConnector extends SinkConnector {
      */
     @Override public Class<? extends Task> taskClass() {
         return MQSinkTask.class;
-    }   
+    }
 
     /**
      * Returns a set of configurations for Tasks based on the current configuration,
@@ -185,7 +185,7 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_QUEUE_MANAGER, CONFIG_GROUP_MQ, 1, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_QUEUE_MANAGER);
 
-        config.define(CONFIG_NAME_MQ_CONNECTION_MODE, Type.STRING, CONFIG_VALUE_MQ_CONNECTION_MODE_CLIENT, 
+        config.define(CONFIG_NAME_MQ_CONNECTION_MODE, Type.STRING, CONFIG_VALUE_MQ_CONNECTION_MODE_CLIENT,
                       ConfigDef.ValidString.in(CONFIG_VALUE_MQ_CONNECTION_MODE_CLIENT,
                                                CONFIG_VALUE_MQ_CONNECTION_MODE_BINDINGS),
                       Importance.MEDIUM,
@@ -231,7 +231,7 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_PERSISTENT, Type.BOOLEAN, "true", Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 12, Width.SHORT,
                       CONFIG_DISPLAY_MQ_PERSISTENT);
-                      
+
         config.define(CONFIG_NAME_MQ_SSL_CIPHER_SUITE, Type.STRING, null, Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE);

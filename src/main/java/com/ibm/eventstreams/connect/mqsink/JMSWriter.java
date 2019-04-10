@@ -73,7 +73,7 @@ public class JMSWriter {
 
     /**
      * Configure this class.
-     * 
+     *
      * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
@@ -100,14 +100,14 @@ public class JMSWriter {
         if (connectionMode != null) {
             if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_CLIENT)) {
                 transportType = WMQConstants.WMQ_CM_CLIENT;
-            } 
+            }
             else if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_BINDINGS)) {
                 transportType = WMQConstants.WMQ_CM_BINDINGS;
-            } 
+            }
             else {
                 log.error("Unsupported MQ connection mode {}", connectionMode);
                 throw new ConnectException("Unsupported MQ connection mode");
-            }               
+            }
         }
 
         try {
@@ -145,7 +145,7 @@ public class JMSWriter {
 
             this.userName = userName;
             this.password = password;
-    
+
             queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_MQ);
             if (mbj != null) {
                 if (Boolean.parseBoolean(mbj)) {
@@ -190,7 +190,7 @@ public class JMSWriter {
             }
             else {
                 jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
-            }            
+            }
 
             jmsProd = jmsCtxt.createProducer();
             jmsProd.setDeliveryMode(deliveryMode);
@@ -210,7 +210,7 @@ public class JMSWriter {
 
     /**
      * Sends a message to MQ. Adds the message to the current transaction. Reconnects to MQ if required.
-     * 
+     *
      * @param r                  The message and schema to send
      *
      * @throws RetriableException Operation failed, but connector should continue to retry.
@@ -298,14 +298,14 @@ public class JMSWriter {
         if (connected) {
             return;
         }
-    
+
         try {
             if (userName != null) {
                 jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
             }
             else {
                 jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
-            }            
+            }
 
             jmsProd = jmsCtxt.createProducer();
             jmsProd.setDeliveryMode(deliveryMode);

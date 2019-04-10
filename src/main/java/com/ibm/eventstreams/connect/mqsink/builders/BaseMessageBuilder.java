@@ -45,7 +45,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
     /**
      * Configure this class.
-     * 
+     *
      * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
@@ -71,20 +71,20 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
 
    /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message fromSinkRecord(JMSContext jmsCtxt, SinkRecord record) {
