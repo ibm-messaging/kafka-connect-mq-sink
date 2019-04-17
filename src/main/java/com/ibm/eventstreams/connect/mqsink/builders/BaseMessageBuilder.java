@@ -77,7 +77,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      * 
      * @return the JMS message
      */
-    abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
+    public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
 
    /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
