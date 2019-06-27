@@ -9,6 +9,8 @@ The connector is supplied as source code which you can easily build into a JAR f
 
  - [Building the connector](#building-the-connector)
  - [Running the connector](#running-the-connector)
+ - [Running the connector with Docker](#running-with-docker)
+ - [Deploying the connector to Kubernetes](#deploying-to-kubernetes)
  - [Data formats](#data-formats)
  - [Security](#security)
  - [Configuration](#configuration)
@@ -65,6 +67,39 @@ To run the connector in standalone mode from the directory into which you instal
 bin/connect-standalone.sh connect-standalone.properties mq-sink.properties
 ```
 
+## Running with Docker
+
+This repository includes a Dockerfile to run Kafka Connect in distributed mode. It also adds in the MQ Sink Connector as an available connector plugin. It uses the default connect-distributed.properties file, to provide a custom one add a `COPY` line to the Dockerfile with your customised connect-distributed.properties file.
+
+1. `mvn clean package`
+1. `docker build -t kafkaconnect-with-mq-sink:0.0.1 .`
+1. `docker run -p 8083:8083 kafkaconnect-with-mq-sink:0.0.1`
+
+## Deploying to Kubernetes
+
+This repository includes a Kubernetes yaml file called `kafka-connect.yaml`. This will create a deployment to run Kafka Connect in distributed mode and a service to access the deployment.
+
+The deployment assumes the existence of two ConfigMaps; `connect-distributed-config` and `connect-log4j-config`. These can be created using the default files in your Kafka install, however it is easier to edit them later if comment and whitespace is trimmed before creation.
+
+### Creating Kafka Connect configuration ConfigMaps
+
+Create ConfigMap for Kafka Connect configuration:
+1. `cp kafka/config/connect-distributed.properties connect-distributed.properties.orig`
+1. `sed '/^#/d;/^[[:space:]]*$/d' < connect-distributed.properties.orig > connect-distributed.properties`
+1. `kubectl -n <namespace> create configmap connect-distributed-config --from-file=connect-distributed.properties`
+
+Create ConfigMap for Kafka Connect Log4j configuration:
+1. `cp kafka/config/connect-log4j.properties connect-log4j.properties.orig`
+1. `sed '/^#/d;/^[[:space:]]*$/d' < connect-log4j.properties.orig > connect-log4j.properties`
+1. `kubectl -n <namespace> create configmap connect-log4j-config --from-file=connect-log4j.properties`
+
+### Creating Kafka Connect deployment and service in Kubernetes
+
+**NOTE:** Remember to [build the Docker image](#running-with-docker) and push it to your Kubernetes image repository. You might need to update the image name in the `kafka-connect.yaml` file.
+
+1. Update the namespace in `kafka-connect.yaml`
+1. `kubectl -n <namespace> apply -f kafka-connect.yaml`
+1. `curl <serviceIP>:<servicePort>/connector-plugins` to see the MQ Sink connector available to use
 
 ## Data formats
 Kafka Connect is very flexible but it's important to understand the way that it processes messages to end up with a reliable system. When the connector encounters a message that it cannot process, it stops rather than throwing the message away. Therefore, you need to make sure that the configuration you use can handle the messages the connector will process.
@@ -197,6 +232,7 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
 | mq.message.builder.key.header      | The JMS message header to set from the Kafka record key    | string  |               | JMSCorrelationID                  |
 | mq.message.builder.value.converter | The class and prefix for message builder's value converter | string  |               | Class implementing Converter      |
+| mq.reply.queue                     | The name of the reply-to queue                             | string  |               | MQ queue name or queue URI        |
 
 
 ### Using a CCDT file
@@ -227,6 +263,10 @@ Update the connector configuration file to reference `secret-key` in the file:
 mq.password=${file:mq-secret.properties:secret-key}
 ```
 
+##### Using FileConfigProvider in Kubernetes
+
+To use a file for the `mq.password` in Kubernetes, you create a Secret using the file as described in [the Kubernetes docs](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod).
+
 ## Troubleshooting
 
 ### Unable to connect to Kafka
@@ -241,7 +281,7 @@ For issues relating specifically to this connector, please use the [GitHub issue
 
 
 ## License
-Copyright 2017, 2018 IBM Corporation
+Copyright 2017, 2018, 2019 IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
