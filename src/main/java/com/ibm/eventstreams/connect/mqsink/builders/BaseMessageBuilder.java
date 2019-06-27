@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 IBM Corporation
+ * Copyright 2018, 2019 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package com.ibm.eventstreams.connect.mqsink.builders;
 
 import com.ibm.eventstreams.connect.mqsink.MQSinkConnector;
 
-import java.util.Map;
+import com.ibm.mq.jms.*;
 
 import java.nio.ByteBuffer;
 
-import javax.jms.BytesMessage;
+import java.util.Map;
+
+import javax.jms.Destination;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -42,6 +44,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
     public enum KeyHeader {NONE, CORRELATION_ID};
     protected KeyHeader keyheader = KeyHeader.NONE;
+    public Destination replyToQueue;
 
     /**
      * Configure this class.
@@ -59,13 +62,27 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                 keyheader = KeyHeader.CORRELATION_ID;
                 log.debug("Setting JMSCorrelationID header field from Kafka record key");
             }
-            else
-            {
+            else {
                 log.debug("Unsupported MQ message builder key header value {}", kh);
                 throw new ConnectException("Unsupported MQ message builder key header value");
             }
         }
 
+        String rtq = props.get(MQSinkConnector.CONFIG_NAME_MQ_REPLY_QUEUE);
+        if (rtq != null) {
+            try {
+                // The queue URI format supports properties, but we only accept "queue://qmgr/queue"
+                if (rtq.contains("?")) {
+                    throw new ConnectException("Reply-to queue URI must not contain properties");
+                }
+                else {
+                    replyToQueue = new MQQueue(rtq);
+                }
+            }
+            catch (JMSException jmse) {
+                throw new ConnectException("Failed to build reply-to queue", jmse);
+            }
+        }
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
@@ -79,7 +96,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      */
     public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
 
-   /**
+    /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
      * 
      * @param context            the JMS context to use for building messages
@@ -148,6 +165,15 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                         throw new ConnectException("Failed to write string", jmse);
                     }
                 }
+            }
+        }
+
+        if (replyToQueue != null) {
+            try {
+                m.setJMSReplyTo(replyToQueue);
+            }
+            catch (JMSException jmse) {
+                throw new ConnectException("Failed to set reply-to queue", jmse);
             }
         }
 

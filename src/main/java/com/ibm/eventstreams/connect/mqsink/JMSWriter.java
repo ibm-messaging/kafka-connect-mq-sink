@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018 IBM Corporation
+ * Copyright 2017, 2018, 2019 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public class JMSWriter {
             else {
                 log.error("Unsupported MQ connection mode {}", connectionMode);
                 throw new ConnectException("Unsupported MQ connection mode");
-            }               
+            }
         }
 
         try {
@@ -190,7 +190,7 @@ public class JMSWriter {
             }
             else {
                 jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
-            }            
+            }
 
             jmsProd = jmsCtxt.createProducer();
             jmsProd.setDeliveryMode(deliveryMode);
@@ -277,8 +277,7 @@ public class JMSWriter {
         catch (JMSRuntimeException jmse) {
             ;
         }
-        finally
-        {
+        finally {
             jmsCtxt = null;
             log.debug("Connection to MQ closed");
         }
@@ -305,7 +304,7 @@ public class JMSWriter {
             }
             else {
                 jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
-            }            
+            }
 
             jmsProd = jmsCtxt.createProducer();
             jmsProd.setDeliveryMode(deliveryMode);

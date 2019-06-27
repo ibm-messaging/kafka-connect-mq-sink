@@ -103,7 +103,11 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Prefix for configuring message builder's value converter.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Message builder's value converter";
 
-    public static String VERSION = "1.0.2";
+    public static final String CONFIG_NAME_MQ_REPLY_QUEUE = "mq.reply.queue";
+    public static final String CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE = "The name of the reply-to queue, as a queue name or URI.";
+    public static final String CONFIG_DISPLAY_MQ_REPLY_QUEUE = "Reply-to queue";
+
+    public static String VERSION = "1.1.0";
 
     private Map<String, String> configProps;
 
@@ -231,7 +235,7 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_PERSISTENT, Type.BOOLEAN, "true", Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_PERSISTENT, CONFIG_GROUP_MQ, 12, Width.SHORT,
                       CONFIG_DISPLAY_MQ_PERSISTENT);
-                      
+
         config.define(CONFIG_NAME_MQ_SSL_CIPHER_SUITE, Type.STRING, null, Importance.MEDIUM,
                       CONFIG_DOCUMENTATION_MQ_SSL_CIPHER_SUITE, CONFIG_GROUP_MQ, 13, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_CIPHER_SUITE);
@@ -247,6 +251,10 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, Type.STRING, null, Importance.LOW,
                       CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 16, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
+
+        config.define(CONFIG_NAME_MQ_REPLY_QUEUE, Type.STRING, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE, CONFIG_GROUP_MQ, 17, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_REPLY_QUEUE);
 
         return config;
     }
