@@ -5,6 +5,7 @@ The connector is supplied as source code which you can easily build into a JAR f
 
 **Note**: A source connector for IBM MQ is also available on [GitHub](https://github.com/ibm-messaging/kafka-connect-mq-source).
 
+
 ## Contents
 
  - [Building the connector](#building-the-connector)
@@ -18,6 +19,7 @@ The connector is supplied as source code which you can easily build into a JAR f
  - [Support](#support)
  - [Issues and contributions](#issues-and-contributions)
  - [License](#license)
+
 
 ## Building the connector
 To build the connector, you must have the following installed:
@@ -57,6 +59,8 @@ To run the connector, you must have:
 
 The connector can be run in a Kafka Connect worker in either standalone (single process) or distributed mode. It's a good idea to start in standalone mode.
 
+### Running in standalone mode
+
 You need two configuration files, one for the configuration that applies to all of the connectors such as the Kafka bootstrap servers, and another for the configuration specific to the MQ sink connector such as the connection information for your queue manager. For the former, the Kafka distribution includes a file called `connect-standalone.properties` that you can use as a starting point. For the latter, you can use `config/mq-sink.properties` in this repository.
 
 The connector connects to MQ using either a client or a bindings connection. For a client connection, you must provide the name of the queue manager, the connection name (one or more host/port pairs) and the channel name. In addition, you can provide a user name and password if the queue manager is configured to require them for client connections. If you look at the supplied `config/mq-sink.properties`, you'll see how to specify the configuration required. For a bindings connection, you must provide provide the name of the queue manager and also run the Kafka Connect worker on the same system as the queue manager.
@@ -67,26 +71,42 @@ To run the connector in standalone mode from the directory into which you instal
 bin/connect-standalone.sh connect-standalone.properties mq-sink.properties
 ```
 
+### Running in distributed mode
+
+You need an instance of Kafka Connect running in distributed mode. The Kafka distribution includes a file called `connect-distributed.properties` that you can use as a starting point, or follow [Running with Docker](#running-with-docker) or [Deploying to Kubernetes](#deploying-to-kubernetes).
+
+To start the MQ connector, you can use `config/mq-sink.json` in this repository after replacing all placeholders and use a command like this:
+
+``` shell
+curl -X POST -H "Content-Type: application/json" http://localhost:8083/connectors \
+  --data "@./config/mq-sink.json"
+```
+
+
 ## Running with Docker
 
-This repository includes a Dockerfile to run Kafka Connect in distributed mode. It also adds in the MQ Sink Connector as an available connector plugin. It uses the default connect-distributed.properties file, to provide a custom one add a `COPY` line to the Dockerfile with your customised connect-distributed.properties file.
+This repository includes a Dockerfile to run Kafka Connect in distributed mode. It also adds in the MQ Sink Connector as an available connector plugin. It uses the default connect-distributed.properties and connect-log4j.properties files.
 
 1. `mvn clean package`
 1. `docker build -t kafkaconnect-with-mq-sink:0.0.1 .`
 1. `docker run -p 8083:8083 kafkaconnect-with-mq-sink:0.0.1`
 
+**NOTE:** To provide custom properties files create a folder called `config` containing the `connect-distributed.properties` and `connect-log4j.properties` files and use a Docker volume to make them available when running the container:
+`docker run -v $(pwd)/config:/opt/kafka/config -p 8083:8083 kafkaconnect:0.0.1`
+
+
 ## Deploying to Kubernetes
 
 This repository includes a Kubernetes yaml file called `kafka-connect.yaml`. This will create a deployment to run Kafka Connect in distributed mode and a service to access the deployment.
 
-The deployment assumes the existence of two ConfigMaps; `connect-distributed-config` and `connect-log4j-config`. These can be created using the default files in your Kafka install, however it is easier to edit them later if comment and whitespace is trimmed before creation.
+The deployment assumes the existence of a Secret called `connect-distributed-config` and a ConfigMap called `connect-log4j-config`. These can be created using the default files in your Kafka install, however it is easier to edit them later if comments and whitespaces are trimmed before creation.
 
-### Creating Kafka Connect configuration ConfigMaps
+### Creating Kafka Connect configuration Secret and ConfigMap
 
-Create ConfigMap for Kafka Connect configuration:
+Create Secret for Kafka Connect configuration:
 1. `cp kafka/config/connect-distributed.properties connect-distributed.properties.orig`
 1. `sed '/^#/d;/^[[:space:]]*$/d' < connect-distributed.properties.orig > connect-distributed.properties`
-1. `kubectl -n <namespace> create configmap connect-distributed-config --from-file=connect-distributed.properties`
+1. `kubectl -n <namespace> create secret generic connect-distributed-config --from-file=connect-distributed.properties`
 
 Create ConfigMap for Kafka Connect Log4j configuration:
 1. `cp kafka/config/connect-log4j.properties connect-log4j.properties.orig`
@@ -100,6 +120,7 @@ Create ConfigMap for Kafka Connect Log4j configuration:
 1. Update the namespace in `kafka-connect.yaml`
 1. `kubectl -n <namespace> apply -f kafka-connect.yaml`
 1. `curl <serviceIP>:<servicePort>/connector-plugins` to see the MQ Sink connector available to use
+
 
 ## Data formats
 Kafka Connect is very flexible but it's important to understand the way that it processes messages to end up with a reliable system. When the connector encounters a message that it cannot process, it stops rather than throwing the message away. Therefore, you need to make sure that the configuration you use can handle the messages the connector will process.
@@ -267,14 +288,17 @@ mq.password=${file:mq-secret.properties:secret-key}
 
 To use a file for the `mq.password` in Kubernetes, you create a Secret using the file as described in [the Kubernetes docs](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod).
 
+
 ## Troubleshooting
 
 ### Unable to connect to Kafka
 
 You may receive an `org.apache.kafka.common.errors.SslAuthenticationException: SSL handshake failed` error when trying to run the MQ sink connector using SSL to connect to your Kafka cluster. In the case that the error is caused by the following exception: `Caused by: java.security.cert.CertificateException: No subject alternative DNS name matching XXXXX found.`, Java may be replacing the IP address of your cluster with the corresponding hostname in your `/etc/hosts` file. For example, to push Docker images to a custom Docker repository, you may add an entry in this file which corresponds to the IP of your repository e.g. `123.456.78.90    mycluster.icp`. To fix this, you can comment out this line in your `/etc/hosts` file.
 
+
 ## Support
 A commercially supported version of this connector is available for customers with a support entitlement for [IBM Event Streams](https://www.ibm.com/cloud/event-streams).
+
 
 ## Issues and contributions
 For issues relating specifically to this connector, please use the [GitHub issue tracker](https://github.com/ibm-messaging/kafka-connect-mq-sink/issues). If you do submit a Pull Request related to this connector, please indicate in the Pull Request that you accept and agree to be bound by the terms of the [IBM Contributor License Agreement](CLA.md).

@@ -8,9 +8,10 @@ RUN addgroup --gid 5000 --system esgroup && \
 
 COPY --chown=esuser:esgroup --from=builder /opt/kafka/bin/ /opt/kafka/bin/
 COPY --chown=esuser:esgroup --from=builder /opt/kafka/libs/ /opt/kafka/libs/
-COPY --chown=esuser:esgroup --from=builder /opt/kafka/config/ /opt/kafka/config/
+COPY --chown=esuser:esgroup --from=builder /opt/kafka/config/connect-distributed.properties /opt/kafka/config/
+COPY --chown=esuser:esgroup --from=builder /opt/kafka/config/connect-log4j.properties /opt/kafka/config/
 RUN mkdir /opt/kafka/logs && chown esuser:esgroup /opt/kafka/logs
-COPY --chown=esuser:esgroup target/kafka-connect-mq-sink-1.1.0-jar-with-dependencies.jar /opt/kafka/libs/
+COPY --chown=esuser:esgroup target/kafka-connect-mq-sink-1.1.1-jar-with-dependencies.jar /opt/kafka/libs/
 
 WORKDIR /opt/kafka
 

@@ -54,8 +54,8 @@ spec:
             subPath: connect-log4j.properties
       volumes:
       - name: connect-config
-        configMap:
-          name: connect-distributed-config
+        secret:
+          secretName: connect-distributed-config
       - name: connect-log4j
         configMap:
           name: connect-log4j-config
