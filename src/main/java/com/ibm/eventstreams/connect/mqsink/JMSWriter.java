@@ -170,7 +170,7 @@ public class JMSWriter {
             builder = c.newInstance();
             builder.configure(props);
         }
-        catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
+        catch (ClassNotFoundException | ClassCastException | IllegalAccessException | InstantiationException | NullPointerException exc) {
             log.error("Could not instantiate message builder {}", builderClass);
             throw new ConnectException("Could not instantiate message builder", exc);
         }
