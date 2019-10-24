@@ -107,7 +107,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE = "The name of the reply-to queue, as a queue name or URI.";
     public static final String CONFIG_DISPLAY_MQ_REPLY_QUEUE = "Reply-to queue";
 
-    public static String VERSION = "1.1.0";
+    public static String VERSION = "1.1.1";
 
     private Map<String, String> configProps;
 
