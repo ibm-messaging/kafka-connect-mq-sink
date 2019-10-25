@@ -225,7 +225,7 @@ To enable use of TLS, set the configuration `mq.ssl.cipher.suite` to the name of
 You will need to put the public part of the queue manager's certificate in the JSSE truststore used by the Kafka Connect worker that you're using to run the connector. If you need to specify extra arguments to the worker's JVM, you can use the EXTRA_ARGS environment variable.
 
 ### Setting up TLS for mutual authentication
-You will need to put the public part of the client's certificate in the queue manager's key repository. You will also need to configure the worker's JVM with the location and password for the keystore containing the client's certificate.
+You will need to put the public part of the client's certificate in the queue manager's key repository. You will also need to configure the worker's JVM with the location and password for the keystore containing the client's certificate. Alternatively, you can configure a separate keystore and truststore for the connector.
 
 ### Troubleshooting
 For troubleshooting, or to better understand the handshake performed by the IBM MQ Java client application in combination with your specific JSSE provider, you can enable debugging by setting `javax.net.debug=ssl` in the JVM environment.
@@ -234,26 +234,30 @@ For troubleshooting, or to better understand the handshake performed by the IBM 
 ## Configuration
 The configuration options for the Kafka Connect sink connector for IBM MQ are as follows:
 
-| Name                               | Description                                                | Type    | Default       | Valid values                      |
-| ---------------------------------- | ---------------------------------------------------------- | ------- | ------------- | --------------------------------- |
-| topics or topics.regex             | List of Kafka source topics                                | string  |               | topic1[,topic2,...]               |
-| mq.queue.manager                   | The name of the MQ queue manager                           | string  |               | MQ queue manager name             |
-| mq.connection.mode                 | The connection mode - bindings or client                   | string  | client        | client, bindings                  |
-| mq.connection.name.list            | List of connection names for queue manager                 | string  |               | host(port)[,host(port),...]       |
-| mq.channel.name                    | The name of the server-connection channel                  | string  |               | MQ channel name                   |
-| mq.queue                           | The name of the target MQ queue                            | string  |               | MQ queue name                     |
-| mq.user.name                       | The user name for authenticating with the queue manager    | string  |               | User name                         |
-| mq.password                        | The password for authenticating with the queue manager     | string  |               | Password                          |
-| mq.ccdt.url                        | The URL for the CCDT file containing MQ connection details | string  |               | URL for obtaining a CCDT file     |
-| mq.message.builder                 | The class used to build the MQ message                     | string  |               | Class implementing MessageBuilder |
-| mq.message.body.jms                | Whether to generate the message body as a JMS message type | boolean | false         |                                   |
-| mq.time.to.live                    | Time-to-live in milliseconds for messages sent to MQ       | long    | 0 (unlimited) | [0,...]                           |
-| mq.persistent                      | Send persistent or non-persistent messages to MQ           | boolean | true          |                                   |
-| mq.ssl.cipher.suite                | The name of the cipher suite for TLS (SSL) connection      | string  |               | Blank or valid cipher suite       |
-| mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer       | string  |               | Blank or DN pattern               |
-| mq.message.builder.key.header      | The JMS message header to set from the Kafka record key    | string  |               | JMSCorrelationID                  |
-| mq.message.builder.value.converter | The class and prefix for message builder's value converter | string  |               | Class implementing Converter      |
-| mq.reply.queue                     | The name of the reply-to queue                             | string  |               | MQ queue name or queue URI        |
+| Name                               | Description                                                            | Type    | Default        | Valid values                      |
+| ---------------------------------- | ---------------------------------------------------------------------- | ------- | -------------- | --------------------------------- |
+| topics or topics.regex             | List of Kafka source topics                                            | string  |                | topic1[,topic2,...]               |
+| mq.queue.manager                   | The name of the MQ queue manager                                       | string  |                | MQ queue manager name             |
+| mq.connection.mode                 | The connection mode - bindings or client                               | string  | client         | client, bindings                  |
+| mq.connection.name.list            | List of connection names for queue manager                             | string  |                | host(port)[,host(port),...]       |
+| mq.channel.name                    | The name of the server-connection channel                              | string  |                | MQ channel name                   |
+| mq.queue                           | The name of the target MQ queue                                        | string  |                | MQ queue name                     |
+| mq.user.name                       | The user name for authenticating with the queue manager                | string  |                | User name                         |
+| mq.password                        | The password for authenticating with the queue manager                 | string  |                | Password                          |
+| mq.ccdt.url                        | The URL for the CCDT file containing MQ connection details             | string  |                | URL for obtaining a CCDT file     |
+| mq.message.builder                 | The class used to build the MQ message                                 | string  |                | Class implementing MessageBuilder |
+| mq.message.body.jms                | Whether to generate the message body as a JMS message type             | boolean | false          |                                   |
+| mq.time.to.live                    | Time-to-live in milliseconds for messages sent to MQ                   | long    | 0 (unlimited)  | [0,...]                           |
+| mq.persistent                      | Send persistent or non-persistent messages to MQ                       | boolean | true           |                                   |
+| mq.ssl.cipher.suite                | The name of the cipher suite for TLS (SSL) connection                  | string  |                | Blank or valid cipher suite       |
+| mq.ssl.peer.name                   | The distinguished name pattern of the TLS (SSL) peer                   | string  |                | Blank or DN pattern               |
+| mq.ssl.keystore.location           | The path to the JKS keystore to use for SSL (TLS) connections          | string  | JVM keystore   | Local path to a JKS file          |
+| mq.ssl.keystore.password           | The password of the JKS keystore to use for SSL (TLS) connections      | string  |                |                                   |
+| mq.ssl.truststore.location         | The path to the JKS truststore to use for SSL (TLS) connections        | string  | JVM truststore | Local path to a JKS file          |
+| mq.ssl.truststore.password         | The password of the JKS truststore to use for SSL (TLS) connections    | string  |                |                                   |
+| mq.message.builder.key.header      | The JMS message header to set from the Kafka record key                | string  |                | JMSCorrelationID                  |
+| mq.message.builder.value.converter | The class and prefix for message builder's value converter             | string  |                | Class implementing Converter      |
+| mq.reply.queue                     | The name of the reply-to queue                                         | string  |                | MQ queue name or queue URI        |
 
 
 ### Using a CCDT file

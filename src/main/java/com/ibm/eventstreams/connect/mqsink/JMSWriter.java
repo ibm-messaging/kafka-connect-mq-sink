@@ -21,8 +21,12 @@ import com.ibm.mq.jms.*;
 import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
 import com.ibm.msg.client.wmq.WMQConstants;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.*;
 import java.util.Map;
 
 import javax.jms.DeliveryMode;
@@ -31,6 +35,9 @@ import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.JMSRuntimeException;
 import javax.jms.Message;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
@@ -95,6 +102,10 @@ public class JMSWriter {
         String persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
         String sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
         String sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
+        String sslKeystoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION);
+        String sslKeystorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD);
+        String sslTruststoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION);
+        String sslTruststorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD);
 
         int transportType = WMQConstants.WMQ_CM_CLIENT;
         if (connectionMode != null) {
@@ -138,6 +149,11 @@ public class JMSWriter {
                     {
                         mqConnFactory.setSSLPeerName(sslPeerName);
                     }
+                }
+
+                if (sslKeystoreLocation != null || sslTruststoreLocation != null) {
+                    final SSLContext sslContext = buildSslContext(sslKeystoreLocation, sslKeystorePassword, sslTruststoreLocation, sslTruststorePassword);
+                    mqConnFactory.setSSLSocketFactory(sslContext.getSocketFactory());
                 }
             }
 
@@ -388,5 +404,46 @@ public class JMSWriter {
         }
 
         return new ConnectException(exc);
+    }
+
+    private SSLContext buildSslContext(String sslKeystoreLocation, String sslKeystorePassword, String sslTruststoreLocation, String sslTruststorePassword) {
+        log.trace("[{}] Entry {}.buildSslContext", Thread.currentThread().getId(), this.getClass().getName());
+
+        try {
+            final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+            if (sslKeystoreLocation != null) {
+                kmf.init(loadKeyStore(sslKeystoreLocation, sslKeystorePassword), sslKeystorePassword.toCharArray());
+            }
+
+            if (sslTruststoreLocation != null) {
+                tmf.init(loadKeyStore(sslTruststoreLocation, sslTruststorePassword));
+            }
+
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+
+            log.trace("[{}]  Exit {}.buildSslContext, retval={}", Thread.currentThread().getId(), this.getClass().getName(), sslContext);
+            return sslContext;
+
+        } catch (GeneralSecurityException e) {
+            throw new ConnectException("Error creating SSLContext", e);
+        }
+    }
+
+    private KeyStore loadKeyStore(String location, String password) throws GeneralSecurityException {
+        log.trace("[{}] Entry {}.loadKeyStore", Thread.currentThread().getId(), this.getClass().getName());
+
+        try (final InputStream ksStr = new FileInputStream(location)) {
+            final KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(ksStr, password.toCharArray());
+
+            log.trace("[{}]  Exit {}.loadKeyStore, retval={}", Thread.currentThread().getId(), this.getClass().getName(), ks);
+            return ks;
+
+        } catch (IOException e) {
+            throw new ConnectException("Error reading keystore " + location, e);
+        }
     }
 }

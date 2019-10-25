@@ -94,6 +94,22 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME = "The distinguished name pattern of the TLS (SSL) peer.";
     public static final String CONFIG_DISPLAY_MQ_SSL_PEER_NAME = "SSL peer name";
 
+    public static final String CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION = "mq.ssl.keystore.location";
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_KEYSTORE_LOCATION = "The path to the JKS keystore to use for the TLS (SSL) connection.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_KEYSTORE_LOCATION = "SSL keystore location";
+
+    public static final String CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD = "mq.ssl.keystore.password";
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_KEYSTORE_PASSWORD = "The password of the JKS keystore to use for the TLS (SSL) connection.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_KEYSTORE_PASSWORD = "SSL keystore password";
+
+    public static final String CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION = "mq.ssl.truststore.location";
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_TRUSTSTORE_LOCATION = "The path to the JKS truststore to use for the TLS (SSL) connection.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_TRUSTSTORE_LOCATION = "SSL truststore location";
+
+    public static final String CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD = "mq.ssl.truststore.password";
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_TRUSTSTORE_PASSWORD = "The password of the JKS truststore to use for the TLS (SSL) connection.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_TRUSTSTORE_PASSWORD = "SSL truststore password";
+
     public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER = "mq.message.builder.key.header";
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER = "The JMS message header to set from the Kafka record key.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_KEY_HEADER = "Record builder key header";
@@ -107,7 +123,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE = "The name of the reply-to queue, as a queue name or URI.";
     public static final String CONFIG_DISPLAY_MQ_REPLY_QUEUE = "Reply-to queue";
 
-    public static String VERSION = "1.1.1";
+    public static String VERSION = "1.2.0-SNAPSHOT";
 
     private Map<String, String> configProps;
 
@@ -244,16 +260,32 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_SSL_PEER_NAME, CONFIG_GROUP_MQ, 14, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_SSL_PEER_NAME);
 
+        config.define(CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION, Type.STRING, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_KEYSTORE_LOCATION, CONFIG_GROUP_MQ, 15, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_SSL_KEYSTORE_LOCATION);
+
+        config.define(CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD, Type.PASSWORD, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_KEYSTORE_PASSWORD, CONFIG_GROUP_MQ, 16, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_SSL_KEYSTORE_PASSWORD);
+
+        config.define(CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION, Type.STRING, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_TRUSTSTORE_LOCATION, CONFIG_GROUP_MQ, 17, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_SSL_TRUSTSTORE_LOCATION);
+
+        config.define(CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD, Type.PASSWORD, null, Importance.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_SSL_TRUSTSTORE_PASSWORD, CONFIG_GROUP_MQ, 18, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_SSL_TRUSTSTORE_PASSWORD);
+
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER, Type.STRING, null, Importance.MEDIUM,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER, CONFIG_GROUP_MQ, 15, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER, CONFIG_GROUP_MQ, 19, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_KEY_HEADER);
 
         config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, Type.STRING, null, Importance.LOW,
-                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 16, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 20, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         config.define(CONFIG_NAME_MQ_REPLY_QUEUE, Type.STRING, null, Importance.LOW,
-                      CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE, CONFIG_GROUP_MQ, 17, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE, CONFIG_GROUP_MQ, 21, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_REPLY_QUEUE);
 
         return config;
