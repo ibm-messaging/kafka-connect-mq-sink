@@ -119,6 +119,18 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Prefix for configuring message builder's value converter.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER = "Message builder's value converter";
 
+    public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY = "mq.message.builder.topic.property";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY = "The JMS message property to set from the Kafka topic.";
+    public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY = "Kafka topic message property";
+
+    public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY = "mq.message.builder.partition.property";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY = "The JMS message property to set from the Kafka partition.";
+    public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY = "Kafka partition message property";
+
+    public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY = "mq.message.builder.offset.property";
+    public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY = "The JMS message property to set from the Kafka offset.";
+    public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY = "Kafka offset message property";
+
     public static final String CONFIG_NAME_MQ_REPLY_QUEUE = "mq.reply.queue";
     public static final String CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE = "The name of the reply-to queue, as a queue name or URI.";
     public static final String CONFIG_DISPLAY_MQ_REPLY_QUEUE = "Reply-to queue";
@@ -284,8 +296,20 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_VALUE_CONVERTER, CONFIG_GROUP_MQ, 20, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
+        config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY, Type.STRING, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY, CONFIG_GROUP_MQ, 21, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY);
+
+        config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY, Type.STRING, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY, CONFIG_GROUP_MQ, 22, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY);
+
+        config.define(CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY, Type.STRING, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY, CONFIG_GROUP_MQ, 23, Width.MEDIUM,
+                      CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
+
         config.define(CONFIG_NAME_MQ_REPLY_QUEUE, Type.STRING, null, Importance.LOW,
-                      CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE, CONFIG_GROUP_MQ, 21, Width.MEDIUM,
+                      CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE, CONFIG_GROUP_MQ, 24, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_REPLY_QUEUE);
 
         return config;

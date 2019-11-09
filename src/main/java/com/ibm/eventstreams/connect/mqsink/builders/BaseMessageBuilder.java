@@ -45,6 +45,9 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public enum KeyHeader {NONE, CORRELATION_ID};
     protected KeyHeader keyheader = KeyHeader.NONE;
     public Destination replyToQueue;
+    public String topicPropertyName;
+    public String partitionPropertyName;
+    public String offsetPropertyName;
 
     /**
      * Configure this class.
@@ -83,6 +86,22 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                 throw new ConnectException("Failed to build reply-to queue", jmse);
             }
         }
+
+        String tpn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY);
+        if (tpn != null) {
+            topicPropertyName = tpn;
+        }
+
+        String ppn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY);
+        if (ppn != null) {
+            partitionPropertyName = ppn;
+        }
+
+        String opn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
+        if (opn != null) {
+            offsetPropertyName = opn;
+        }
+
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
@@ -174,6 +193,33 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             }
             catch (JMSException jmse) {
                 throw new ConnectException("Failed to set reply-to queue", jmse);
+            }
+        }
+
+        if (topicPropertyName != null) {
+            try {
+                m.setStringProperty(topicPropertyName, record.topic());
+            }
+            catch (JMSException jmse) {
+                throw new ConnectException("Failed to set topic property", jmse);
+            }
+        }
+
+        if (partitionPropertyName != null) {
+            try {
+                m.setIntProperty(partitionPropertyName, record.kafkaPartition());;
+            }
+            catch (JMSException jmse) {
+                throw new ConnectException("Failed to set partition property", jmse);
+            }
+        }
+
+        if (offsetPropertyName != null) {
+            try {
+                m.setLongProperty(offsetPropertyName, record.kafkaOffset());
+            }
+            catch (JMSException jmse) {
+                throw new ConnectException("Failed to set offset property", jmse);
             }
         }
 
