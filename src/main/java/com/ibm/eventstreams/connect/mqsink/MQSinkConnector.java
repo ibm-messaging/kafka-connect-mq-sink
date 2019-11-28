@@ -135,6 +135,10 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE = "The name of the reply-to queue, as a queue name or URI.";
     public static final String CONFIG_DISPLAY_MQ_REPLY_QUEUE = "Reply-to queue";
 
+    public static final String CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP = "mq.user.authentication.mqcsp";
+    public static final String CONFIG_DOCUMENTATION_MQ_USER_AUTHENTICATION_MQCSP = "Whether to use MQ connection security parameters (MQCSP).";
+    public static final String CONFIG_DISPLAY_MQ_USER_AUTHENTICATION_MQCSP = "User authentication using MQCSP";
+
     public static String VERSION = "1.2.0-SNAPSHOT";
 
     private Map<String, String> configProps;
@@ -311,6 +315,10 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_REPLY_QUEUE, Type.STRING, null, Importance.LOW,
                       CONFIG_DOCUMENTATION_MQ_REPLY_QUEUE, CONFIG_GROUP_MQ, 24, Width.MEDIUM,
                       CONFIG_DISPLAY_MQ_REPLY_QUEUE);
+
+        config.define(CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP, Type.BOOLEAN, Boolean.TRUE, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_USER_AUTHENTICATION_MQCSP, CONFIG_GROUP_MQ, 25, Width.SHORT,
+                      CONFIG_DISPLAY_MQ_USER_AUTHENTICATION_MQCSP);
 
         return config;
     }

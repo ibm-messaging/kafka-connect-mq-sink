@@ -106,6 +106,7 @@ public class JMSWriter {
         String sslKeystorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD);
         String sslTruststoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION);
         String sslTruststorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD);
+        String useMQCSP = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP);
 
         int transportType = WMQConstants.WMQ_CM_CLIENT;
         if (connectionMode != null) {
@@ -126,6 +127,9 @@ public class JMSWriter {
             mqConnFactory.setTransportType(transportType);
             mqConnFactory.setQueueManager(queueManager);
             mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, true);
+            if (useMQCSP != null) {
+                mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, Boolean.parseBoolean(useMQCSP));
+            }
 
             if (transportType == WMQConstants.WMQ_CM_CLIENT) {
                 if (ccdtUrl != null) {

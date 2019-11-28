@@ -219,7 +219,7 @@ The connector can be configured to set the Kafka topic, partition and offset as 
 
 
 ## Security
-The connector supports authentication with user name and password and also connections secured with TLS using a server-side certificate and mutual authentication with client-side certificates.
+The connector supports authentication with user name and password and also connections secured with TLS using a server-side certificate and mutual authentication with client-side certificates. You can also choose whether to use connection security parameters (MQCSP) depending on the security settings you're using in MQ.
 
 ### Setting up TLS using a server-side certificate
 To enable use of TLS, set the configuration `mq.ssl.cipher.suite` to the name of the cipher suite which matches the CipherSpec in the SSLCIPH attribute of the MQ server-connection channel. Use the table of supported cipher suites for MQ 9.1 [here](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.dev.doc/q113220_.htm) as a reference. Note that the names of the CipherSpecs as used in the MQ configuration are not necessarily the same as the cipher suite names that the connector uses. The connector uses the JMS interface so it follows the Java conventions.
@@ -263,6 +263,7 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.message.builder.partition.property | The JMS message property to set from the Kafka partition               | string  |                | Blank or valid JMS property name  |
 | mq.message.builder.offset.property    | The JMS message property to set from the Kafka offset                  | string  |                | Blank or valid JMS property name  |
 | mq.reply.queue                        | The name of the reply-to queue                                         | string  |                | MQ queue name or queue URI        |
+| mq.user.authentication.mqcsp          | Whether to use MQ connection security parameters (MQCSP)               | boolean | true           |                                   |
 
 
 ### Using a CCDT file
