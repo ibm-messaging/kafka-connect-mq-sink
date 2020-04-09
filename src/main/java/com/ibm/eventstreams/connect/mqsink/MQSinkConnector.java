@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018, 2019 IBM Corporation
+ * Copyright 2017, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_USER_AUTHENTICATION_MQCSP = "Whether to use MQ connection security parameters (MQCSP).";
     public static final String CONFIG_DISPLAY_MQ_USER_AUTHENTICATION_MQCSP = "User authentication using MQCSP";
 
-    public static String VERSION = "1.2.0-SNAPSHOT";
+    public static String VERSION = "1.2.0";
 
     private Map<String, String> configProps;
 
