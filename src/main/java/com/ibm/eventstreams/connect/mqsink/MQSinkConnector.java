@@ -139,7 +139,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_USER_AUTHENTICATION_MQCSP = "Whether to use MQ connection security parameters (MQCSP).";
     public static final String CONFIG_DISPLAY_MQ_USER_AUTHENTICATION_MQCSP = "User authentication using MQCSP";
 
-    public static String VERSION = "1.2.0";
+    public static String VERSION = "1.3.0-SNAPSHOT";
 
     private Map<String, String> configProps;
 
