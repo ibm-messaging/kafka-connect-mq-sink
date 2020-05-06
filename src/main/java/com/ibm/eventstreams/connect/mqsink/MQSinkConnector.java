@@ -110,6 +110,10 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_SSL_TRUSTSTORE_PASSWORD = "The password of the JKS truststore to use for the TLS (SSL) connection.";
     public static final String CONFIG_DISPLAY_MQ_SSL_TRUSTSTORE_PASSWORD = "SSL truststore password";
 
+    public static final String CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS = "mq.ssl.use.ibm.cipher.mappings";
+    public static final String CONFIG_DOCUMENTATION_MQ_SSL_USE_IBM_CIPHER_MAPPINGS = "Whether to set system property to control use of IBM cipher mappings.";
+    public static final String CONFIG_DISPLAY_MQ_SSL_USE_IBM_CIPHER_MAPPINGS = "Use IBM cipher mappings";
+
     public static final String CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER = "mq.message.builder.key.header";
     public static final String CONFIG_DOCUMENTATION_MQ_MESSAGE_BUILDER_KEY_HEADER = "The JMS message header to set from the Kafka record key.";
     public static final String CONFIG_DISPLAY_MQ_MESSAGE_BUILDER_KEY_HEADER = "Record builder key header";
@@ -319,6 +323,10 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP, Type.BOOLEAN, Boolean.TRUE, Importance.LOW,
                       CONFIG_DOCUMENTATION_MQ_USER_AUTHENTICATION_MQCSP, CONFIG_GROUP_MQ, 25, Width.SHORT,
                       CONFIG_DISPLAY_MQ_USER_AUTHENTICATION_MQCSP);
+
+        config.define(CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS, Type.BOOLEAN, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_SSL_USE_IBM_CIPHER_MAPPINGS, CONFIG_GROUP_MQ, 26, Width.SHORT,
+                      CONFIG_DISPLAY_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
 
         return config;
     }
