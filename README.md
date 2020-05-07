@@ -92,7 +92,7 @@ This repository includes a Dockerfile to run Kafka Connect in distributed mode. 
 1. `docker run -p 8083:8083 kafkaconnect-with-mq-sink:0.0.1`
 
 **NOTE:** To provide custom properties files create a folder called `config` containing the `connect-distributed.properties` and `connect-log4j.properties` files and use a Docker volume to make them available when running the container:
-`docker run -v $(pwd)/config:/opt/kafka/config -p 8083:8083 kafkaconnect:0.0.1`
+`docker run -v $(pwd)/config:/opt/kafka/config -p 8083:8083 kafkaconnect-with-mq-sink:0.0.1`
 
 
 ## Deploying to Kubernetes
@@ -246,6 +246,7 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.queue                              | The name of the target MQ queue                                        | string  |                | MQ queue name                     |
 | mq.user.name                          | The user name for authenticating with the queue manager                | string  |                | User name                         |
 | mq.password                           | The password for authenticating with the queue manager                 | string  |                | Password                          |
+| mq.user.authentication.mqcsp          | Whether to use MQ connection security parameters (MQCSP)               | boolean | true           |                                   |
 | mq.ccdt.url                           | The URL for the CCDT file containing MQ connection details             | string  |                | URL for obtaining a CCDT file     |
 | mq.message.builder                    | The class used to build the MQ message                                 | string  |                | Class implementing MessageBuilder |
 | mq.message.body.jms                   | Whether to generate the message body as a JMS message type             | boolean | false          |                                   |
@@ -257,13 +258,13 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.ssl.keystore.password              | The password of the JKS keystore to use for SSL (TLS) connections      | string  |                |                                   |
 | mq.ssl.truststore.location            | The path to the JKS truststore to use for SSL (TLS) connections        | string  | JVM truststore | Local path to a JKS file          |
 | mq.ssl.truststore.password            | The password of the JKS truststore to use for SSL (TLS) connections    | string  |                |                                   |
+| mq.ssl.use.ibm.cipher.mappings        | Whether to set system property to control use of IBM cipher mappings   | boolean |                |                                   |
 | mq.message.builder.key.header         | The JMS message header to set from the Kafka record key                | string  |                | JMSCorrelationID                  |
 | mq.message.builder.value.converter    | The class and prefix for message builder's value converter             | string  |                | Class implementing Converter      |
 | mq.message.builder.topic.property     | The JMS message property to set from the Kafka topic                   | string  |                | Blank or valid JMS property name  |
 | mq.message.builder.partition.property | The JMS message property to set from the Kafka partition               | string  |                | Blank or valid JMS property name  |
 | mq.message.builder.offset.property    | The JMS message property to set from the Kafka offset                  | string  |                | Blank or valid JMS property name  |
 | mq.reply.queue                        | The name of the reply-to queue                                         | string  |                | MQ queue name or queue URI        |
-| mq.user.authentication.mqcsp          | Whether to use MQ connection security parameters (MQCSP)               | boolean | true           |                                   |
 
 
 ### Using a CCDT file
@@ -304,6 +305,10 @@ To use a file for the `mq.password` in Kubernetes, you create a Secret using the
 ### Unable to connect to Kafka
 
 You may receive an `org.apache.kafka.common.errors.SslAuthenticationException: SSL handshake failed` error when trying to run the MQ sink connector using SSL to connect to your Kafka cluster. In the case that the error is caused by the following exception: `Caused by: java.security.cert.CertificateException: No subject alternative DNS name matching XXXXX found.`, Java may be replacing the IP address of your cluster with the corresponding hostname in your `/etc/hosts` file. For example, to push Docker images to a custom Docker repository, you may add an entry in this file which corresponds to the IP of your repository e.g. `123.456.78.90    mycluster.icp`. To fix this, you can comment out this line in your `/etc/hosts` file.
+
+### Unsupported cipher suite
+
+When configuring TLS connection to MQ, you may find that the queue manager rejects the cipher suite, in spite of the name looking correct. There are two different naming conventions for cipher suites (https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.dev.doc/q113220_.htm). Setting the configuration option `mq.ssl.use.ibm.cipher.mappings=false` often resolves cipher suite problems.
 
 
 ## Support
