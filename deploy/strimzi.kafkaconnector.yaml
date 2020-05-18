@@ -1,0 +1,18 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaConnector
+metadata:
+  name: mq-sink
+  labels:
+    strimzi.io/cluster: <KafkaConnect_CLUSTER_NAME>
+spec:
+  class: com.ibm.eventstreams.connect.mqsink.MQSinkConnector
+  tasksMax: 1
+  config:
+    topics: <TOPIC>
+    mq.queue.manager: <QUEUE_MANAGER>
+    mq.connection.name.list: <CONNECTION_NAME_LIST>
+    mq.channel.name: <CHANNEL_NAME>
+    mq.queue: <QUEUE>
+    mq.message.builder: com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    value.converter: org.apache.kafka.connect.storage.StringConverter
