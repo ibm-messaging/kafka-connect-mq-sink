@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018, 2019 IBM Corporation
+ * Copyright 2017, 2020 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,14 +83,14 @@ public class MQSinkTask extends SinkTask {
      * @param records the set of records to send
      */
     @Override public void put(Collection<SinkRecord> records) {
-        log.trace("[{}] Entry {}.put", Thread.currentThread().getId(), this.getClass().getName());
+        log.trace("[{}] Entry {}.put, records.size={}", Thread.currentThread().getId(), this.getClass().getName(), records.size());
 
         for (SinkRecord r: records) {
             log.debug("Putting record for topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
             writer.send(r);
         }
 
-        context.requestCommit();
+        writer.commit();
         log.trace("[{}]  Exit {}.put", Thread.currentThread().getId(), this.getClass().getName());
     }
 
@@ -110,7 +110,6 @@ public class MQSinkTask extends SinkTask {
             log.debug("Flushing up to topic {}, partition {} and offset {}", tp.topic(), tp.partition(), om.offset());
         }
 
-        writer.commit();
         log.trace("[{}]  Exit {}.flush", Thread.currentThread().getId(), this.getClass().getName());
     }
 
