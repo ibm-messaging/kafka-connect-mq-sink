@@ -332,7 +332,7 @@ public class MQSinkConnector extends SinkConnector {
                       CONFIG_DOCUMENTATION_MQ_SSL_USE_IBM_CIPHER_MAPPINGS, CONFIG_GROUP_MQ, 26, Width.SHORT,
                       CONFIG_DISPLAY_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
 
-        config.define(CONFIG_NAME_MQ_ENCODING, Type.BOOLEAN, null, Importance.LOW,
+        config.define(CONFIG_NAME_MQ_ENCODING, Type.STRING, null, Importance.LOW,
                       CONFIG_DOCUMENTATION_MQ_ENCODING, CONFIG_GROUP_MQ, 27, Width.SHORT,
                       CONFIG_DISPLAY_MQ_ENCODING);
 
