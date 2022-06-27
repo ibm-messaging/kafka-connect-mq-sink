@@ -37,6 +37,16 @@ Change directory into the `kafka-connect-mq-sink` directory:
 cd kafka-connect-mq-sink
 ```
 
+Run the unit tests:
+```shell
+mvn test
+```
+
+Run the integration tests (requires Docker):
+```shell
+mvn integration-test
+```
+
 Build the connector using Maven:
 ```shell
 mvn clean package

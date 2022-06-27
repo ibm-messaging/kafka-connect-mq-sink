@@ -78,6 +78,15 @@
       <version>1.7.25</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- tests in src/integration depend on a running MQ queue manager -->
+    <!--  in a container, configured using org.testcontainers          -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>1.17.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -92,12 +101,30 @@
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M1</version>
+        <version>3.0.0-M7</version>
         <configuration>
           <systemPropertyVariables>
             <connectorVersion>${project.version}</connectorVersion>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M7</version>
+        <configuration>
+          <systemPropertyVariables>
+            <connectorVersion>${project.version}</connectorVersion>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-tests</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -115,6 +142,30 @@
             <descriptor>src/assembly/package.xml</descriptor>
           </descriptors>
         </configuration>
+      </plugin>
+
+
+      <!-- add the src/integration folder as a test folder, which lets us keep -->
+      <!--  tests that have a dependency on testcontainers separate from pure  -->
+      <!--  unit tests with no external dependency                             -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>add-test-source</id>
+            <phase>process-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/integration/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
