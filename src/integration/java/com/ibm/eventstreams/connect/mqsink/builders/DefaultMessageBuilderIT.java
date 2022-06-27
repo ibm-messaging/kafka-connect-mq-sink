@@ -1,4 +1,4 @@
-package com.ibm.eventstreams.connect.mqsink;
+package com.ibm.eventstreams.connect.mqsink.builders;
 
 import static org.junit.Assert.assertEquals;
 
@@ -13,32 +13,31 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder;
-import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
+import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
 
 public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
 
     private MessageBuilder builder;
-    
+
     @Before
     public void prepareMessageBuilder() {
         builder = new DefaultMessageBuilder();
     }
-    
+
     private SinkRecord generateSinkRecord(Schema valueSchema, Object value) {
         final String TOPIC = "TOPIC.NAME";
         final int PARTITION = 0;
         final long OFFSET = 0;
         final Schema KEY_SCHEMA = Schema.STRING_SCHEMA;
         final String KEY = "mykey";
-        
-        return new SinkRecord(TOPIC, PARTITION, 
+
+        return new SinkRecord(TOPIC, PARTITION,
                               KEY_SCHEMA, KEY,
-                              valueSchema, value, 
+                              valueSchema, value,
                               OFFSET);
     }
-    
-    
+
+
     @Test
     public void buildEmptyMessageWithoutSchema() throws Exception {
         createAndVerifyEmptyMessage(null);
@@ -46,7 +45,8 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
     @Test
     public void buildEmptyMessageWithSchema() throws Exception {
         createAndVerifyEmptyMessage(Schema.STRING_SCHEMA);
-    }    
+    }
+
     @Test
     public void buildTextMessageWithoutSchema() throws Exception {
         createAndVerifyStringMessage(null, "Hello World");
@@ -89,29 +89,29 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
         value.put(payload);
         createAndVerifyByteMessage(Schema.BYTES_SCHEMA, value, TEST_MESSAGE);
     }
-    
+
 
     private void createAndVerifyEmptyMessage(Schema valueSchema) throws Exception {
         Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, null));
         assertEquals(null, message.getBody(String.class));
     }
-    
+
     private void createAndVerifyStringMessage(Schema valueSchema, String value) throws Exception {
         Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
         assertEquals(value, message.getBody(String.class));
-        
+
         TextMessage textmessage = (TextMessage) message;
         assertEquals(value, textmessage.getText());
     }
-    
+
     private void createAndVerifyIntegerMessage(Schema valueSchema, Integer value) throws Exception {
         Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
         assertEquals(value, new Integer(message.getBody(String.class)));
     }
-    
+
     private void createAndVerifyByteMessage(Schema valueSchema, Object value, String valueAsString) throws Exception {
         Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
-        
+
         BytesMessage byteMessage = (BytesMessage) message;
         byteMessage.reset();
 
