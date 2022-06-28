@@ -26,6 +26,8 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -66,8 +68,26 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
     }
 
     @Test
-    public void buildJsonMessageWithoutSchema() throws Exception {
-        Object testObject = generateComplexObject();
+    public void buildStructMessage() throws Exception {
+        Struct testObject = generateComplexObjectAsStruct();
+        Schema testSchema = testObject.schema();
+
+        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(testSchema, testObject));
+        String contents = message.getBody(String.class);
+
+        JSONObject jsonContents = new JSONObject(contents);
+        assertEquals(3, jsonContents.length());
+        assertEquals("this is a string", jsonContents.getString("mystring"));
+        assertEquals(true, jsonContents.getJSONObject("myobj").getBoolean("mybool"));
+        assertEquals(12345, jsonContents.getJSONObject("myobj").getInt("myint"));
+        assertEquals(12.4, jsonContents.getJSONObject("myobj").getDouble("myfloat"), 0.0001);
+        assertEquals(4, jsonContents.getJSONArray("myarray").length());
+        assertEquals("first", jsonContents.getJSONArray("myarray").getString(0));
+    }
+
+    @Test
+    public void buildMapMessage() throws Exception {
+        Object testObject = generateComplexObjectAsMap();
 
         Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null, testObject));
         String contents = message.getBody(String.class);
@@ -83,7 +103,42 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
     }
 
 
-    private Object generateComplexObject() {
+    private Struct generateComplexObjectAsStruct() {
+        Schema innerSchema = SchemaBuilder.struct()
+                .name("com.ibm.eventstreams.tests.Inner")
+                .field("mybool", Schema.BOOLEAN_SCHEMA)
+                .field("myint", Schema.INT32_SCHEMA)
+                .field("myfloat", Schema.FLOAT32_SCHEMA)
+                .field("mybytes", Schema.BYTES_SCHEMA)
+                .build();
+
+        Schema complexSchema = SchemaBuilder.struct()
+                .name("com.ibm.eventstreams.tests.Complex")
+                .field("mystring", Schema.STRING_SCHEMA)
+                .field("myobj", innerSchema)
+                .field("myarray", SchemaBuilder.array(Schema.STRING_SCHEMA))
+                .build();
+
+        List<String> innerary = new ArrayList<>();
+        innerary.add("first");
+        innerary.add("second");
+        innerary.add("third");
+        innerary.add("fourth");
+
+        Struct obj = new Struct(complexSchema)
+                .put("mystring", "this is a string")
+                .put("myobj",
+                        new Struct(innerSchema)
+                            .put("mybool", true)
+                            .put("myint", 12345)
+                            .put("myfloat", 12.4f)
+                            .put("mybytes", "Hello".getBytes()))
+                .put("myarray", innerary);
+
+        return obj;
+    }
+
+    private Map<String, Object> generateComplexObjectAsMap() {
         Map<String, Object> obj = new HashMap<>();
 
         obj.put("mystring", "this is a string");
