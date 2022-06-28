@@ -1,6 +1,7 @@
 package com.ibm.eventstreams.connect.mqsink;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,10 +17,11 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-public class SimpleMQSinkTaskIT extends AbstractJMSContextIT {
+public class MQSinkTaskIT extends AbstractJMSContextIT {
 
     private static final String TOPIC = "SINK.TOPIC.NAME";
     private static final int PARTITION = 3;
@@ -43,6 +45,35 @@ public class SimpleMQSinkTaskIT extends AbstractJMSContextIT {
         props.put("mq.queue", "DEV.QUEUE.1");
         props.put("mq.user.authentication.mqcsp", "false");
         return props;
+    }
+
+
+    @Test
+    public void verifyUnsupportedReplyQueueName() {
+        Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
+        connectorConfigProps.put("mq.message.builder", "com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder");
+        connectorConfigProps.put("mq.reply.queue", "queue://QM2/Q2?persistence=2&priority=5");
+
+        MQSinkTask newConnectTask = new MQSinkTask();
+        ConnectException exc = assertThrows(ConnectException.class, () -> {
+            newConnectTask.start(connectorConfigProps);
+        });
+
+        assertEquals("Reply-to queue URI must not contain properties", exc.getMessage());
+    }
+
+    @Test
+    public void verifyUnsupportedKeyHeader() {
+        Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
+        connectorConfigProps.put("mq.message.builder", "com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder");
+        connectorConfigProps.put("mq.message.builder.key.header", "hello");
+
+        MQSinkTask newConnectTask = new MQSinkTask();
+        ConnectException exc = assertThrows(ConnectException.class, () -> {
+            newConnectTask.start(connectorConfigProps);
+        });
+
+        assertEquals("Unsupported MQ message builder key header value", exc.getMessage());
     }
 
 
@@ -207,7 +238,7 @@ public class SimpleMQSinkTaskIT extends AbstractJMSContextIT {
         connectorConfigProps.put("mq.message.builder.value.converter", "org.apache.kafka.connect.json.JsonConverter");
         connectorConfigProps.put("mq.message.builder", "com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder");
 
-        verifyMessageConversion(connectorConfigProps, Schema.STRING_SCHEMA, "\"ABC\"", "\"ABC\"");
+        verifyMessageConversion(connectorConfigProps, Schema.STRING_SCHEMA, "ABC", "ABC");
     }
     @Test
     public void verifyJsonWithJsonBuilder() throws JMSException {
@@ -215,7 +246,7 @@ public class SimpleMQSinkTaskIT extends AbstractJMSContextIT {
         connectorConfigProps.put("mq.message.builder.value.converter", "org.apache.kafka.connect.json.JsonConverter");
         connectorConfigProps.put("mq.message.builder", "com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder");
 
-        verifyMessageConversion(connectorConfigProps, Schema.STRING_SCHEMA, "\"ABC\"", "\"\\\"ABC\\\"\"");
+        verifyMessageConversion(connectorConfigProps, Schema.STRING_SCHEMA, "ABC", "\"ABC\"");
     }
 
 
