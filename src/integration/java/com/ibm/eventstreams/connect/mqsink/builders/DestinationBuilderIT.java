@@ -43,7 +43,7 @@ public class DestinationBuilderIT extends AbstractJMSContextIT {
 
         SinkRecord record = new SinkRecord("topic", 0, null, null, null, "msg", 0);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        Message message = builder.fromSinkRecord(getSession(), record);
         assertEquals("msg", message.getBody(String.class));
 
         MQQueue destination = (MQQueue) message.getJMSReplyTo();
@@ -64,7 +64,7 @@ public class DestinationBuilderIT extends AbstractJMSContextIT {
 
         SinkRecord record = new SinkRecord(TOPIC, 0, null, null, null, "message", 0);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        Message message = builder.fromSinkRecord(getSession(), record);
         assertEquals("message", message.getBody(String.class));
         assertEquals(TOPIC, message.getStringProperty(topicProperty));
     }
@@ -83,7 +83,7 @@ public class DestinationBuilderIT extends AbstractJMSContextIT {
 
         SinkRecord record = new SinkRecord("topic", PARTITION, null, null, null, "message", 0);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        Message message = builder.fromSinkRecord(getSession(), record);
         assertEquals("message", message.getBody(String.class));
         assertEquals(PARTITION, message.getIntProperty(topicProperty));
     }
@@ -102,7 +102,7 @@ public class DestinationBuilderIT extends AbstractJMSContextIT {
 
         SinkRecord record = new SinkRecord("topic", 0, null, null, null, "message", OFFSET);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        Message message = builder.fromSinkRecord(getSession(), record);
         assertEquals("message", message.getBody(String.class));
         assertEquals(OFFSET, message.getLongProperty(topicProperty));
     }

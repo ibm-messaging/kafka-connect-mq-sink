@@ -21,7 +21,6 @@ import java.util.concurrent.TimeoutException;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
-import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -38,10 +37,10 @@ import com.ibm.msg.client.wmq.WMQConstants;
 
 
 /**
- * Helper class for integration tests that have a dependency on JMSContext.
+ * Helper class for integration tests that have a dependency on Session.
  *
  *  It starts a queue manager in a test container, and uses it to create
- *  a JMSContext instance, that can be used in tests.
+ *  a Session instance, that can be used in tests.
  */
 public abstract class AbstractJMSContextIT {
 
@@ -55,15 +54,15 @@ public abstract class AbstractJMSContextIT {
         .withEnv("MQ_ENABLE_EMBEDDED_WEB_SERVER", "false")
         .withExposedPorts(1414);
 
-    private JMSContext jmsContext;
+    private Session mQSession;
 
 
     /**
      * Returns a JMS context pointing at a developer queue manager running in a
      * test container.
      */
-    public JMSContext getJmsContext() throws Exception {
-        if (jmsContext == null) {
+    public Session getSession() throws Exception {
+        if (mQSession == null) {
             waitForQueueManagerStartup();
 
             MQConnectionFactory mqcf = new MQConnectionFactory();
@@ -71,11 +70,12 @@ public abstract class AbstractJMSContextIT {
             mqcf.setChannel(CHANNEL_NAME);
             mqcf.setQueueManager(QMGR_NAME);
             mqcf.setConnectionNameList(getConnectionName());
+            Connection mQConnection = mqcf.createConnection();
 
-            jmsContext = mqcf.createContext();
+            mQSession = mQConnection.createSession();
         }
 
-        return jmsContext;
+        return mQSession;
     }
 
 

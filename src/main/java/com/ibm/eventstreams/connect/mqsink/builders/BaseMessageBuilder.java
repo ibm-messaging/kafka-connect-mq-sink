@@ -24,9 +24,9 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 import javax.jms.Destination;
-import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
@@ -112,8 +112,9 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
+     * @throws JMSException
      */
-    public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
+    public abstract Message getJMSMessage(Session mQSession, SinkRecord record) throws JMSException;
 
     /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
@@ -122,9 +123,10 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
+     * @throws JMSException
      */
-    @Override public Message fromSinkRecord(JMSContext jmsCtxt, SinkRecord record) {
-        Message m = this.getJMSMessage(jmsCtxt, record);
+    @Override public Message fromSinkRecord(Session mQSession, SinkRecord record) throws JMSException {
+        Message m = this.getJMSMessage(mQSession, record);
 
         if (keyheader != KeyHeader.NONE) {
             Schema s = record.keySchema();

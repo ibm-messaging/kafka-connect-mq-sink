@@ -17,8 +17,9 @@ package com.ibm.eventstreams.connect.mqsink.builders;
 
 import java.util.Map;
 
-import javax.jms.JMSContext;
+import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import org.apache.kafka.connect.sink.SinkRecord;
 
@@ -42,6 +43,7 @@ public interface MessageBuilder {
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the message
+     * @throws JMSException
      */
-    Message fromSinkRecord(JMSContext context, SinkRecord record);
+    Message fromSinkRecord(Session mQSession, SinkRecord record) throws JMSException;
 }

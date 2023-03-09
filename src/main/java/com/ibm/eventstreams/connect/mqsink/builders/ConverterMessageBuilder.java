@@ -19,8 +19,9 @@ import com.ibm.eventstreams.connect.mqsink.MQSinkConnector;
 
 import java.util.Map;
 
-import javax.jms.JMSContext;
+import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -86,9 +87,10 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
+     * @throws JMSException
      */
-    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
+    @Override public Message getJMSMessage(Session mQSession, SinkRecord record) throws JMSException {
         byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
-        return jmsCtxt.createTextMessage(new String(payload, UTF_8));
+        return mQSession.createTextMessage(new String(payload, UTF_8));
     }
 }

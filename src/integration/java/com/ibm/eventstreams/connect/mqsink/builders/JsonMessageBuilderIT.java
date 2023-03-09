@@ -72,7 +72,7 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
         Struct testObject = generateComplexObjectAsStruct();
         Schema testSchema = testObject.schema();
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(testSchema, testObject));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(testSchema, testObject));
         String contents = message.getBody(String.class);
 
         JSONObject jsonContents = new JSONObject(contents);
@@ -89,7 +89,7 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
     public void buildMapMessage() throws Exception {
         Object testObject = generateComplexObjectAsMap();
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null, testObject));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(null, testObject));
         String contents = message.getBody(String.class);
 
         JSONObject jsonContents = new JSONObject(contents);
@@ -162,7 +162,7 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
 
 
     private void createAndVerifyStringMessage(Schema valueSchema, String value) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(valueSchema, value));
         assertEquals("\"" + value + "\"", message.getBody(String.class));
 
         TextMessage textmessage = (TextMessage) message;

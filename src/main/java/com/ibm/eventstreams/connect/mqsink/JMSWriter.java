@@ -31,12 +31,14 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.Map;
 
+import javax.jms.Connection;
 import javax.jms.DeliveryMode;
-import javax.jms.JMSContext;
+import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.JMSProducer;
 import javax.jms.JMSRuntimeException;
 import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -64,16 +66,17 @@ public class JMSWriter {
 
     // JMS factory and context
     private MQConnectionFactory mqConnFactory;
-    private JMSContext jmsCtxt;
-    private JMSProducer jmsProd;
+    private MessageProducer producer;
+    private Connection mQConnection;
+    private Session mQSession;
+    private Destination destination;
     private MQQueue queue;
     private int deliveryMode = Message.DEFAULT_DELIVERY_MODE;
     private long timeToLive = Message.DEFAULT_TIME_TO_LIVE;
 
     private MessageBuilder builder;
 
-    private boolean connected = false;                              // Whether connected to MQ
-    private boolean inflight = false;                               // Whether messages in-flight in current transaction
+    private boolean connected = false;                              // Whether connected to MQ                            // Whether messages in-flight in current transaction
     private long reconnectDelayMillis = RECONNECT_DELAY_MILLIS_MIN; // Delay between repeated reconnect attempts
 
     private static long RECONNECT_DELAY_MILLIS_MIN = 64l;
@@ -215,20 +218,18 @@ public class JMSWriter {
 
         try {
             if (userName != null) {
-                jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
+                mQConnection = mqConnFactory.createConnection(userName, password);
             }
             else {
-                jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
+                mQConnection = mqConnFactory.createConnection();
             }
-
-            jmsProd = jmsCtxt.createProducer();
-            jmsProd.setDeliveryMode(deliveryMode);
-            jmsProd.setTimeToLive(timeToLive);
-            connected = true;
-
+            mQSession = mQConnection.createSession();
+            destination = mQSession.createQueue(queue.getQueueName());
+            producer = mQSession.createProducer(destination);
+            mQConnection.start();
             log.info("Connection to MQ established");
         }
-        catch (JMSRuntimeException jmse) {
+        catch (JMSException | JMSRuntimeException jmse) {
             log.info("Connection to MQ could not be established");
             log.error("JMS exception {}", jmse);
             handleException(jmse);
@@ -251,42 +252,14 @@ public class JMSWriter {
         connectInternal();
 
         try {
-            Message m = builder.fromSinkRecord(jmsCtxt, r);
-            inflight = true;
-            jmsProd.send(queue, m);
-        }
-        catch (JMSRuntimeException jmse) {
+            Message m = builder.fromSinkRecord(mQSession, r);
+            producer.send(m);
+        } catch (JMSException | JMSRuntimeException jmse) {
             log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
 
         log.trace("[{}]  Exit {}.send", Thread.currentThread().getId(), this.getClass().getName());
-    }
-
-
-    /**
-     * Commits the current transaction.
-     *
-     * @throws RetriableException Operation failed, but connector should continue to retry.
-     * @throws ConnectException   Operation failed and connector should stop.
-     */
-    public void commit() throws ConnectException, RetriableException {
-        log.trace("[{}] Entry {}.commit", Thread.currentThread().getId(), this.getClass().getName());
-
-        connectInternal();
-        try {
-            if (inflight) {
-                inflight = false;
-            }
-
-            jmsCtxt.commit();
-        }
-        catch (JMSRuntimeException jmse) {
-            log.error("JMS exception {}", jmse);
-            throw handleException(jmse);
-        }
-
-        log.trace("[{}]  Exit {}.commit", Thread.currentThread().getId(), this.getClass().getName());
     }
 
     /**
@@ -296,18 +269,19 @@ public class JMSWriter {
         log.trace("[{}] Entry {}.close", Thread.currentThread().getId(), this.getClass().getName());
 
         try {
-            inflight = false;
             connected = false;
 
-            if (jmsCtxt != null) {
-                jmsCtxt.close();
+            if (producer != null) {
+                producer.close();
+                mQSession.close();
+                mQConnection.close();
             }
         }
-        catch (JMSRuntimeException jmse) {
+        catch (JMSException | JMSRuntimeException jmse) {
             ;
         }
         finally {
-            jmsCtxt = null;
+            producer = null;
             log.debug("Connection to MQ closed");
         }
 
@@ -329,19 +303,19 @@ public class JMSWriter {
     
         try {
             if (userName != null) {
-                jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
+                mQConnection = mqConnFactory.createConnection(userName, password);
             }
             else {
-                jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
+                mQConnection = mqConnFactory.createConnection();
             }
-
-            jmsProd = jmsCtxt.createProducer();
-            jmsProd.setDeliveryMode(deliveryMode);
-            jmsProd.setTimeToLive(timeToLive);
+            mQSession = mQConnection.createSession();
+            destination = mQSession.createQueue(queue.getQueueName());
+            producer = mQSession.createProducer(destination);
+            mQConnection.start();
             reconnectDelayMillis = RECONNECT_DELAY_MILLIS_MIN;
             connected = true;
         }
-        catch (JMSRuntimeException jmse) {
+        catch (JMSException | JMSRuntimeException jmse) {
             // Delay slightly so that repeated reconnect loops don't run too fast
             try {
                 Thread.sleep(reconnectDelayMillis);

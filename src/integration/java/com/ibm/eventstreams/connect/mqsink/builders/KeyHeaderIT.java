@@ -107,7 +107,7 @@ public class KeyHeaderIT extends AbstractJMSContextIT {
         DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(schema, key));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(schema, key));
         assertEquals(key, message.getJMSCorrelationID());
     }
 
@@ -118,7 +118,7 @@ public class KeyHeaderIT extends AbstractJMSContextIT {
         DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(schema, key));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(schema, key));
         assertEquals(keyAsString, new String(message.getJMSCorrelationIDAsBytes()));
     }
 }

@@ -107,12 +107,12 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
 
 
     private void createAndVerifyEmptyMessage(Schema valueSchema) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, null));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(valueSchema, null));
         assertEquals(null, message.getBody(String.class));
     }
 
     private void createAndVerifyStringMessage(Schema valueSchema, String value) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(valueSchema, value));
         assertEquals(value, message.getBody(String.class));
 
         TextMessage textmessage = (TextMessage) message;
@@ -120,12 +120,12 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
     }
 
     private void createAndVerifyIntegerMessage(Schema valueSchema, Integer value) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(valueSchema, value));
         assertEquals(value, new Integer(message.getBody(String.class)));
     }
 
     private void createAndVerifyByteMessage(Schema valueSchema, Object value, String valueAsString) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+        Message message = builder.fromSinkRecord(getSession(), generateSinkRecord(valueSchema, value));
 
         BytesMessage byteMessage = (BytesMessage) message;
         byteMessage.reset();

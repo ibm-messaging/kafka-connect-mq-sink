@@ -17,8 +17,9 @@ package com.ibm.eventstreams.connect.mqsink.builders;
 
 import java.util.HashMap;
 
-import javax.jms.JMSContext;
+import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -56,9 +57,10 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
+     * @throws JMSException
      */
-    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
+    @Override public Message getJMSMessage(Session mQSession, SinkRecord record) throws JMSException {
         byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
-        return jmsCtxt.createTextMessage(new String(payload, UTF_8));
+        return mQSession.createTextMessage(new String(payload, UTF_8));
     }
 }

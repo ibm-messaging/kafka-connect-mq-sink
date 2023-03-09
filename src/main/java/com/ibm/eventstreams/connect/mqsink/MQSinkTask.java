@@ -90,7 +90,6 @@ public class MQSinkTask extends SinkTask {
             writer.send(r);
         }
 
-        writer.commit();
         log.trace("[{}]  Exit {}.put", Thread.currentThread().getId(), this.getClass().getName());
     }
 
