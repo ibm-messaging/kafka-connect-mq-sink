@@ -226,6 +226,7 @@ public class JMSWriter {
             mQSession = mQConnection.createSession();
             destination = mQSession.createQueue(queue.getQueueName());
             producer = mQSession.createProducer(destination);
+            producer.setDeliveryMode(deliveryMode);
             mQConnection.start();
             log.info("Connection to MQ established");
         }
