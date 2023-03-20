@@ -28,9 +28,9 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
+import com.ibm.eventstreams.connect.mqsink.AbstractJMSSessionIT;
 
-public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
+public class DefaultMessageBuilderIT extends AbstractJMSSessionIT {
 
     private MessageBuilder builder;
 

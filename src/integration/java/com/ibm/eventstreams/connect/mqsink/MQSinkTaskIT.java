@@ -21,7 +21,7 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-public class MQSinkTaskIT extends AbstractJMSContextIT {
+public class MQSinkTaskIT extends AbstractJMSSessionIT {
 
     private static final String TOPIC = "SINK.TOPIC.NAME";
     private static final int PARTITION = 3;

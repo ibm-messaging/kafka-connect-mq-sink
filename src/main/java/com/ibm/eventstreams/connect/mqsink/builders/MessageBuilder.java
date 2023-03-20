@@ -39,11 +39,11 @@ public interface MessageBuilder {
     /**
      * Convert a Kafka Connect SinkRecord into a message.
      * 
-     * @param context            the JMS context to use for building messages
+     * @param mqSession          the JMS session to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the message
      * @throws JMSException
      */
-    Message fromSinkRecord(Session mQSession, SinkRecord record) throws JMSException;
+    Message fromSinkRecord(Session mqSession, SinkRecord record) throws JMSException;
 }

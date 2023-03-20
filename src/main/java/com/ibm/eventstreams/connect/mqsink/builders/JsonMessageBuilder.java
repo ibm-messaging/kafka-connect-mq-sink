@@ -53,14 +53,14 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
      * 
-     * @param context            the JMS context to use for building messages
+     * @param mqSession          the JMS session to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
      * @throws JMSException
      */
-    @Override public Message getJMSMessage(Session mQSession, SinkRecord record) throws JMSException {
+    @Override public Message getJMSMessage(Session mqSession, SinkRecord record) throws JMSException {
         byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
-        return mQSession.createTextMessage(new String(payload, UTF_8));
+        return mqSession.createTextMessage(new String(payload, UTF_8));
     }
 }

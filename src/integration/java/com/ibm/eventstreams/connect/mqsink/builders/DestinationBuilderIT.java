@@ -25,10 +25,10 @@ import javax.jms.Message;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
+import com.ibm.eventstreams.connect.mqsink.AbstractJMSSessionIT;
 import com.ibm.mq.jms.MQQueue;
 
-public class DestinationBuilderIT extends AbstractJMSContextIT {
+public class DestinationBuilderIT extends AbstractJMSSessionIT {
 
 
     @Test

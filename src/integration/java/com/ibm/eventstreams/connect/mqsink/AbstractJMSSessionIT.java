@@ -42,7 +42,7 @@ import com.ibm.msg.client.wmq.WMQConstants;
  *  It starts a queue manager in a test container, and uses it to create
  *  a Session instance, that can be used in tests.
  */
-public abstract class AbstractJMSContextIT {
+public abstract class AbstractJMSSessionIT {
 
     private static final String QMGR_NAME = "MYQMGR";
     private static final String CHANNEL_NAME = "DEV.APP.SVRCONN";
@@ -54,15 +54,15 @@ public abstract class AbstractJMSContextIT {
         .withEnv("MQ_ENABLE_EMBEDDED_WEB_SERVER", "false")
         .withExposedPorts(1414);
 
-    private Session mQSession;
+    private Session mqSession;
 
 
     /**
-     * Returns a JMS context pointing at a developer queue manager running in a
+     * Returns a JMS Session pointing at a developer queue manager running in a
      * test container.
      */
     public Session getSession() throws Exception {
-        if (mQSession == null) {
+        if (mqSession == null) {
             waitForQueueManagerStartup();
 
             MQConnectionFactory mqcf = new MQConnectionFactory();
@@ -70,12 +70,12 @@ public abstract class AbstractJMSContextIT {
             mqcf.setChannel(CHANNEL_NAME);
             mqcf.setQueueManager(QMGR_NAME);
             mqcf.setConnectionNameList(getConnectionName());
-            Connection mQConnection = mqcf.createConnection();
+            Connection mqConnection = mqcf.createConnection();
 
-            mQSession = mQConnection.createSession();
+            mqSession = mqConnection.createSession();
         }
 
-        return mQSession;
+        return mqSession;
     }
 
 

@@ -48,25 +48,25 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
      * 
-     * @param context            the JMS context to use for building messages
+     * @param mqSession          the JMS session to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
      * @throws JMSException
      */
-    @Override public Message getJMSMessage(Session mQSession, SinkRecord record) throws JMSException {
+    @Override public Message getJMSMessage(Session mqSession, SinkRecord record) throws JMSException {
         Schema s = record.valueSchema();
         Object v = record.value();
 
         log.debug("Value schema {}", s);
         if (v == null) {
-            return mQSession.createMessage();
+            return mqSession.createMessage();
         }
         else if (s == null) {
             log.debug("No schema info {}", v);
             if (v instanceof byte[]) {
                 try {
-                    BytesMessage bm = mQSession.createBytesMessage();
+                    BytesMessage bm = mqSession.createBytesMessage();
                     bm.writeBytes((byte[])v);
                     return bm;
                 }
@@ -76,7 +76,7 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
             }
             else if (v instanceof ByteBuffer) {
                 try {
-                    BytesMessage bm = mQSession.createBytesMessage();
+                    BytesMessage bm = mqSession.createBytesMessage();
                     bm.writeBytes(((ByteBuffer)v).array());
                     return bm;
                 }
@@ -88,7 +88,7 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
         else if (s.type() == Type.BYTES) {
             if (v instanceof byte[]) {
                 try {
-                    BytesMessage bm = mQSession.createBytesMessage();
+                    BytesMessage bm = mqSession.createBytesMessage();
                     bm.writeBytes((byte[])v);
                     return bm;
                 }
@@ -98,7 +98,7 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
             }
             else if (v instanceof ByteBuffer) {
                 try {
-                    BytesMessage bm = mQSession.createBytesMessage();
+                    BytesMessage bm = mqSession.createBytesMessage();
                     bm.writeBytes(((ByteBuffer)v).array());
                     return bm;
                 }
@@ -108,6 +108,6 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
             }
         }
 
-        return mQSession.createTextMessage(v.toString());     
+        return mqSession.createTextMessage(v.toString());     
     }
 }

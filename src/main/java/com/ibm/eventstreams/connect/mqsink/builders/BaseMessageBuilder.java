@@ -108,25 +108,25 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
      * 
-     * @param context            the JMS context to use for building messages
+     * @param mqSession          the JMS session to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
      * @throws JMSException
      */
-    public abstract Message getJMSMessage(Session mQSession, SinkRecord record) throws JMSException;
+    public abstract Message getJMSMessage(Session mqSession, SinkRecord record) throws JMSException;
 
     /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
      * 
-     * @param context            the JMS context to use for building messages
+     * @param mqSession          the JMS session to use for building messages
      * @param record             the Kafka Connect SinkRecord
      * 
      * @return the JMS message
      * @throws JMSException
      */
-    @Override public Message fromSinkRecord(Session mQSession, SinkRecord record) throws JMSException {
-        Message m = this.getJMSMessage(mQSession, record);
+    @Override public Message fromSinkRecord(Session mqSession, SinkRecord record) throws JMSException {
+        Message m = this.getJMSMessage(mqSession, record);
 
         if (keyheader != KeyHeader.NONE) {
             Schema s = record.keySchema();

@@ -33,9 +33,9 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
+import com.ibm.eventstreams.connect.mqsink.AbstractJMSSessionIT;
 
-public class JsonMessageBuilderIT extends AbstractJMSContextIT {
+public class JsonMessageBuilderIT extends AbstractJMSSessionIT {
 
     private MessageBuilder builder;
 

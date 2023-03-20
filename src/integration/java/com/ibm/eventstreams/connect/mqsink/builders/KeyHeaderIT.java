@@ -29,9 +29,9 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
-import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
+import com.ibm.eventstreams.connect.mqsink.AbstractJMSSessionIT;
 
-public class KeyHeaderIT extends AbstractJMSContextIT {
+public class KeyHeaderIT extends AbstractJMSSessionIT {
 
     private SinkRecord generateSinkRecord(Schema keySchema, Object keyValue) {
         final String TOPIC = "TOPIC.NAME";
