@@ -15,12 +15,20 @@
  */
 package com.ibm.eventstreams.connect.mqsink;
 
+import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
 import com.ibm.mq.MQException;
 import com.ibm.mq.constants.MQConstants;
-import com.ibm.mq.jms.*;
-import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
+import com.ibm.mq.jms.MQConnectionFactory;
+import com.ibm.mq.jms.MQQueue;
 import com.ibm.msg.client.wmq.WMQConstants;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.RetriableException;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.jms.*;
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,25 +38,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.Map;
-
-import javax.jms.DeliveryMode;
-import javax.jms.JMSContext;
-import javax.jms.JMSException;
-import javax.jms.JMSProducer;
-import javax.jms.JMSRuntimeException;
-import javax.jms.Message;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.errors.RetriableException;
-import org.apache.kafka.connect.sink.SinkRecord;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -61,6 +50,7 @@ public class JMSWriter {
     // Configs
     private String userName;
     private String password;
+    private String encoding;
 
     // JMS factory and context
     private MQConnectionFactory mqConnFactory;
@@ -99,6 +89,7 @@ public class JMSWriter {
         String queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
         String userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
         String password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
+        String encoding = props.get(MQSinkConnector.CONFIG_NAME_MQ_ENCODING);
         String ccdtUrl = props.get(MQSinkConnector.CONFIG_NAME_MQ_CCDT_URL);
         String builderClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER);
         String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
@@ -174,7 +165,8 @@ public class JMSWriter {
 
             this.userName = userName;
             this.password = password;
-    
+            this.encoding = encoding;
+
             queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_MQ);
             if (mbj != null) {
                 if (Boolean.parseBoolean(mbj)) {
@@ -252,10 +244,15 @@ public class JMSWriter {
 
         try {
             Message m = builder.fromSinkRecord(jmsCtxt, r);
+
+            if (encoding != null) {
+                m.setStringProperty(WMQConstants.JMS_IBM_CHARACTER_SET, encoding);
+            }
+
             inflight = true;
             jmsProd.send(queue, m);
         }
-        catch (JMSRuntimeException jmse) {
+        catch (JMSRuntimeException | JMSException jmse) {
             log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
