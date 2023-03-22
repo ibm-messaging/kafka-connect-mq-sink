@@ -62,7 +62,7 @@ public class JMSWriter {
     private String userName;
     private String password;
 
-    // JMS factory and context
+    // JMS factory and session
     private MQConnectionFactory mqConnFactory;
     private MessageProducer producer;
     private Connection mqConnection;
