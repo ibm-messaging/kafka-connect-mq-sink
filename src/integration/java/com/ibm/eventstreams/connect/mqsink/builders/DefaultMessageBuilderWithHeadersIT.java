@@ -58,9 +58,17 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
                               headers);
     }
 
-
     @Test
-    public void buildMessageWithMultipleHeaders() throws Exception {
+    public void buildMessageWithNoHeaders() throws Exception {
+        // generate MQ message
+        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null));
+
+        // verify there are no MQ message properties
+        assertFalse(message.getPropertyNames().hasMoreElements());
+    }
+    
+    @Test
+    public void buildMessageWithStringHeaders() throws Exception {
         Map<String, String> testHeaders = new HashMap<>();
         testHeaders.put("HeaderOne",   "This is test header one");
         testHeaders.put("HeaderTwo",   "This is test header two");
