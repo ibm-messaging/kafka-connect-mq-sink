@@ -229,17 +229,17 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                 throw new ConnectException("Failed to set offset property", jmse);
             }
         }
-        
+
         if (copyJmsProperties) {
             for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
-    			Header header = iterator.next();
-    			try {
+                Header header = iterator.next();
+                try {
                     m.setStringProperty(header.key(), header.value().toString());
-                } 
-    			catch (JMSException jmse) {
+                }
+                catch (JMSException jmse) {
                     throw new ConnectException("Failed to set header", jmse);
                 }
-    		}
+            }
         }
 
         return m;
