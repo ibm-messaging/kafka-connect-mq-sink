@@ -121,7 +121,8 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
 
     private void createAndVerifyIntegerMessage(Schema valueSchema, Integer value) throws Exception {
         Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
-        assertEquals(value, new Integer(message.getBody(String.class)));
+        Integer intValue = Integer.parseInt(message.getBody(String.class));
+        assertEquals(value, intValue);
     }
 
     private void createAndVerifyByteMessage(Schema valueSchema, Object value, String valueAsString) throws Exception {
