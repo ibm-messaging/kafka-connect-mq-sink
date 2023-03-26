@@ -16,6 +16,8 @@
 package com.ibm.eventstreams.connect.mqsink.builders;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 import java.nio.ByteBuffer;
 
@@ -23,7 +25,9 @@ import javax.jms.BytesMessage;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 
+import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,6 +107,32 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
         ByteBuffer value = ByteBuffer.allocate(payload.length);
         value.put(payload);
         createAndVerifyByteMessage(Schema.BYTES_SCHEMA, value, TEST_MESSAGE);
+    }
+    
+    @Test
+    public void buildMessageWithTextHeader() throws Exception {
+        final String TOPIC = "TOPIC.NAME";
+        final int PARTITION = 0;
+        final long OFFSET = 0;
+        
+        final String TEST_HEADER_KEY = "TestHeader";
+        
+        ConnectHeaders headers = new ConnectHeaders();
+        headers.addString(TEST_HEADER_KEY, "This is a test header");
+
+        SinkRecord record = new SinkRecord(TOPIC, PARTITION,
+                                           Schema.STRING_SCHEMA, "mykey",
+                                           Schema.STRING_SCHEMA, "Test message",
+                                           OFFSET, 
+                                           null, TimestampType.NO_TIMESTAMP_TYPE,
+                                           headers);
+        
+        // header should not have been copied across by default
+        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        assertNull(message.getStringProperty(TEST_HEADER_KEY));
+        
+        // no message properties should be set by default
+        assertFalse(message.getPropertyNames().hasMoreElements());
     }
 
 
