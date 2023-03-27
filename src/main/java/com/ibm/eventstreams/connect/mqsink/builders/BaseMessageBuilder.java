@@ -20,7 +20,7 @@ import com.ibm.eventstreams.connect.mqsink.MQSinkConnector;
 import com.ibm.mq.jms.*;
 
 import java.nio.ByteBuffer;
-
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.jms.Destination;
@@ -31,6 +31,7 @@ import javax.jms.Message;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public String topicPropertyName;
     public String partitionPropertyName;
     public String offsetPropertyName;
+    public boolean copyJmsProperties;
 
     /**
      * Configure this class.
@@ -100,6 +102,11 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         String opn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
         if (opn != null) {
             offsetPropertyName = opn;
+        }
+        
+        String copyhdr = props.get(MQSinkConnector.CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
+        if (copyhdr != null) {
+            copyJmsProperties = Boolean.valueOf(copyhdr);
         }
 
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
@@ -220,6 +227,18 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             }
             catch (JMSException jmse) {
                 throw new ConnectException("Failed to set offset property", jmse);
+            }
+        }
+
+        if (copyJmsProperties) {
+            for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
+                Header header = iterator.next();
+                try {
+                    m.setStringProperty(header.key(), header.value().toString());
+                }
+                catch (JMSException jmse) {
+                    throw new ConnectException("Failed to set header", jmse);
+                }
             }
         }
 

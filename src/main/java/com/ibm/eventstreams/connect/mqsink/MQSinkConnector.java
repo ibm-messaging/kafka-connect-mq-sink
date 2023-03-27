@@ -143,7 +143,11 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_MQ_USER_AUTHENTICATION_MQCSP = "Whether to use MQ connection security parameters (MQCSP).";
     public static final String CONFIG_DISPLAY_MQ_USER_AUTHENTICATION_MQCSP = "User authentication using MQCSP";
 
-    public static String VERSION = "1.3.1";
+    public static final String CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES = "mq.kafka.headers.copy.to.jms.properties";
+    public static final String CONFIG_DOCUMENTATION_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES = "Whether to copy Kafka headers to JMS message properties.";
+    public static final String CONFIG_DISPLAY_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES = "Copy Kafka headers to JMS message properties";
+
+    public static String VERSION = "1.4.0";
 
     private Map<String, String> configProps;
 
@@ -327,6 +331,10 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS, Type.BOOLEAN, null, Importance.LOW,
                       CONFIG_DOCUMENTATION_MQ_SSL_USE_IBM_CIPHER_MAPPINGS, CONFIG_GROUP_MQ, 26, Width.SHORT,
                       CONFIG_DISPLAY_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
+
+        config.define(CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES, Type.BOOLEAN, null, Importance.LOW,
+                      CONFIG_DOCUMENTATION_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES, CONFIG_GROUP_MQ, 27, Width.SHORT,
+                      CONFIG_DISPLAY_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
 
         return config;
     }
