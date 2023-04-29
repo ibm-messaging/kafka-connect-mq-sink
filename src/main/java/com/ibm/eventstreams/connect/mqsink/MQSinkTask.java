@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 
@@ -31,6 +32,8 @@ public class MQSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MQSinkTask.class);
 
     private JMSWriter writer;
+
+    private long retryBackoffMs = 60000;
 
     public MQSinkTask() {
     }
@@ -61,6 +64,13 @@ public class MQSinkTask extends SinkTask {
             log.debug("Task props entry {} : {}", entry.getKey(), value);
         }
 
+        // check if a custom retry time is provided
+        String retryBackoffMsStr = props.get(MQSinkConnector.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
+        if (retryBackoffMsStr != null) {
+            retryBackoffMs = Long.parseLong(retryBackoffMsStr);
+        }
+        log.debug("Setting retry backoff {}", retryBackoffMs);
+
         // Construct a writer to interface with MQ
         writer = new JMSWriter();
         writer.configure(props);
@@ -85,12 +95,19 @@ public class MQSinkTask extends SinkTask {
     @Override public void put(Collection<SinkRecord> records) {
         log.trace("[{}] Entry {}.put, records.size={}", Thread.currentThread().getId(), this.getClass().getName(), records.size());
 
-        for (SinkRecord r: records) {
-            log.debug("Putting record for topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
-            writer.send(r);
+        try {
+            for (SinkRecord r: records) {
+                log.debug("Putting record for topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
+                writer.send(r);
+            }
+
+            writer.commit();
+        }
+        catch (RetriableException rte) {
+            context.timeout(retryBackoffMs);
+            throw rte;
         }
 
-        writer.commit();
         log.trace("[{}]  Exit {}.put", Thread.currentThread().getId(), this.getClass().getName());
     }
 
