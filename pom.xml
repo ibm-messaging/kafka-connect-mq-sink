@@ -20,7 +20,7 @@
   <groupId>com.ibm.eventstreams.connect</groupId>
   <artifactId>kafka-connect-mq-sink</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
   <name>kafka-connect-mq-sink</name>
   <organization>
     <name>IBM Corporation</name>

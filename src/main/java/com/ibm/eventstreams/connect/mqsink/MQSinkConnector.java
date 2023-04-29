@@ -147,7 +147,12 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DOCUMENTATION_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES = "Whether to copy Kafka headers to JMS message properties.";
     public static final String CONFIG_DISPLAY_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES = "Copy Kafka headers to JMS message properties";
 
-    public static String VERSION = "1.4.0";
+    public static final String CONFIG_NAME_MQ_RETRY_BACKOFF_MS = "mq.retry.backoff.ms";
+    public static final String CONFIG_DOCUMENTATION_MQ_RETRY_BACKOFF_MS = "Time to wait, in milliseconds, before retrying after retriable exceptions";
+    public static final String CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS = "Retry backoff (ms)";
+
+
+    public static String VERSION = "1.5.0";
 
     private Map<String, String> configProps;
 
@@ -335,6 +340,10 @@ public class MQSinkConnector extends SinkConnector {
         config.define(CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES, Type.BOOLEAN, null, Importance.LOW,
                       CONFIG_DOCUMENTATION_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES, CONFIG_GROUP_MQ, 27, Width.SHORT,
                       CONFIG_DISPLAY_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
+
+        config.define(CONFIG_NAME_MQ_RETRY_BACKOFF_MS, Type.LONG, 60000, Range.between(0L, 99999999900L), Importance.LOW,
+                      CONFIG_DOCUMENTATION_MQ_RETRY_BACKOFF_MS, CONFIG_GROUP_MQ, 28, Width.SHORT,
+                      CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS);
 
         return config;
     }
