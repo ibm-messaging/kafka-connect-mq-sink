@@ -53,55 +53,47 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
      * 
      * @return the JMS message
      */
-    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
-        Schema s = record.valueSchema();
-        Object v = record.value();
+    @Override public Message getJMSMessage(final JMSContext jmsCtxt, final SinkRecord record) {
+        final Schema s = record.valueSchema();
+        final Object v = record.value();
 
         log.debug("Value schema {}", s);
         if (v == null) {
             return jmsCtxt.createMessage();
-        }
-        else if (s == null) {
+        } else if (s == null) {
             log.debug("No schema info {}", v);
             if (v instanceof byte[]) {
                 try {
-                    BytesMessage bm = jmsCtxt.createBytesMessage();
-                    bm.writeBytes((byte[])v);
+                    final BytesMessage bm = jmsCtxt.createBytesMessage();
+                    bm.writeBytes((byte[]) v);
                     return bm;
-                }
-                catch (JMSException jmse) {
+                } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to write bytes", jmse);
                 }
-            }
-            else if (v instanceof ByteBuffer) {
+            } else if (v instanceof ByteBuffer) {
                 try {
-                    BytesMessage bm = jmsCtxt.createBytesMessage();
-                    bm.writeBytes(((ByteBuffer)v).array());
+                    final BytesMessage bm = jmsCtxt.createBytesMessage();
+                    bm.writeBytes(((ByteBuffer) v).array());
                     return bm;
-                }
-                catch (JMSException jmse) {
+                } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to write bytes", jmse);
                 }
             }
-        }
-        else if (s.type() == Type.BYTES) {
+        }  else if (s.type() == Type.BYTES) {
             if (v instanceof byte[]) {
                 try {
-                    BytesMessage bm = jmsCtxt.createBytesMessage();
-                    bm.writeBytes((byte[])v);
+                    final BytesMessage bm = jmsCtxt.createBytesMessage();
+                    bm.writeBytes((byte[]) v);
                     return bm;
-                }
-                catch (JMSException jmse) {
+                } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to write bytes", jmse);
                 }
-            }
-            else if (v instanceof ByteBuffer) {
+            } else if (v instanceof ByteBuffer) {
                 try {
-                    BytesMessage bm = jmsCtxt.createBytesMessage();
-                    bm.writeBytes(((ByteBuffer)v).array());
+                    final BytesMessage bm = jmsCtxt.createBytesMessage();
+                    bm.writeBytes(((ByteBuffer) v).array());
                     return bm;
-                }
-                catch (JMSException jmse) {
+                } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to write bytes", jmse);
                 }
             }

@@ -17,7 +17,8 @@ package com.ibm.eventstreams.connect.mqsink;
 
 import com.ibm.mq.MQException;
 import com.ibm.mq.constants.MQConstants;
-import com.ibm.mq.jms.*;
+import com.ibm.mq.jms.MQConnectionFactory;
+import com.ibm.mq.jms.MQQueue;
 import com.ibm.eventstreams.connect.mqsink.builders.MessageBuilder;
 import com.ibm.msg.client.wmq.WMQConstants;
 
@@ -76,8 +77,8 @@ public class JMSWriter {
     private boolean inflight = false;                               // Whether messages in-flight in current transaction
     private long reconnectDelayMillis = RECONNECT_DELAY_MILLIS_MIN; // Delay between repeated reconnect attempts
 
-    private static long RECONNECT_DELAY_MILLIS_MIN = 64l;
-    private static long RECONNECT_DELAY_MILLIS_MAX = 8192l;
+    final private static long RECONNECT_DELAY_MILLIS_MIN = 64L;
+    final private static long RECONNECT_DELAY_MILLIS_MAX = 8192L;
 
     public JMSWriter() {
     }
@@ -89,29 +90,29 @@ public class JMSWriter {
      *
      * @throws ConnectException   Operation failed and connector should stop.
      */
-    public void configure(Map<String, String> props) {
+    public void configure(final Map<String, String> props) {
         log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
-        String queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
-        String connectionMode = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_MODE);
-        String connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
-        String channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
-        String queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
-        String userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
-        String password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
-        String ccdtUrl = props.get(MQSinkConnector.CONFIG_NAME_MQ_CCDT_URL);
-        String builderClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER);
-        String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
-        String timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
-        String persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
-        String sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
-        String sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
-        String sslKeystoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION);
-        String sslKeystorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD);
-        String sslTruststoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION);
-        String sslTruststorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD);
-        String useMQCSP = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP);
-        String useIBMCipherMappings = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
+        final String queueManager = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE_MANAGER);
+        final String connectionMode = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_MODE);
+        final String connectionNameList = props.get(MQSinkConnector.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
+        final String channelName = props.get(MQSinkConnector.CONFIG_NAME_MQ_CHANNEL_NAME);
+        final String queueName = props.get(MQSinkConnector.CONFIG_NAME_MQ_QUEUE);
+        final String userName = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_NAME);
+        final String password = props.get(MQSinkConnector.CONFIG_NAME_MQ_PASSWORD);
+        final String ccdtUrl = props.get(MQSinkConnector.CONFIG_NAME_MQ_CCDT_URL);
+        final String builderClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER);
+        final String mbj = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
+        final String timeToLive = props.get(MQSinkConnector.CONFIG_NAME_MQ_TIME_TO_LIVE);
+        final String persistent = props.get(MQSinkConnector.CONFIG_NAME_MQ_PERSISTENT);
+        final String sslCipherSuite = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
+        final String sslPeerName = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_PEER_NAME);
+        final String sslKeystoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION);
+        final String sslKeystorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD);
+        final String sslTruststoreLocation = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION);
+        final String sslTruststorePassword = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD);
+        final String useMQCSP = props.get(MQSinkConnector.CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP);
+        final String useIBMCipherMappings = props.get(MQSinkConnector.CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
 
         if (useIBMCipherMappings != null) {
             System.setProperty("com.ibm.mq.cfg.useIBMCipherMappings", useIBMCipherMappings);
@@ -121,11 +122,9 @@ public class JMSWriter {
         if (connectionMode != null) {
             if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_CLIENT)) {
                 transportType = WMQConstants.WMQ_CM_CLIENT;
-            } 
-            else if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_BINDINGS)) {
+            } else if (connectionMode.equals(MQSinkConnector.CONFIG_VALUE_MQ_CONNECTION_MODE_BINDINGS)) {
                 transportType = WMQConstants.WMQ_CM_BINDINGS;
-            } 
-            else {
+            } else {
                 log.error("Unsupported MQ connection mode {}", connectionMode);
                 throw new ConnectException("Unsupported MQ connection mode");
             }
@@ -142,11 +141,10 @@ public class JMSWriter {
 
             if (transportType == WMQConstants.WMQ_CM_CLIENT) {
                 if (ccdtUrl != null) {
-                    URL ccdtUrlObject;
+                    final URL ccdtUrlObject;
                     try {
                         ccdtUrlObject = new URL(ccdtUrl);
-                    }
-                    catch (MalformedURLException e) {
+                    } catch (final MalformedURLException e) {
                         log.error("MalformedURLException exception {}", e);
                         throw new ConnectException("CCDT file url invalid", e);
                     }
@@ -158,8 +156,7 @@ public class JMSWriter {
 
                 if (sslCipherSuite != null) {
                     mqConnFactory.setSSLCipherSuite(sslCipherSuite);
-                    if (sslPeerName != null)
-                    {
+                    if (sslPeerName != null) {
                         mqConnFactory.setSSLPeerName(sslPeerName);
                     }
                 }
@@ -188,18 +185,16 @@ public class JMSWriter {
             if (persistent != null) {
                 this.deliveryMode = Boolean.parseBoolean(persistent) ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
             }
-        }
-        catch (JMSException | JMSRuntimeException jmse) {
+        } catch (JMSException | JMSRuntimeException jmse) {
             log.error("JMS exception {}", jmse);
             throw new ConnectException(jmse);
         }
 
         try {
-            Class<? extends MessageBuilder> c = Class.forName(builderClass).asSubclass(MessageBuilder.class);
+            final Class<? extends MessageBuilder> c = Class.forName(builderClass).asSubclass(MessageBuilder.class);
             builder = c.newInstance();
             builder.configure(props);
-        }
-        catch (ClassNotFoundException | ClassCastException | IllegalAccessException | InstantiationException | NullPointerException exc) {
+        } catch (ClassNotFoundException | ClassCastException | IllegalAccessException | InstantiationException | NullPointerException exc) {
             log.error("Could not instantiate message builder {}", builderClass);
             throw new ConnectException("Could not instantiate message builder", exc);
         }
@@ -216,8 +211,7 @@ public class JMSWriter {
         try {
             if (userName != null) {
                 jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
-            }
-            else {
+            } else {
                 jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
             }
 
@@ -227,8 +221,7 @@ public class JMSWriter {
             connected = true;
 
             log.info("Connection to MQ established");
-        }
-        catch (JMSRuntimeException jmse) {
+        } catch (final JMSRuntimeException jmse) {
             log.info("Connection to MQ could not be established");
             log.error("JMS exception {}", jmse);
             handleException(jmse);
@@ -245,17 +238,16 @@ public class JMSWriter {
      * @throws RetriableException Operation failed, but connector should continue to retry.
      * @throws ConnectException   Operation failed and connector should stop.
      */
-    public void send(SinkRecord r) throws ConnectException, RetriableException {
+    public void send(final SinkRecord r) throws ConnectException, RetriableException {
         log.trace("[{}] Entry {}.send", Thread.currentThread().getId(), this.getClass().getName());
 
         connectInternal();
 
         try {
-            Message m = builder.fromSinkRecord(jmsCtxt, r);
+            final Message m = builder.fromSinkRecord(jmsCtxt, r);
             inflight = true;
             jmsProd.send(queue, m);
-        }
-        catch (JMSRuntimeException jmse) {
+        } catch (final JMSRuntimeException jmse) {
             log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
@@ -280,8 +272,7 @@ public class JMSWriter {
             }
 
             jmsCtxt.commit();
-        }
-        catch (JMSRuntimeException jmse) {
+        } catch (final JMSRuntimeException jmse) {
             log.error("JMS exception {}", jmse);
             throw handleException(jmse);
         }
@@ -302,11 +293,9 @@ public class JMSWriter {
             if (jmsCtxt != null) {
                 jmsCtxt.close();
             }
-        }
-        catch (JMSRuntimeException jmse) {
-            ;
-        }
-        finally {
+        } catch (final JMSRuntimeException jmse) {
+            jmse.printStackTrace();
+        } finally {
             jmsCtxt = null;
             log.debug("Connection to MQ closed");
         }
@@ -330,8 +319,7 @@ public class JMSWriter {
         try {
             if (userName != null) {
                 jmsCtxt = mqConnFactory.createContext(userName, password, JMSContext.SESSION_TRANSACTED);
-            }
-            else {
+            } else {
                 jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);
             }
 
@@ -340,18 +328,15 @@ public class JMSWriter {
             jmsProd.setTimeToLive(timeToLive);
             reconnectDelayMillis = RECONNECT_DELAY_MILLIS_MIN;
             connected = true;
-        }
-        catch (JMSRuntimeException jmse) {
+        } catch (final JMSRuntimeException jmse) {
             // Delay slightly so that repeated reconnect loops don't run too fast
             try {
-                Thread.sleep(reconnectDelayMillis);
-            }
-            catch (InterruptedException ie) {
-                ;
+                Thread.sleep(reconnectDelayMillis); 
+            } catch (final InterruptedException e) {
+                e.printStackTrace();
             }
 
-            if (reconnectDelayMillis < RECONNECT_DELAY_MILLIS_MAX)
-            {
+            if (reconnectDelayMillis < RECONNECT_DELAY_MILLIS_MAX) {
                 reconnectDelayMillis = reconnectDelayMillis * 2;
             }
 
@@ -366,7 +351,7 @@ public class JMSWriter {
      * Handles exceptions from MQ. Some JMS exceptions are treated as retriable meaning that the
      * connector can keep running and just trying again is likely to fix things.
      */
-    private ConnectException handleException(Throwable exc) {
+    private ConnectException handleException(final Throwable exc) {
         boolean isRetriable = false;
         boolean mustClose = true;
         int reason = -1;
@@ -375,7 +360,7 @@ public class JMSWriter {
         Throwable t = exc.getCause();
         while (t != null) {
             if (t instanceof MQException) {
-                MQException mqe = (MQException)t;
+                final MQException mqe = (MQException) t;
                 log.error("MQ error: CompCode {}, Reason {}", mqe.getCompCode(), mqe.getReason());
                 reason = mqe.getReason();
                 break;
@@ -383,8 +368,7 @@ public class JMSWriter {
             t = t.getCause();
         }
 
-        switch (reason)
-        {
+        switch (reason) {
             // These reason codes indicate that the connection needs to be closed, but just retrying later
             // will probably recover
             case MQConstants.MQRC_BACKED_OUT:
@@ -419,7 +403,7 @@ public class JMSWriter {
         return new ConnectException(exc);
     }
 
-    private SSLContext buildSslContext(String sslKeystoreLocation, String sslKeystorePassword, String sslTruststoreLocation, String sslTruststorePassword) {
+    private SSLContext buildSslContext(final String sslKeystoreLocation, final String sslKeystorePassword, final String sslTruststoreLocation, final String sslTruststorePassword) {
         log.trace("[{}] Entry {}.buildSslContext", Thread.currentThread().getId(), this.getClass().getName());
 
         try {
@@ -427,13 +411,13 @@ public class JMSWriter {
             TrustManager[] trustManagers = null;
 
             if (sslKeystoreLocation != null) {
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                 kmf.init(loadKeyStore(sslKeystoreLocation, sslKeystorePassword), sslKeystorePassword.toCharArray());
                 keyManagers = kmf.getKeyManagers();
             }
 
             if (sslTruststoreLocation != null) {
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 tmf.init(loadKeyStore(sslTruststoreLocation, sslTruststorePassword));
                 trustManagers = tmf.getTrustManagers();
             }
@@ -443,12 +427,12 @@ public class JMSWriter {
 
             log.trace("[{}]  Exit {}.buildSslContext, retval={}", Thread.currentThread().getId(), this.getClass().getName(), sslContext);
             return sslContext;
-        } catch (GeneralSecurityException e) {
+        } catch (final GeneralSecurityException e) {
             throw new ConnectException("Error creating SSLContext", e);
         }
     }
 
-    private KeyStore loadKeyStore(String location, String password) throws GeneralSecurityException {
+    private KeyStore loadKeyStore(final String location, final String password) throws GeneralSecurityException {
         log.trace("[{}] Entry {}.loadKeyStore", Thread.currentThread().getId(), this.getClass().getName());
 
         try (final InputStream ksStr = new FileInputStream(location)) {
@@ -457,7 +441,7 @@ public class JMSWriter {
 
             log.trace("[{}]  Exit {}.loadKeyStore, retval={}", Thread.currentThread().getId(), this.getClass().getName(), ks);
             return ks;
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new ConnectException("Error reading keystore " + location, e);
         }
     }

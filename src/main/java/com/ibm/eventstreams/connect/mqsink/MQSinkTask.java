@@ -18,6 +18,7 @@ package com.ibm.eventstreams.connect.mqsink;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Locale;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -44,19 +45,19 @@ public class MQSinkTask extends SinkTask {
      * @return the version, formatted as a String
      */
     @Override public String version() {
-        return MQSinkConnector.VERSION;
+        return MQSinkConnector.version;
     }
 
     /**
      * Start the Task. This should handle any configuration parsing and one-time setup of the task.
      * @param props initial configuration
      */
-    @Override public void start(Map<String, String> props) {
+    @Override public void start(final Map<String, String> props) {
         log.trace("[{}] Entry {}.start, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
         for (final Entry<String, String> entry: props.entrySet()) {
-            String value;
-            if (entry.getKey().toLowerCase().contains("password")) {
+            final String value;
+            if (entry.getKey().toLowerCase(Locale.ENGLISH).contains("password")) {
                 value = "[hidden]";
             } else {
                 value = entry.getValue();
@@ -65,7 +66,7 @@ public class MQSinkTask extends SinkTask {
         }
 
         // check if a custom retry time is provided
-        String retryBackoffMsStr = props.get(MQSinkConnector.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
+        final String retryBackoffMsStr = props.get(MQSinkConnector.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
         if (retryBackoffMsStr != null) {
             retryBackoffMs = Long.parseLong(retryBackoffMsStr);
         }
@@ -92,18 +93,17 @@ public class MQSinkTask extends SinkTask {
      *
      * @param records the set of records to send
      */
-    @Override public void put(Collection<SinkRecord> records) {
+    @Override public void put(final Collection<SinkRecord> records) {
         log.trace("[{}] Entry {}.put, records.size={}", Thread.currentThread().getId(), this.getClass().getName(), records.size());
 
         try {
-            for (SinkRecord r: records) {
+            for (final SinkRecord r: records) {
                 log.debug("Putting record for topic {}, partition {} and offset {}", r.topic(), r.kafkaPartition(), r.kafkaOffset());
                 writer.send(r);
             }
 
             writer.commit();
-        }
-        catch (RetriableException rte) {
+        } catch (final RetriableException rte) {
             context.timeout(retryBackoffMs);
             throw rte;
         }
@@ -118,12 +118,12 @@ public class MQSinkTask extends SinkTask {
      *                       provided for convenience but could also be determined by tracking all offsets included in the {@link SinkRecord}s
      *                       passed to {@link #put}.
      */
-    public void flush(Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
+    public void flush(final Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
         log.trace("[{}] Entry {}.flush", Thread.currentThread().getId(), this.getClass().getName());
 
-        for (Map.Entry<TopicPartition, OffsetAndMetadata> entry: currentOffsets.entrySet()) {
-            TopicPartition tp = entry.getKey();
-            OffsetAndMetadata om = entry.getValue();
+        for (final Map.Entry<TopicPartition, OffsetAndMetadata> entry: currentOffsets.entrySet()) {
+            final TopicPartition tp = entry.getKey();
+            final OffsetAndMetadata om = entry.getValue();
             log.debug("Flushing up to topic {}, partition {} and offset {}", tp.topic(), tp.partition(), om.offset());
         }
 
