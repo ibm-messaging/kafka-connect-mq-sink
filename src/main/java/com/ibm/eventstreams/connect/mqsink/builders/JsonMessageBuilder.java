@@ -26,7 +26,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Builds messages from Kafka Connect SinkRecords. It creates a JMS TextMessage containing
@@ -42,7 +42,7 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
         converter = new JsonConverter();
         
         // We just want the payload, not the schema in the output message
-        HashMap<String, String> m = new HashMap<>();
+        final HashMap<String, String> m = new HashMap<>();
         m.put("schemas.enable", "false");
 
         // Convert the value, not the key (isKey == false)
@@ -57,8 +57,8 @@ public class JsonMessageBuilder extends BaseMessageBuilder {
      * 
      * @return the JMS message
      */
-    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
-        byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
+    @Override public Message getJMSMessage(final JMSContext jmsCtxt, final SinkRecord record) {
+        final byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
         return jmsCtxt.createTextMessage(new String(payload, UTF_8));
     }
 }

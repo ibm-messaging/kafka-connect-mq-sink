@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.mqsink;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -152,7 +153,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS = "Retry backoff (ms)";
 
 
-    public static String VERSION = "1.5.0";
+    public static String version = "1.5.1";
 
     private Map<String, String> configProps;
 
@@ -162,7 +163,7 @@ public class MQSinkConnector extends SinkConnector {
      * @return the version, formatted as a String
      */
     @Override public String version() {
-        return VERSION;
+        return version;
     }
 
     /**
@@ -171,13 +172,13 @@ public class MQSinkConnector extends SinkConnector {
      *
      * @param props configuration settings
      */
-    @Override public void start(Map<String, String> props) {
+    @Override public void start(final Map<String, String> props) {
         log.trace("[{}] Entry {}.start, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
         configProps = props;
         for (final Entry<String, String> entry: props.entrySet()) {
-            String value;
-            if (entry.getKey().toLowerCase().contains("password")) {
+            final String value;
+            if (entry.getKey().toLowerCase(Locale.ENGLISH).contains("password")) {
                 value = "[hidden]";
             } else {
                 value = entry.getValue();
@@ -202,12 +203,11 @@ public class MQSinkConnector extends SinkConnector {
      * @param maxTasks maximum number of configurations to generate
      * @return configurations for Tasks
      */
-    @Override public List<Map<String, String>> taskConfigs(int maxTasks) {
+    @Override public List<Map<String, String>> taskConfigs(final int maxTasks) {
         log.trace("[{}] Entry {}.taskConfigs, maxTasks={}", Thread.currentThread().getId(), this.getClass().getName(), maxTasks);
 
-        List<Map<String, String>> taskConfigs = new ArrayList<>();
-        for (int i = 0; i < maxTasks; i++)
-        {
+        final List<Map<String, String>> taskConfigs = new ArrayList<>();
+        for (int i = 0; i < maxTasks; i++) {
             taskConfigs.add(configProps);
         }
 
@@ -228,7 +228,7 @@ public class MQSinkConnector extends SinkConnector {
      * @return The ConfigDef for this connector.
      */
     @Override public ConfigDef config() {
-        ConfigDef config = new ConfigDef();
+        final ConfigDef config = new ConfigDef();
 
         config.define(CONFIG_NAME_MQ_QUEUE_MANAGER, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                       CONFIG_DOCUMENTATION_MQ_QUEUE_MANAGER, CONFIG_GROUP_MQ, 1, Width.MEDIUM,

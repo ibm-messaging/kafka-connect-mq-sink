@@ -31,7 +31,7 @@ import org.apache.kafka.connect.storage.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Builds messages from Kafka Connect SinkRecords. It creates a JMS TextMessage containing
@@ -53,25 +53,24 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
      *
      * @throws ConnectException   Operation failed and connector should stop.
      */
-    public void configure(Map<String, String> props) {
+    public void configure(final Map<String, String> props) {
         log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
         super.configure(props);
 
-        String converterClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
+        final String converterClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         try {
-            Class<? extends Converter> c = Class.forName(converterClass).asSubclass(Converter.class);
+            final Class<? extends Converter> c = Class.forName(converterClass).asSubclass(Converter.class);
             converter = c.newInstance();
 
             // Make a copy of the configuration to filter out only those that begin "mq.message.builder.value.converter."
             // since those are used to configure the converter itself
-            AbstractConfig ac = new AbstractConfig(new ConfigDef(), props, false);
+            final AbstractConfig ac = new AbstractConfig(new ConfigDef(), props, false);
 
             // Configure the Converter to convert the value, not the key (isKey == false)
             converter.configure(ac.originalsWithPrefix(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER + "."), false);
-        }
-        catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
             log.error("Could not instantiate converter for message builder {}", converterClass);
             throw new ConnectException("Could not instantiate converter for message builder", exc);
         }
@@ -87,8 +86,8 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
      * 
      * @return the JMS message
      */
-    @Override public Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record) {
-        byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
+    @Override public Message getJMSMessage(final JMSContext jmsCtxt, final SinkRecord record) {
+        final byte[] payload = converter.fromConnectData(record.topic(), record.valueSchema(), record.value());
         return jmsCtxt.createTextMessage(new String(payload, UTF_8));
     }
 }
