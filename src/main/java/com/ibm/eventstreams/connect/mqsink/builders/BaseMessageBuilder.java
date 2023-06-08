@@ -17,7 +17,7 @@ package com.ibm.eventstreams.connect.mqsink.builders;
 
 import com.ibm.eventstreams.connect.mqsink.MQSinkConnector;
 
-import com.ibm.mq.jms.*;
+import com.ibm.mq.jms.MQQueue;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 public abstract class BaseMessageBuilder implements MessageBuilder {
     private static final Logger log = LoggerFactory.getLogger(BaseMessageBuilder.class);
 
-    public enum KeyHeader {NONE, CORRELATION_ID};
+    public enum KeyHeader { NONE, CORRELATION_ID };
     protected KeyHeader keyheader = KeyHeader.NONE;
     public Destination replyToQueue;
     public String topicPropertyName;
@@ -58,53 +58,50 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      *
      * @throws ConnectException   Operation failed and connector should stop.
      */
-    @Override public void configure(Map<String, String> props) {
+    @Override public void configure(final Map<String, String> props) {
         log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
-        String kh = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER);
+        final String kh = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER);
         if (kh != null) {
             if (kh.equals(MQSinkConnector.CONFIG_VALUE_MQ_MESSAGE_BUILDER_KEY_HEADER_JMSCORRELATIONID)) {
                 keyheader = KeyHeader.CORRELATION_ID;
                 log.debug("Setting JMSCorrelationID header field from Kafka record key");
-            }
-            else {
+            } else {
                 log.debug("Unsupported MQ message builder key header value {}", kh);
                 throw new ConnectException("Unsupported MQ message builder key header value");
             }
         }
 
-        String rtq = props.get(MQSinkConnector.CONFIG_NAME_MQ_REPLY_QUEUE);
+        final String rtq = props.get(MQSinkConnector.CONFIG_NAME_MQ_REPLY_QUEUE);
         if (rtq != null) {
             try {
                 // The queue URI format supports properties, but we only accept "queue://qmgr/queue"
                 if (rtq.contains("?")) {
                     throw new ConnectException("Reply-to queue URI must not contain properties");
-                }
-                else {
+                } else {
                     replyToQueue = new MQQueue(rtq);
                 }
-            }
-            catch (JMSException jmse) {
+            } catch (final JMSException jmse) {
                 throw new ConnectException("Failed to build reply-to queue", jmse);
             }
         }
 
-        String tpn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY);
+        final String tpn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY);
         if (tpn != null) {
             topicPropertyName = tpn;
         }
 
-        String ppn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY);
+        final String ppn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY);
         if (ppn != null) {
             partitionPropertyName = ppn;
         }
 
-        String opn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
+        final String opn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
         if (opn != null) {
             offsetPropertyName = opn;
         }
         
-        String copyhdr = props.get(MQSinkConnector.CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
+        final String copyhdr = props.get(MQSinkConnector.CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
         if (copyhdr != null) {
             copyJmsProperties = Boolean.valueOf(copyhdr);
         }
@@ -130,64 +127,53 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      * 
      * @return the JMS message
      */
-    @Override public Message fromSinkRecord(JMSContext jmsCtxt, SinkRecord record) {
-        Message m = this.getJMSMessage(jmsCtxt, record);
+    @Override public Message fromSinkRecord(final JMSContext jmsCtxt, final SinkRecord record) {
+        final Message m = this.getJMSMessage(jmsCtxt, record);
 
         if (keyheader != KeyHeader.NONE) {
-            Schema s = record.keySchema();
-            Object k = record.key();
+            final Schema s = record.keySchema();
+            final Object k = record.key();
 
             if (k != null) {
                 if (s == null) {
                     log.debug("No schema info {}", k);
                     if (k instanceof byte[]) {
                         try {
-                            m.setJMSCorrelationIDAsBytes((byte[])k);
+                            m.setJMSCorrelationIDAsBytes((byte[]) k);
+                        } catch (final JMSException jmse) {
+                            throw new ConnectException("Failed to write bytes", jmse); 
                         }
-                        catch (JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    }
-                    else if (k instanceof ByteBuffer) {
+                    } else if (k instanceof ByteBuffer) {
                         try {
-                            m.setJMSCorrelationIDAsBytes(((ByteBuffer)k).array());
-                        }
-                        catch (JMSException jmse) {
+                            m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
+                        } catch (final JMSException jmse) {
                             throw new ConnectException("Failed to write bytes", jmse);
                         }
-                    }
-                    else {
+                    } else {
                         try {
                             m.setJMSCorrelationID(k.toString());
-                        }
-                        catch (JMSException jmse) {
+                        } catch (final JMSException jmse) {
                             throw new ConnectException("Failed to write bytes", jmse);
                         }
                     }
-                }
-                else if (s.type() == Type.BYTES) {
+                } else if (s.type() == Type.BYTES) {
                     if (k instanceof byte[]) {
                         try {
-                            m.setJMSCorrelationIDAsBytes((byte[])k);
-                        }
-                        catch (JMSException jmse) {
+                            m.setJMSCorrelationIDAsBytes((byte[]) k);
+                        } catch (final JMSException jmse) {
                             throw new ConnectException("Failed to write bytes", jmse);
                         }
-                    }
-                    else if (k instanceof ByteBuffer) {
+                    } else if (k instanceof ByteBuffer) {
                         try {
-                            m.setJMSCorrelationIDAsBytes(((ByteBuffer)k).array());
-                        }
-                        catch (JMSException jmse) {
+                            m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
+                        } catch (final JMSException jmse) {
                             throw new ConnectException("Failed to write bytes", jmse);
                         }
                     }
-                }
-                else if (s.type() == Type.STRING) {
+                } else if (s.type() == Type.STRING) {
                     try {
-                        m.setJMSCorrelationID((String)k);
-                    }
-                    catch (JMSException jmse) {
+                        m.setJMSCorrelationID((String) k);
+                    } catch (final JMSException jmse) {
                         throw new ConnectException("Failed to write string", jmse);
                     }
                 }
@@ -197,8 +183,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         if (replyToQueue != null) {
             try {
                 m.setJMSReplyTo(replyToQueue);
-            }
-            catch (JMSException jmse) {
+            } catch (final JMSException jmse) {
                 throw new ConnectException("Failed to set reply-to queue", jmse);
             }
         }
@@ -206,17 +191,15 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         if (topicPropertyName != null) {
             try {
                 m.setStringProperty(topicPropertyName, record.topic());
-            }
-            catch (JMSException jmse) {
+            } catch (final JMSException jmse) {
                 throw new ConnectException("Failed to set topic property", jmse);
             }
         }
 
         if (partitionPropertyName != null) {
             try {
-                m.setIntProperty(partitionPropertyName, record.kafkaPartition());;
-            }
-            catch (JMSException jmse) {
+                m.setIntProperty(partitionPropertyName, record.kafkaPartition());
+            } catch (final JMSException jmse) {
                 throw new ConnectException("Failed to set partition property", jmse);
             }
         }
@@ -224,24 +207,22 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         if (offsetPropertyName != null) {
             try {
                 m.setLongProperty(offsetPropertyName, record.kafkaOffset());
-            }
-            catch (JMSException jmse) {
+            } catch (final JMSException jmse) {
                 throw new ConnectException("Failed to set offset property", jmse);
             }
         }
 
         if (copyJmsProperties) {
             for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
-                Header header = iterator.next();
+                final Header header = iterator.next();
                 try {
                     m.setStringProperty(header.key(), header.value().toString());
-                }
-                catch (JMSException jmse) {
+                } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to set header", jmse);
                 }
             }
         }
 
         return m;
-    }
+    } 
 }
