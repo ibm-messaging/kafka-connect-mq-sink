@@ -3,6 +3,4 @@ language: java
 services:
   - docker
 
-script:
-  - docker login docker-eu-public.artifactory.swg-devops.com/hyc-qp-stable-docker-local -u ${ARTIFACTORY_USERNAME} -p ${ARTIFACTORY_PASSWORD}
-  - mvn clean test verify
+script: mvn clean test verify
