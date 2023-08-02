@@ -22,6 +22,7 @@ The connector is supplied as source code which you can easily build into a JAR f
 
 
 ## Building the connector
+
 To build the connector, you must have the following installed:
 * [git](https://git-scm.com/)
 * [Maven 3.0 or later](https://maven.apache.org)
@@ -150,11 +151,13 @@ The KafkaConnectS2I resource provides a nice way to have OpenShift do all the wo
 The following instructions assume you are running on OpenShift and have Strimzi 0.16 or later installed.
 
 #### Start a Kafka Connect cluster using KafkaConnectS2I
+
 1. Create a file called `kafka-connect-s2i.yaml` containing the definition of a KafkaConnectS2I resource. You can use the examples in the Strimzi project to get started.
 1. Configure it with the information it needs to connect to your Kafka cluster. You must include the annotation `strimzi.io/use-connector-resources: "true"` to configure it to use KafkaConnector resources so you can avoid needing to call the Kafka Connect REST API directly.
 1. `oc apply -f kafka-connect-s2i.yaml` to create the cluster, which usually takes several minutes.
 
 #### Add the MQ sink connector to the cluster
+
 1. `mvn clean package` to build the connector JAR.
 1. `mkdir my-plugins`
 1. `cp target/kafka-connect-mq-sink-*-jar-with-dependencies.jar my-plugins`
@@ -162,6 +165,7 @@ The following instructions assume you are running on OpenShift and have Strimzi 
 1. `oc describe kafkaconnects2i <kafkaConnectClusterName>` to check that the MQ sink connector is in the list of available connector plugins.
 
 #### Start an instance of the MQ sink connector using KafkaConnector
+
 1. `cp deploy/strimzi.kafkaconnector.yaml kafkaconnector.yaml`
 1. Update the `kafkaconnector.yaml` file to replace all of the values in `<>`, adding any additional configuration properties.
 1. `oc apply -f kafkaconnector.yaml` to start the connector.
@@ -169,6 +173,7 @@ The following instructions assume you are running on OpenShift and have Strimzi 
 
 
 ## Data formats
+
 Kafka Connect is very flexible but it's important to understand the way that it processes messages to end up with a reliable system. When the connector encounters a message that it cannot process, it stops rather than throwing the message away. Therefore, you need to make sure that the configuration you use can handle the messages the connector will process.
 
 Each message in Kafka Connect is associated with a representation of the message format known as a *schema*. Each Kafka message actually has two parts, key and value, and each part has its own schema. The MQ sink connector does not currently use message keys, but some of the configuration options use the word *Value* because they refer to the Kafka message value.
@@ -205,6 +210,7 @@ value.converter=org.apache.kafka.connect.storage.StringConverter
 ```
 
 ### The gory detail
+
 The messages received from Kafka are processed by a converter which chooses a schema to represent the message and creates a Java object containing the message value. There are three basic converters built into Apache Kafka.
 
 | Converter class                                        | Kafka message encoding | Value schema        | Value class        |
@@ -252,6 +258,7 @@ mq.message.builder.value.converter.schemas.enable=false
 ```
 
 ### Key support and partitioning
+
 By default, the connector does not use the keys for the Kafka messages it reads. It can be configured to set the JMS correlation ID using the key of the Kafka records. To configure this behavior, set the `mq.message.builder.key.header` configuration value.
 
 | mq.message.builder.key.header | Key schema | Key class | Recommended value for key.converter                    |
@@ -265,21 +272,26 @@ The connector can be configured to set the Kafka topic, partition and offset as 
 
 
 ## Security
+
 The connector supports authentication with user name and password and also connections secured with TLS using a server-side certificate and mutual authentication with client-side certificates. You can also choose whether to use connection security parameters (MQCSP) depending on the security settings you're using in MQ.
 
 ### Setting up TLS using a server-side certificate
+
 To enable use of TLS, set the configuration `mq.ssl.cipher.suite` to the name of the cipher suite which matches the CipherSpec in the SSLCIPH attribute of the MQ server-connection channel. Use the table of supported cipher suites for MQ 9.1 [here](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.dev.doc/q113220_.htm) as a reference. Note that the names of the CipherSpecs as used in the MQ configuration are not necessarily the same as the cipher suite names that the connector uses. The connector uses the JMS interface so it follows the Java conventions.
 
 You will need to put the public part of the queue manager's certificate in the JSSE truststore used by the Kafka Connect worker that you're using to run the connector. If you need to specify extra arguments to the worker's JVM, you can use the EXTRA_ARGS environment variable.
 
 ### Setting up TLS for mutual authentication
+
 You will need to put the public part of the client's certificate in the queue manager's key repository. You will also need to configure the worker's JVM with the location and password for the keystore containing the client's certificate. Alternatively, you can configure a separate keystore and truststore for the connector.
 
 ### Troubleshooting
+
 For troubleshooting, or to better understand the handshake performed by the IBM MQ Java client application in combination with your specific JSSE provider, you can enable debugging by setting `javax.net.debug=ssl` in the JVM environment.
 
 
 ## Configuration
+
 The configuration options for the Kafka Connect sink connector for IBM MQ are as follows:
 
 | Name                                    | Description                                                            | Type    | Default        | Valid values                      |
@@ -358,17 +370,16 @@ You may receive an `org.apache.kafka.common.errors.SslAuthenticationException: S
 
 When configuring TLS connection to MQ, you may find that the queue manager rejects the cipher suite, in spite of the name looking correct. There are two different naming conventions for cipher suites (https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.dev.doc/q113220_.htm). Setting the configuration option `mq.ssl.use.ibm.cipher.mappings=false` often resolves cipher suite problems.
 
-
 ## Support
-A commercially supported version of this connector is available for customers with a support entitlement for [IBM Event Streams](https://www.ibm.com/cloud/event-streams) or [IBM Cloud Pak for Integration](https://www.ibm.com/cloud/cloud-pak-for-integration).
 
+Commercial support for this connector is available for customers with a support entitlement for [IBM Event Automation](https://www.ibm.com/products/event-automation) or [IBM Cloud Pak for Integration](https://www.ibm.com/cloud/cloud-pak-for-integration).
 
 ## Issues and contributions
 For issues relating specifically to this connector, please use the [GitHub issue tracker](https://github.com/ibm-messaging/kafka-connect-mq-sink/issues). If you do want to submit a Pull Request related to this connector, please read the [contributing guide](CONTRIBUTING.md) first to understand how to sign your commits.
 
 
 ## License
-Copyright 2017, 2020 IBM Corporation
+Copyright 2017, 2020, 2023 IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
