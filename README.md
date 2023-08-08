@@ -86,6 +86,23 @@ bin/connect-standalone.sh connect-standalone.properties mq-sink.properties
 
 You need an instance of Kafka Connect running in distributed mode. The Kafka distribution includes a file called `connect-distributed.properties` that you can use as a starting point, or follow [Running with Docker](#running-with-docker) or [Deploying to Kubernetes](#deploying-to-kubernetes).
 
+Note: As applicable, add below consumer properties for authentication in `connect-distributed.properties` so that mq-sink task can access kafka topic to read data
+
+``` shell
+# Sink authentication settings
+consumer.security.protocol=
+consumer.ssl.truststore.location=
+consumer.ssl.truststore.password=
+consumer.ssl.keystore.location=
+consumer.ssl.keystore.password=
+```
+
+Note: By default, kafka connect uses a group.id starting with connect-{connector name}
+To override group.id, use below property in mq-sink.json
+``` shell
+"consumer.override.group.id": "group id name"
+```
+
 To start the MQ connector, you can use `config/mq-sink.json` in this repository after replacing all placeholders and use a command like this:
 
 ``` shell
