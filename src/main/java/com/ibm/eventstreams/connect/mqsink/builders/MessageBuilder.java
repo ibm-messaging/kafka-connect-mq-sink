@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018 IBM Corporation
+ * Copyright 2017, 2018, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 public interface MessageBuilder {
     /**
      * Configure this class.
-     * 
+     *
      * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
@@ -37,10 +37,10 @@ public interface MessageBuilder {
 
     /**
      * Convert a Kafka Connect SinkRecord into a message.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the message
      */
     Message fromSinkRecord(JMSContext context, SinkRecord record);

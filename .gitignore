@@ -16,3 +16,5 @@ target/
 
 # Visual Studio Code
 .vscode/
+
+mqjms.log.*

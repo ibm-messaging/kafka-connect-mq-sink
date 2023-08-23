@@ -1,0 +1,19 @@
+{
+    "name": "mq-sink-exactly-once",
+    "config":
+    {
+        "connector.class": "com.ibm.eventstreams.connect.mqsink.MQSinkConnector",
+        "tasks.max": "1",
+        "topics": "<TOPIC>",
+
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+
+        "mq.queue.manager": "<QUEUE_MANAGER>",
+        "mq.connection.name.list": "<CONNECTION_NAME_LIST>",
+        "mq.channel.name": "<CHANNEL_NAME>",
+        "mq.queue": "<QUEUE>",
+        "mq.message.builder": "com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder",
+        "mq.exactly.once.state.queue": "<EXACTLY_ONCE_STATE_QUEUE>"
+    }
+}

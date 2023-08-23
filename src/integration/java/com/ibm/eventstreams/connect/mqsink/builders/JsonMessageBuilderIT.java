@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 IBM Corporation
+ * Copyright 2022, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,24 +44,24 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
         builder = new JsonMessageBuilder();
     }
 
-    private SinkRecord generateSinkRecord(Schema valueSchema, Object value) {
-        final String TOPIC = "TOPIC.NAME";
-        final int PARTITION = 0;
-        final long OFFSET = 0;
-        final Schema KEY_SCHEMA = Schema.STRING_SCHEMA;
-        final String KEY = "mykey";
+    private SinkRecord generateSinkRecord(final Schema valueSchema, final Object value) {
+        final String topic = "TOPIC.NAME";
+        final int partition = 0;
+        final long offset = 0;
+        final Schema keySchema = Schema.STRING_SCHEMA;
+        final String key = "mykey";
 
-        return new SinkRecord(TOPIC, PARTITION,
-                              KEY_SCHEMA, KEY,
-                              valueSchema, value,
-                              OFFSET);
+        return new SinkRecord(topic, partition,
+                keySchema, key,
+                valueSchema, value,
+                offset);
     }
-
 
     @Test
     public void buildTextMessageWithoutSchema() throws Exception {
         createAndVerifyStringMessage(null, "Hello World");
     }
+
     @Test
     public void buildTextMessageWithSchema() throws Exception {
         createAndVerifyStringMessage(Schema.STRING_SCHEMA, "Hello World with a schema");
@@ -69,13 +69,13 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
 
     @Test
     public void buildStructMessage() throws Exception {
-        Struct testObject = generateComplexObjectAsStruct();
-        Schema testSchema = testObject.schema();
+        final Struct testObject = generateComplexObjectAsStruct();
+        final Schema testSchema = testObject.schema();
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(testSchema, testObject));
-        String contents = message.getBody(String.class);
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(testSchema, testObject));
+        final String contents = message.getBody(String.class);
 
-        JSONObject jsonContents = new JSONObject(contents);
+        final JSONObject jsonContents = new JSONObject(contents);
         assertEquals(3, jsonContents.length());
         assertEquals("this is a string", jsonContents.getString("mystring"));
         assertEquals(true, jsonContents.getJSONObject("myobj").getBoolean("mybool"));
@@ -87,12 +87,12 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
 
     @Test
     public void buildMapMessage() throws Exception {
-        Object testObject = generateComplexObjectAsMap();
+        final Object testObject = generateComplexObjectAsMap();
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null, testObject));
-        String contents = message.getBody(String.class);
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null, testObject));
+        final String contents = message.getBody(String.class);
 
-        JSONObject jsonContents = new JSONObject(contents);
+        final JSONObject jsonContents = new JSONObject(contents);
         assertEquals(3, jsonContents.length());
         assertEquals("this is a string", jsonContents.getString("mystring"));
         assertEquals(true, jsonContents.getJSONObject("myobj").getBoolean("mybool"));
@@ -102,9 +102,8 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
         assertEquals("first", jsonContents.getJSONArray("myarray").getString(0));
     }
 
-
     private Struct generateComplexObjectAsStruct() {
-        Schema innerSchema = SchemaBuilder.struct()
+        final Schema innerSchema = SchemaBuilder.struct()
                 .name("com.ibm.eventstreams.tests.Inner")
                 .field("mybool", Schema.BOOLEAN_SCHEMA)
                 .field("myint", Schema.INT32_SCHEMA)
@@ -112,45 +111,45 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
                 .field("mybytes", Schema.BYTES_SCHEMA)
                 .build();
 
-        Schema complexSchema = SchemaBuilder.struct()
+        final Schema complexSchema = SchemaBuilder.struct()
                 .name("com.ibm.eventstreams.tests.Complex")
                 .field("mystring", Schema.STRING_SCHEMA)
                 .field("myobj", innerSchema)
                 .field("myarray", SchemaBuilder.array(Schema.STRING_SCHEMA))
                 .build();
 
-        List<String> innerary = new ArrayList<>();
+        final List<String> innerary = new ArrayList<>();
         innerary.add("first");
         innerary.add("second");
         innerary.add("third");
         innerary.add("fourth");
 
-        Struct obj = new Struct(complexSchema)
+        final Struct obj = new Struct(complexSchema)
                 .put("mystring", "this is a string")
                 .put("myobj",
                         new Struct(innerSchema)
-                            .put("mybool", true)
-                            .put("myint", 12345)
-                            .put("myfloat", 12.4f)
-                            .put("mybytes", "Hello".getBytes()))
+                                .put("mybool", true)
+                                .put("myint", 12345)
+                                .put("myfloat", 12.4f)
+                                .put("mybytes", "Hello".getBytes()))
                 .put("myarray", innerary);
 
         return obj;
     }
 
     private Map<String, Object> generateComplexObjectAsMap() {
-        Map<String, Object> obj = new HashMap<>();
+        final Map<String, Object> obj = new HashMap<>();
 
         obj.put("mystring", "this is a string");
 
-        Map<String, Object> innerobj = new HashMap<>();
+        final Map<String, Object> innerobj = new HashMap<>();
         innerobj.put("mybool", true);
         innerobj.put("myint", 12345);
         innerobj.put("myfloat", 12.4f);
         innerobj.put("mybytes", "Hello".getBytes());
         obj.put("myobj", innerobj);
 
-        List<String> innerary = new ArrayList<>();
+        final List<String> innerary = new ArrayList<>();
         innerary.add("first");
         innerary.add("second");
         innerary.add("third");
@@ -160,12 +159,11 @@ public class JsonMessageBuilderIT extends AbstractJMSContextIT {
         return obj;
     }
 
-
-    private void createAndVerifyStringMessage(Schema valueSchema, String value) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+    private void createAndVerifyStringMessage(final Schema valueSchema, final String value) throws Exception {
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
         assertEquals("\"" + value + "\"", message.getBody(String.class));
 
-        TextMessage textmessage = (TextMessage) message;
+        final TextMessage textmessage = (TextMessage) message;
         assertEquals("\"" + value + "\"", textmessage.getText());
     }
 }

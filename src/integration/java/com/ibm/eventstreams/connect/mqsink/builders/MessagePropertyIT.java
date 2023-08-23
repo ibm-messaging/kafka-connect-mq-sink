@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 IBM Corporation
+ * Copyright 2022, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,82 +28,78 @@ import org.junit.Test;
 import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
 import com.ibm.mq.jms.MQQueue;
 
-public class DestinationBuilderIT extends AbstractJMSContextIT {
-
+public class MessagePropertyIT extends AbstractJMSContextIT {
 
     @Test
     public void verifyReplyQueueProperty() throws Exception {
-        String replyQueue = "queue://QM1/REPLY.Q";
+        final String replyQueue = "queue://QM1/REPLY.Q";
 
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.reply.queue", replyQueue);
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        SinkRecord record = new SinkRecord("topic", 0, null, null, null, "msg", 0);
+        final SinkRecord record = new SinkRecord("topic", 0, null, null, null, "msg", 0);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        final Message message = builder.fromSinkRecord(getJmsContext(), record);
         assertEquals("msg", message.getBody(String.class));
 
-        MQQueue destination = (MQQueue) message.getJMSReplyTo();
+        final MQQueue destination = (MQQueue) message.getJMSReplyTo();
         assertEquals(replyQueue, destination.getQueueName());
     }
 
-
     @Test
     public void verifyTopicNameProperty() throws Exception {
-        String topicProperty = "PutTopicNameHere";
-        String TOPIC = "MY.TOPIC";
+        final String topicProperty = "PutTopicNameHere";
+        final String topic = "MY.TOPIC";
 
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.message.builder.topic.property", topicProperty);
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        SinkRecord record = new SinkRecord(TOPIC, 0, null, null, null, "message", 0);
+        final SinkRecord record = new SinkRecord(topic, 0, null, null, null, "message", 0);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        final Message message = builder.fromSinkRecord(getJmsContext(), record);
         assertEquals("message", message.getBody(String.class));
-        assertEquals(TOPIC, message.getStringProperty(topicProperty));
+        assertEquals(topic, message.getStringProperty(topicProperty));
     }
-
 
     @Test
     public void verifyTopicPartitionProperty() throws Exception {
-        String topicProperty = "PutTopicPartitionHere";
-        int PARTITION = 4;
+        final String topicProperty = "PutTopicPartitionHere";
+        final int partition = 4;
 
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.message.builder.partition.property", topicProperty);
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        SinkRecord record = new SinkRecord("topic", PARTITION, null, null, null, "message", 0);
+        final SinkRecord record = new SinkRecord("topic", partition, null, null, null, "message", 0);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        final Message message = builder.fromSinkRecord(getJmsContext(), record);
         assertEquals("message", message.getBody(String.class));
-        assertEquals(PARTITION, message.getIntProperty(topicProperty));
+        assertEquals(partition, message.getIntProperty(topicProperty));
     }
-
 
     @Test
     public void verifyMessageOffsetProperty() throws Exception {
-        String topicProperty = "PutOffsetHere";
-        long OFFSET = 91;
+        final String topicProperty = "PutOffsetHere";
+        final long offset = 91;
 
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.message.builder.offset.property", topicProperty);
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        SinkRecord record = new SinkRecord("topic", 0, null, null, null, "message", OFFSET);
+        final SinkRecord record = new SinkRecord("topic", 0, null, null, null, "message", offset);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
+        final Message message = builder.fromSinkRecord(getJmsContext(), record);
         assertEquals("message", message.getBody(String.class));
-        assertEquals(OFFSET, message.getLongProperty(topicProperty));
+        assertEquals(offset, message.getLongProperty(topicProperty));
     }
 }

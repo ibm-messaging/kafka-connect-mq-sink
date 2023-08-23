@@ -1,0 +1,346 @@
+IMPORTANT: READ CAREFULLY
+
+Two license agreements are presented below.
+
+1. IBM International License Agreement for Evaluation of Programs
+2. IBM International Program License Agreement
+
+If Licensee is obtaining the Program for purposes of productive use (other than evaluation, testing, trial "try or buy," or demonstration): By clicking on the "Accept" button below, Licensee accepts the IBM International Program License Agreement, without modification.
+
+If Licensee is obtaining the Program for the purpose of evaluation, testing, trial "try or buy," or demonstration (collectively, an "Evaluation"): By clicking on the "Accept" button below, Licensee accepts both (i) the IBM International License Agreement for Evaluation of Programs (the "Evaluation License"), without modification; and (ii) the IBM International Program License Agreement (the "IPLA"), without modification.
+
+The Evaluation License will apply during the term of Licensee's Evaluation.
+
+The IPLA will automatically apply if Licensee elects to retain the Program after the Evaluation (or obtain additional copies of the Program for use after the Evaluation) by entering into a procurement agreement (e.g., the IBM International Passport Advantage or the IBM Passport Advantage Express agreements).
+
+The Evaluation License and the IPLA are not in effect concurrently; neither modifies the other; and each is independent of the other.
+
+The complete text of each of these two license agreements follow.
+
+LICENSE INFORMATION
+
+The Programs listed below are licensed under the following License Information terms and conditions in addition to the Program license terms previously agreed to by Client and IBM. If Client does not have previously agreed to license terms in effect for the Program, the International License Agreement for Evaluation of Programs (i125-5543-06) applies.
+
+Program Name (Program Number):
+IBM Cloud Pak for Integration 2023.2.1 (Evaluation)
+
+The following standard terms apply to Licensee's use of the Program.
+
+Evaluation Period
+
+The evaluation period begins on the date that Licensee agrees to the terms of this Agreement and ends after 60 days.
+
+Bundled Programs
+
+Licensee is authorized to install and use the Bundled Programs identified below. A Bundled Program may be accompanied by license terms, and those terms, if any, apply to Licensee's use of that Bundled Program. In the event of conflict, the terms in this License Information document supersede the Bundled Program's terms. The Principal Program and any Bundled Programs are all part of the Program, as a whole. Therefore, Licensee must obtain sufficient entitlements to the Program, as a whole, to cover Licensee's installation and use of all of the Bundled Programs, unless separate entitlements are provided within this License Information document. For example, if this Program were licensed on a VPC (Virtual Processor Core) basis and Licensee were to install the Principal Program or a Bundled Program on a 10 VPC machine and another Bundled Program on a second 10 VPC machine, Licensee would be required to obtain 20 VPC entitlements to the Program.
+
+Bundled Programs:
+IBM App Connect Enterprise
+IBM API Connect Enterprise
+IBM Datapower Gateway Virtual Edition Production
+IBM MQ Advanced
+IBM MQ Advanced High Availability Replica
+IBM Aspera High Speed Transfer Server
+IBM MQ
+IBM MQ High Availability Replica
+IBM Robotic Process Automation
+IBM Process Mining
+
+Prohibited Components
+
+Licensee is not authorized to use any of the following components or functions of the Program:
+ABBYY FineReader OCR Provider (of IBM Robotic Process Automation)
+Attended Bot Agent add-on (of IBM Robotic Process Automation)
+Business Process Model and Notation Export/Import Capability (of Process Mining)
+Decision Model and Notation Export/Import Capability (of Process Mining)
+
+Modifiable Third Party Code
+
+To the extent, if any, in the NOTICES file IBM identifies third party code as "Modifiable Third Party Code," IBM authorizes Licensee to 1) modify the Modifiable Third Party Code and 2) reverse engineer the Program modules that directly interface with the Modifiable Third Party Code provided that it is only for the purpose of debugging Licensee's modifications to such third party code. IBM's service and support obligations, if any, apply only to the unmodified Program.
+
+Separately Licensed Code
+
+Each of the components listed in the NON_IBM_LICENSE file is considered "Separately Licensed Code" licensed to Licensee under the terms of the applicable third party license agreement(s) set forth in the NON_IBM_LICENSE file(s) that accompanies the Program, and not this Agreement. Future Program updates or fixes may contain additional Separately Licensed Code. Such additional Separately Licensed Code and related licenses are listed in the applicable NON_IBM_LICENSE file that accompanies the Program update or fix. 
+
+Note: Notwithstanding any of the terms in the third party license agreement, the Agreement, or any other agreement Licensee may have with IBM, with respect to the Separately Licensed Code: 
+(a) IBM provides it to Licensee WITHOUT WARRANTIES OF ANY KIND AND DISCLAIMS ANY AND ALL EXPRESS AND IMPLIED WARRANTIES AND CONDITIONS INCLUDING, BUT NOT LIMITED TO, THE WARRANTY OF TITLE, NON-INFRINGEMENT OR NON-INTERFERENCE, AND THE IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE;
+(b) IBM is not liable for any direct, indirect, incidental, special, exemplary, punitive or consequential damages including, but not limited to, lost data, lost savings, and lost profits.
+
+Source Components and Sample Materials
+
+The Program includes components in source code form ("Source Components"), or other materials identified as Sample Materials or both. Licensee may copy and modify Source Components and Sample Materials for internal use only within the limits of the license rights under this Agreement; provided, however, that Licensee may not alter or delete any copyright information or notices contained in the Source Components or Sample Materials. IBM provides the Source Components and Sample Materials without obligation of support and "AS IS", WITH NO WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING THE WARRANTY OF TITLE, NON-INFRINGEMENT OR NON-INTERFERENCE AND THE IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+
+LICENSE INFORMATION
+
+The Programs listed below are licensed under the following License Information terms and conditions in addition to the Program license terms previously agreed to by Client and IBM. If Client does not have previously agreed to license terms in effect for the Program, the International Program License Agreement (i125-3301-15) applies.
+
+Program Name (Program Number):
+IBM Cloud Pak for Integration 2023.2.1 (5737-I89)
+
+The following standard terms apply to Licensee's use of the Program.
+
+Bundled Programs
+
+Licensee is authorized to install and use the Bundled Programs identified below. A Bundled Program may be accompanied by license terms, and those terms, if any, apply to Licensee's use of that Bundled Program. In the event of conflict, the terms in this License Information document supersede the Bundled Program's terms. The Principal Program and any Bundled Programs are all part of the Program, as a whole. Therefore, Licensee must obtain sufficient entitlements to the Program, as a whole, to cover Licensee's installation and use of all of the Bundled Programs, unless separate entitlements are provided within this License Information document. For example, if this Program were licensed on a VPC (Virtual Processor Core) basis and Licensee were to install the Principal Program or a Bundled Program on a 10 VPC machine and another Bundled Program on a second 10 VPC machine, Licensee would be required to obtain 20 VPC entitlements to the Program.
+
+Bundled Programs:
+IBM App Connect Enterprise
+IBM API Connect Enterprise
+IBM Datapower Gateway Virtual Edition Production
+IBM MQ Advanced
+IBM MQ Advanced High Availability Replica
+IBM Aspera High Speed Transfer Server
+IBM MQ
+IBM MQ High Availability Replica
+IBM Robotic Process Automation
+IBM Process Mining
+
+Prohibited Components
+
+Licensee is not authorized to use any of the following components or functions of the Program:
+ABBYY FineReader OCR Provider (of IBM Robotic Process Automation)
+Attended Bot Agent add-on (of IBM Robotic Process Automation)
+Business Process Model and Notation Export/Import Capability (of Process Mining)
+Decision Model and Notation Export/Import Capability (of Process Mining)
+
+Components Not Used for Establishing Required Entitlements
+
+Licensee may install and use the following Program components, under the license terms, but these components are not used to determine the number of entitlements required for the Program.
+IBM MQ Managed File Transfer Agent V9.x
+IBM Cloud Transformation Advisor
+IBM Aspera Proxy Server
+Migration Tools
+Cloud Platform Common Services including:
+-Audit Logging
+-Catalog
+-Certificate Management
+-CLI Tools Guide
+-Common Web UI
+-Helm REST APIs
+-Identity Access Management
+-Installer
+-License Service
+-Logging
+-Metering
+-Monitoring
+-System Health Check
+
+Modifiable Third Party Code
+
+To the extent, if any, in the NOTICES file IBM identifies third party code as "Modifiable Third Party Code," IBM authorizes Licensee to 1) modify the Modifiable Third Party Code and 2) reverse engineer the Program modules that directly interface with the Modifiable Third Party Code provided that it is only for the purpose of debugging Licensee's modifications to such third party code. IBM's service and support obligations, if any, apply only to the unmodified Program.
+
+Separately Licensed Code
+
+Each of the components listed in the NON_IBM_LICENSE file is considered "Separately Licensed Code" licensed to Licensee under the terms of the applicable third party license agreement(s) set forth in the NON_IBM_LICENSE file(s) that accompanies the Program, and not this Agreement. Future Program updates or fixes may contain additional Separately Licensed Code. Such additional Separately Licensed Code and related licenses are listed in the applicable NON_IBM_LICENSE file that accompanies the Program update or fix. 
+
+Note: Notwithstanding any of the terms in the third party license agreement, the Agreement, or any other agreement Licensee may have with IBM, with respect to the Separately Licensed Code: 
+(a) IBM provides it to Licensee WITHOUT WARRANTIES OF ANY KIND AND DISCLAIMS ANY AND ALL EXPRESS AND IMPLIED WARRANTIES AND CONDITIONS INCLUDING, BUT NOT LIMITED TO, THE WARRANTY OF TITLE, NON-INFRINGEMENT OR NON-INTERFERENCE, AND THE IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE;
+(b) IBM is not liable for any direct, indirect, incidental, special, exemplary, punitive or consequential damages including, but not limited to, lost data, lost savings, and lost profits.
+
+Source Components and Sample Materials
+
+The Program includes components in source code form ("Source Components"), or other materials identified as Sample Materials or both. Licensee may copy and modify Source Components and Sample Materials for internal use only within the limits of the license rights under this Agreement; provided, however, that Licensee may not alter or delete any copyright information or notices contained in the Source Components or Sample Materials. IBM provides the Source Components and Sample Materials without obligation of support and "AS IS", WITH NO WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING THE WARRANTY OF TITLE, NON-INFRINGEMENT OR NON-INTERFERENCE AND THE IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+The following units of measure may apply to Licensee's use of the Program.
+
+Virtual Processor Core
+
+Virtual Processor Core is a unit of measure by which the Program can be licensed. A Physical Server is a physical computer that is comprised of processing units, memory, and input/output capabilities and that executes requested procedures, commands, or applications for one or more users or client devices. Where racks, blade enclosures, or other similar equipment is being employed, each separable physical device (for example, a blade or a rack-mounted device) that has the required components is considered itself a separate Physical Server. A Virtual Server is either a virtual computer created by partitioning the resources available to a Physical Server or an unpartitioned Physical Server. A Processor Core is a functional unit within a computing device that interprets and executes instructions. A Processor Core consists of at least one instruction control unit and one or more arithmetic or logic units. A Virtual Processor Core is a Processor Core in an unpartitioned Physical Server, or a virtual core assigned to a Virtual Server. Licensee must obtain entitlements for each Virtual Processor Core made available to the Program.
+
+Licensee can deploy the Program (if supported) using full capacity licensing, sub-capacity licensing (https://www.ibm.com/software/passportadvantage/subcaplicensing.html), or container licensing (https://www.ibm.com/software/passportadvantage/containerlicenses.html). See the linked websites for more information. 
+
+In addition to the above, the following terms apply to Licensee's use of the Program.
+
+Bundled and Supporting Program Entitlement Conversion Details
+
+Bundle Program Entitlement Conversion Options:
+
+IBM App Connect Enterprise
+- Conversion Entitlement Ratio: 1 VPC/ 3 VPCs
+
+IBM App Connect Enterprise
+- Conversion Entitlement Ratio: 2 VPC/ 3 VPCs
+- Use Limitation: Non-Production
+
+IBM API Connect
+- Conversion Entitlement Ratio: 1 VPC/ 1 VPCs
+- Use Limitation: Licensee is permitted to deploy API Connect containers to Linux on Z only when used as entitled through the Program.
+
+IBM API Connect
+- Conversion Entitlement Ratio: 2 VPCs/ 1 VPCs
+- Use Limitation: Non-Production. 
+- Use Limitation: Licensee is permitted to deploy API Connect containers to Linux on Z only when used as entitled through the Program.
+
+IBM DataPower Gateway
+- Conversion Entitlement Ratio: 1 VPC/ 1 VPC
+
+IBM DataPower Gateway
+- Conversion Entitlement Ratio: 2 VPCs/ 1 VPC
+- Use Limitation: Non-Production
+
+ IBM MQ Advanced
+- Conversion Entitlement Ratio: 2 VPC/ 1 VPC
+
+IBM MQ Advanced
+- Conversion Entitlement Ratio: 4 VPC/ 1 VPC
+- Use Limitation: Non-Production
+
+IBM MQ Advanced High Availability Replica
+- Conversion Entitlement Ratio: 10 VPC/ 1 VPC
+
+IBM MQ Advanced High Availability Replica
+- Conversion Entitlement Ratio: 20 VPC/ 1 VPC
+- Use Limitation: Non-Production
+
+IBM MQ Advanced
+- Conversion Entitlement Ratio: 5 VPC/ 3 VPC
+- Deployment model: Multi-Instance Containers
+
+IBM MQ Advanced
+- Conversion Entitlement Ratio: 10 VPC/ 3 VPC
+- Use Limitation: Non-Production
+- Deployment model: Multi-Instance Containers
+
+IBM Event Streams
+- Conversion Entitlement Ratio: 1 VPC/ 1 VPC
+
+IBM Event Streams
+- Conversion Entitlement Ratio: 2 VPCs/ 1 VPC
+- Use Limitation: Non-Production
+
+IBM Aspera High Speed Transfer Server 1Gbps
+- Conversion Entitlement Ratio: 1 Gigabit per Second/ 4 VPC
+- Use Limitation: Licensee's use of the program is limited to the deployment in Red Hat Openshift Container Platform supporting IBM Cloud Pak for Integration.
+
+IBM Aspera High Speed Transfer Server 1Gbps
+- Conversion Entitlement Ratio: 1 Gigabit per Second/ 2 VPC
+- Use Limitation: Non-Production
+- Use Limitation: Licensee's use of the program is limited to the deployment in Red Hat Openshift Container Platform supporting IBM Cloud Pak for Integration.
+
+IBM Aspera High Speed Transfer Server 1Gbps
+- Conversion Entitlement Ratio: 1 Install/ 4 VPC
+
+IBM Aspera High Speed Transfer Server 1Gbps
+- Conversion Entitlement Ratio: 1 Install/ 2 VPC
+- Use Limitation: Non-Production
+
+IBM MQ
+- Conversion Entitlement Ratio: 4 VPC/ 1 VPC
+
+IBM MQ
+- Conversion Entitlement Ratio: 8 VPC/ 1 VPC
+- Use Limitation: Non-Production
+
+IBM MQ High Availability Replica
+- Conversion Entitlement Ratio: 20 VPC/ 1 VPC
+
+IBM MQ High Availability Replica
+- Conversion Entitlement Ratio: 40 VPC/ 1 VPC
+- Use Limitation: Non-Production
+
+IBM MQ
+- Conversion Entitlement Ratio: 10 VPC/ 3 VPC
+- Deployment model: Multi-Instance Containers
+
+IBM MQ
+- Conversion Entitlement Ratio: 20 VPC/ 3 VPC
+- Use Limitation: Non-Production
+- Deployment model: Multi-Instance Containers
+
+IBM Event Endpoint Management
+- Conversion Entitlement Ratio: 1 VPC/ 1 VPCs
+
+IBM Event Endpoint Management
+- Conversion Entitlement Ratio: 2 VPCs/ 1 VPCs
+- Use Limitation: Non-Production. 
+
+IBM Robotic Process Automation Platform
+- Conversion Entitlement Ratio : 1 Install/ 2 VPCs
+ 
+IBM Robotic Process Automation Environment
+- Conversion Entitlement Ratio : 1 Virtual Server / 1 VPC
+
+Process Mining Platform
+ - Conversion Flat Entitlement: Licensee may convert 3VPCs of the Program to use 1 Install of the listed program. Regardless of the number of entitlements obtained to the Program Licensee's use of the listed program is limited to the one-time listed conversion.
+ 
+Process Mining Process add-on 
+ - Conversion Entitlement Ratio: 4 Processes/ 1 VPC
+
+Process Mining Events add-on
+- Conversion Entitlement Ratio: 10 Million Events/ 1 VPC
+
+Process Mining Analyst User add-on
+ - Conversion Entitlement Ratio: 6 Authorized User/ 1 VPC
+
+Process Mining Business User add-on
+ - Conversion Entitlement Ratio: 22 Authorized User/ 1 VPC
+
+Task Mining Agent add-on
+ - Conversion Entitlement Ratio: 22 Concurrent Connection/ 1 VPC
+
+Licensee is entitled to use 3 Process Mining Processes, 20 Million Events, 1 Analyst User, 3 Business User, 2 Task Mining Agents, with every Install of IBM Process Mining Platform.
+
+Multi-Instance Container
+
+Multi-Instance Container refers to a Container solely running MQ Queue Manager in a Multi-Instance Queue Manager Configuration (see IBM MQ Documentation). A Container is a lightweight and portable executable unit (image) of software in which application code is packaged, along with its libraries and dependencies.
+ 
+Million Event
+
+A Million Event is a unit of measure by which the Program can be licensed. A Million Event is a log event generated from a server, application or device that can be processed for a specific purpose, rounded up to the nearest million. Sufficient entitlements must be obtained to cover the maximum number of Million Events to be collected and processed by the Program at any time. Licensee is entitled to use two IBM Robotic Process Automation Environment and one IBM Robotic Process Automation Unattended Bot, with every Install of IBM Robotic Process Automation Platform.
+
+"Conversion Entitlement Ratio n/m" means that Licensee can convert some number ('n') entitlements of the indicated metric for the listed program for every specified number ('m') entitlements of the specified metric for the Program. Once converted, Licensee may only use such converted entitlements for the listed program. The specified conversion does not apply to any entitlements for the Program that are not of the required metric type. "Non-Production" means that the Supporting Program can only be deployed as part of Licensee's internal development and test environment for internal non-production activities.
+
+Gigabit (Gb) per Second is a unit of measure by which the Program can be licensed. A Gigabit per Second is each second a Gb (2 to the 30th power bits) of data is processed by the Program. Licensee must obtain an entitlement for each Gigabit per Second processed by the Program.
+ 
+Additional Flat Entitlement
+
+IBM Instana Observability Self-Hosted
+
+Additional Flat Entitlement: Use of limited IBM Instana Observability Self-Hosted entitlement 
+
+Use Limitation: Licensee's entitlement to the listed program is only available for first-time purchases of the Program, or for a first additional purchase of the Program following previous entitlements to the Program and terminates 6 calendar months after Licensee's notification of license key activation for the listed program following the purchase of the Program, or upon the termination or expiration of the Program to the extent such termination or expiration occurs prior to 6 months after license key activation of the listed program. Upon termination of the listed programs, Licensee agrees to promptly discontinue use of and destroy all of Licensee's copies of the listed programs. Use of listed program entitlement is limited to the following IBM Instana Observability sensors for tracing:
+- IBM ACE
+- IBM DataPower
+- IBM MQ
+- Node.js
+
+Also limited to the following Sensors:
+- Envoy
+- etcd
+- Host
+- HTTPd
+- IBM API Connect
+- Kafka
+- Kubernetes
+- OpenShift
+- OS Process
+- PostgreSQL
+- Zookeeper
+
+"Additional Flat Entitlement" means that regardless of the number of entitlements obtained to the Program, Licensee's use of the listed program is limited to the number of entitlement(s) listed. 
+
+Red Hat Products 
+
+Red Hat Products listed below include software, maintenance and support in the form of Red Hat Software Subscriptions governed by a separate Red Hat Enterprise Agreement set forth at https://www.redhat.com/en/about/agreements (or if applicable, a negotiated version of such agreement between Licensee and Red Hat). Under this License Information, Licensee acquires Red Hat Software Subscription entitlements for the listed Red Hat Products in the quantities and/or ratios set out below in this LI. The Red Hat Software Subscription entitlements are applicable and valid only to the extent the Red Hat Products are used in support of the Program, and only while Licensee has IBM Software Subscription and Support (S&S) in effect for the Program. Red Hat Software Subscription entitlements do not include support of the Red Hat Products to run, deploy or otherwise support any software other than the Program, and Licensee acknowledges additional per unit fees at Red Hat standard rates will apply for any broader usage. Red Hat's standard Software Subscription support does not include Red Hat's remote access to Licensee's network and/or systems, but, if the parties mutually agree that remote access is needed for a support issue, such remote access is subject to the terms of the Remote Access Rider to the Red Hat agreement set forth at: https://www.redhat.com/wapps/tnc/standalone/RemoteAccessRider (Red Hat login required).
+
+Red Hat OpenShift Container Platform 
+- Additional Entitlement Ratio: 3 VPC / 1 VPC
+
+"Additional Entitlement Ratio n/m" means that Licensee receives some number ('n') entitlements of the indicated metric for the identified program for every specified number ('m') entitlements of the specified metric for the Program as a whole. The specified ratio does not apply to any entitlements for the Program that are not of the required metric type. The number of entitlements for the identified program is rounded up to a multiple of 'n'. 
+
+Use of Usage Metering Data 
+
+The Program enables use of a usage metering dashboard (the "Dashboard") that enables the display and monitoring of certain data and metrics regarding Licensee's deployment and usage of IBM and non-IBM software programs, as well as the computing environment on which they are deployed ("Usage Metering Data"). Usage of the Dashboard requires registration on either the Red Hat Marketplace or IBM Software Central. Licensee's usage of the Dashboard and IBM's use and sharing of Usage Metering Data are governed by the terms of the Service Description for the Red Hat Marketplace, Operated by IBM, available here: https://www.ibm.com/support/customer/csol/terms?id=i126-8719, and if Licensee enables or uses the Dashboard, Licensee agrees to those terms. 
+
+PROHIBITED COMPONENTS
+
+Licensee is not authorized to perform any of the following functions of the Supporting Program IBM Cloud Pak for Integration Operations Dashboard Add-On: 
+- electronically extract, copy or export outside of the Program data generated by MQOpenTracingExit and ACEOpenTracingUserExit
+- monitor any activity outside of the private cloud environment managed by the Program.
+
+
+L/N: L-YBXJ-ADJNSM
+D/N: L-YBXJ-ADJNSM
+P/N: L-YBXJ-ADJNSM
+
