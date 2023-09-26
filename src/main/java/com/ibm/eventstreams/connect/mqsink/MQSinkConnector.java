@@ -153,7 +153,7 @@ public class MQSinkConnector extends SinkConnector {
     public static final String CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS = "Retry backoff (ms)";
 
 
-    public static String version = "1.5.1";
+    public static String version = "1.5.2";
 
     private Map<String, String> configProps;
 
