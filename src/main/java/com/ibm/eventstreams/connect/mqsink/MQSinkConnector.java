@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -117,16 +118,14 @@ public class MQSinkConnector extends SinkConnector {
 
     /**
      * Returns true if the supplied connector configuration supports exactly-once semantics.
-     * Checks that 'mq.exactly.once.state.queue' property is supplied and is not empty and
-     * that 'tasks.max' is 1.
+     * Checks that 'mq.exactly.once.state.queue' property is supplied and is not empty.
      *
      * @param connectorConfig the connector config
-     * @return true if 'mq.exactly.once.state.queue' property is supplied and is not empty and 'tasks.max' is 1.
+     * @return true if 'mq.exactly.once.state.queue' property is supplied and is not empty.
      */
-    public static final boolean configSupportsExactlyOnce(final Map<String, String> connectorConfig) {
-        // If there is a state queue configured and tasks.max is 1 we can do exactly-once semantics
-        final String exactlyOnceStateQueue = connectorConfig.get(MQSinkConfig.CONFIG_NAME_MQ_EXACTLY_ONCE_STATE_QUEUE);
-        final String tasksMax = connectorConfig.get("tasks.max");
-        return exactlyOnceStateQueue != null && !exactlyOnceStateQueue.isEmpty() && (tasksMax == null || "1".equals(tasksMax));
+    public static final boolean configSupportsExactlyOnce(final AbstractConfig connectorConfig) {
+        // If there is a state queue configured, we can do exactly-once semantics
+        final String exactlyOnceStateQueue = connectorConfig.getString(MQSinkConfig.CONFIG_NAME_MQ_EXACTLY_ONCE_STATE_QUEUE);
+        return exactlyOnceStateQueue != null && !exactlyOnceStateQueue.isEmpty();
     }
 }

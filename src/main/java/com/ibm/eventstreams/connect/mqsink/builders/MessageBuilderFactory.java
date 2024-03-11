@@ -15,25 +15,25 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
 
-import java.util.Map;
 
 public class MessageBuilderFactory {
 
     private static final Logger log = LoggerFactory.getLogger(MessageBuilderFactory.class);
 
-    public static MessageBuilder getMessageBuilder(final Map<String, String> props) throws ConnectException {
+    public static MessageBuilder getMessageBuilder(final AbstractConfig config) throws ConnectException {
         return getMessageBuilder(
-                props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER),
-                props);
+            config.getString(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER),
+                config);
     }
 
-    protected static MessageBuilder getMessageBuilder(final String builderClass, final Map<String, String> props)
+    protected static MessageBuilder getMessageBuilder(final String builderClass, final AbstractConfig config)
             throws ConnectException {
 
         final MessageBuilder builder;
@@ -41,7 +41,7 @@ public class MessageBuilderFactory {
         try {
             final Class<? extends MessageBuilder> c = Class.forName(builderClass).asSubclass(MessageBuilder.class);
             builder = c.newInstance();
-            builder.configure(props);
+            builder.configure(config.originalsStrings());
         } catch (ClassNotFoundException | ClassCastException | IllegalAccessException | InstantiationException
                 | NullPointerException exc) {
             log.error("Could not instantiate message builder {}", builderClass);

@@ -15,33 +15,34 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import java.util.HashMap;
-import java.util.Map;
+
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
+
 public class MessageBuilderFactoryTest {
 
-    final Map<String, String> emptyProps = new HashMap<>();
+   
 
     @Test
     public void testGetMessageBuilder_ForJsonMessageBuilder() {
         final MessageBuilder messageBuilder = MessageBuilderFactory
-                .getMessageBuilder("com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder", emptyProps);
+                .getMessageBuilder("com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder", Configs.defaultConfig());
         Assertions.assertThat(messageBuilder).isInstanceOf(JsonMessageBuilder.class);
     }
 
     @Test
     public void testGetMessageBuilder_ForDefaultMessageBuilder() {
         final MessageBuilder messageBuilder = MessageBuilderFactory
-                .getMessageBuilder("com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder", emptyProps);
+                .getMessageBuilder("com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder", Configs.defaultConfig());
         Assertions.assertThat(messageBuilder).isInstanceOf(DefaultMessageBuilder.class);
     }
 
     @Test(expected = MessageBuilderException.class)
     public void testGetMessageBuilder_JunkClass() {
-        MessageBuilderFactory.getMessageBuilder("casjsajhasdhusdo;iasd", emptyProps);
+        MessageBuilderFactory.getMessageBuilder("casjsajhasdhusdo;iasd", Configs.defaultConfig());
     }
 
     @Test(expected = MessageBuilderException.class)

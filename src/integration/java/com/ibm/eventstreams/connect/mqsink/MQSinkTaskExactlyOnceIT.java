@@ -47,6 +47,8 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.eventstreams.connect.mqsink.util.SinkRecordBuilderForTest;
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
+
 
 public class MQSinkTaskExactlyOnceIT extends AbstractJMSContextIT {
 
@@ -62,7 +64,7 @@ public class MQSinkTaskExactlyOnceIT extends AbstractJMSContextIT {
 
         final MQSinkTask mqSinkTask = getMqSinkTask(connectorProps);
 
-        final JMSWorker jmsWorkerSpy = configureJMSWorkerSpy(connectorProps, mqSinkTask);
+        final JMSWorker jmsWorkerSpy = configureJMSWorkerSpy(Configs.customConfig(connectorProps), mqSinkTask);
 
         final List<SinkRecord> sinkRecords = createSinkRecords(10);
 
@@ -172,7 +174,7 @@ public class MQSinkTaskExactlyOnceIT extends AbstractJMSContextIT {
 
         final MQSinkTask mqSinkTask = getMqSinkTask(connectorProps);
 
-        final JMSWorker jmsWorkerSpy = configureJMSWorkerSpy(connectorProps, mqSinkTask);
+        final JMSWorker jmsWorkerSpy = configureJMSWorkerSpy(Configs.customConfig(connectorProps), mqSinkTask);
 
         final List<SinkRecord> sinkRecords = new ArrayList<>();
 

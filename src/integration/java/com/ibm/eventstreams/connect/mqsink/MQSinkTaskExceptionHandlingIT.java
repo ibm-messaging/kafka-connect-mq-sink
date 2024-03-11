@@ -44,6 +44,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 import com.ibm.mq.MQException;
 
 public class MQSinkTaskExceptionHandlingIT extends AbstractJMSContextIT {
@@ -79,7 +80,7 @@ public class MQSinkTaskExceptionHandlingIT extends AbstractJMSContextIT {
         when(connectTaskSpy.newJMSWorker()).thenReturn(jmsWorkerSpy);
         doThrow(new JMSWorkerConnectionException("This is a JMSWorkerConnectionException caused by a spy!!"))
                 .when(jmsWorkerSpy)
-                .configure(connectorConfigProps);
+                .configure(Configs.customConfig(connectorConfigProps));
 
         assertThrows(ConnectException.class, () -> {
             connectTaskSpy.start(connectorConfigProps);

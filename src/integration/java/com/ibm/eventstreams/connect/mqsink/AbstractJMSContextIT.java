@@ -36,6 +36,7 @@ import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +53,7 @@ import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper;
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 import com.ibm.mq.jms.MQConnectionFactory;
 import com.ibm.msg.client.jms.JmsConnectionFactory;
 import com.ibm.msg.client.jms.JmsFactoryFactory;
@@ -135,7 +137,6 @@ public abstract class AbstractJMSContextIT {
     @NotNull
     protected static Map<String, String> getExactlyOnceConnectionDetails() {
         final Map<String, String> connectorProps = getConnectionDetails();
-        connectorProps.put("tasks.max", "1");
         connectorProps.put("mq.exactly.once.state.queue", DEFAULT_SINK_STATE_QUEUE_NAME);
         return connectorProps;
     }
@@ -310,10 +311,10 @@ public abstract class AbstractJMSContextIT {
         return messageMap;
     }
 
-    protected JMSWorker configureJMSWorkerSpy(final Map<String, String> connectorProps, final MQSinkTask mqSinkTask) {
+    protected JMSWorker configureJMSWorkerSpy( AbstractConfig config, final MQSinkTask mqSinkTask) {
         final JMSWorker jmsWorkerSpy = spy(new JMSWorker());
         mqSinkTask.worker = jmsWorkerSpy;
-        mqSinkTask.worker.configure(connectorProps);
+        mqSinkTask.worker.configure(config);
         mqSinkTask.worker.connect();
         return jmsWorkerSpy;
     }

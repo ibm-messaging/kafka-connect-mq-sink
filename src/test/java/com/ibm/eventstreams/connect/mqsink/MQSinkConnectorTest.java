@@ -1,25 +1,29 @@
 /**
  * Copyright 2017, 2018, 2019, 2023 IBM Corporation
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.ibm.eventstreams.connect.mqsink;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.junit.Test;
 
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
+
+import static com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT.DEFAULT_MESSAGE_BUILDER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -56,6 +60,7 @@ public class MQSinkConnectorTest {
         props.put("mq.queue", "DEV.QUEUE.1");
         props.put("mq.user.authentication.mqcsp", "false");
         props.put("mq.exactly.once.state.queue", "DEV.QUEUE.2");
+
         connector.start(props);
 
         // Test with exactly.once.state.queue is set but the max number of tasks is 2
@@ -83,18 +88,24 @@ public class MQSinkConnectorTest {
     public void testConnectorConfigSupportsExactlyOnce() {
         // True if an mq.exactly.once.state.queue value is supplied in the config and
         // 'tasks.max' is 1
-        final Map<String, String> configProps = new HashMap<String, String>();
-        configProps.put("mq.exactly.once.state.queue", "DEV.QUEUE.2");
-        configProps.put("tasks.max", "1");
-        assertTrue(MQSinkConnector.configSupportsExactlyOnce(configProps));
-        assertTrue(MQSinkConnector
-                .configSupportsExactlyOnce(Collections.singletonMap("mq.exactly.once.state.queue", "DEV.QUEUE.2")));
+        final Map<String, String> configProps_tskMax_devQue = new HashMap<String, String>();
+        configProps_tskMax_devQue.put("mq.exactly.once.state.queue", "DEV.QUEUE.2");
+        configProps_tskMax_devQue.put("tasks.max", "1");
+        configProps_tskMax_devQue.put("mq.message.builder", DEFAULT_MESSAGE_BUILDER);
+
+        assertTrue(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(configProps_tskMax_devQue)));
+        final Map<String, String> configProps_devQue = new HashMap<String, String>();
+        configProps_devQue.put("mq.message.builder", DEFAULT_MESSAGE_BUILDER);
+        configProps_devQue.put("mq.exactly.once.state.queue", "DEV.QUEUE.2");
+        assertTrue(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(configProps_devQue)));
         // False otherwise
-        assertFalse(MQSinkConnector.configSupportsExactlyOnce(Collections.singletonMap("tasks.max", "1")));
-        assertFalse(MQSinkConnector.configSupportsExactlyOnce(Collections.emptyMap()));
-        assertFalse(
-                MQSinkConnector.configSupportsExactlyOnce(Collections.singletonMap("mq.exactly.once.state.queue", "")));
-        assertFalse(MQSinkConnector
-                .configSupportsExactlyOnce(Collections.singletonMap("mq.exactly.once.state.queue", null)));
+        final Map<String, String> configProps_tskMax = new HashMap<String, String>();
+        configProps_tskMax.put("mq.message.builder", DEFAULT_MESSAGE_BUILDER);
+        configProps_tskMax.put("tasks.max", "1");
+
+        assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(configProps_tskMax)));
+        assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.defaultConfig()));
+        assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(Collections.singletonMap("mq.exactly.once.state.queue", ""))));
+        assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(Collections.singletonMap("mq.exactly.once.state.queue", null))));
     }
 }

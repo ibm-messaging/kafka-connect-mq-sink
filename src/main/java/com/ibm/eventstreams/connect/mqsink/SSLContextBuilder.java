@@ -15,6 +15,7 @@
  */
 package com.ibm.eventstreams.connect.mqsink;
 
+import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,8 @@ import java.security.SecureRandom;
 public class SSLContextBuilder {
     private static final Logger log = LoggerFactory.getLogger(SSLContextBuilder.class);
 
-    public SSLContext buildSslContext(final String sslKeystoreLocation, final String sslKeystorePassword,
-                                       final String sslTruststoreLocation, final String sslTruststorePassword) {
+    public SSLContext buildSslContext(final String sslKeystoreLocation, final Password sslKeystorePassword,
+                                       final String sslTruststoreLocation, final Password sslTruststorePassword) {
         log.trace("[{}] Entry {}.buildSslContext", Thread.currentThread().getId(), this.getClass().getName());
 
         try {
@@ -44,7 +45,7 @@ public class SSLContextBuilder {
 
             if (sslKeystoreLocation != null) {
                 final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                kmf.init(loadKeyStore(sslKeystoreLocation, sslKeystorePassword), sslKeystorePassword.toCharArray());
+                kmf.init(loadKeyStore(sslKeystoreLocation, sslKeystorePassword), sslKeystorePassword.value().toCharArray());
                 keyManagers = kmf.getKeyManagers();
             }
 
@@ -66,12 +67,12 @@ public class SSLContextBuilder {
         }
     }
 
-    private KeyStore loadKeyStore(final String location, final String password) throws GeneralSecurityException {
+    private KeyStore loadKeyStore(final String location, final Password password) throws GeneralSecurityException {
         log.trace("[{}] Entry {}.loadKeyStore", Thread.currentThread().getId(), this.getClass().getName());
 
         try (final InputStream ksStr = new FileInputStream(location)) {
             final KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(ksStr, password.toCharArray());
+            ks.load(ksStr, password.value().toCharArray());
 
             log.trace("[{}]  Exit {}.loadKeyStore, retval={}", Thread.currentThread().getId(),
                     this.getClass().getName(), ks);

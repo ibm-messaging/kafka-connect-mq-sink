@@ -1,20 +1,21 @@
 /**
  * Copyright 2017, 2020, 2023 IBM Corporation
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.ibm.eventstreams.connect.mqsink;
 
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import javax.jms.JMSRuntimeException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -88,15 +90,15 @@ public class JMSWorker {
     /**
      * Configure this class.
      *
-     * @param props
+     * @param config
      * @throws ConnectException
      */
-    public void configure(final Map<String, String> props) throws ConnectException {
+    public void configure(final AbstractConfig config) throws ConnectException {
         log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(),
                 this.getClass().getName());
 
-        isExactlyOnceMode = MQSinkConnector.configSupportsExactlyOnce(props);
-        mqConnectionHelper = new MQConnectionHelper(props);
+        isExactlyOnceMode = MQSinkConnector.configSupportsExactlyOnce(config);
+        mqConnectionHelper = new MQConnectionHelper(config);
 
         if (mqConnectionHelper.getUseIBMCipherMappings() != null) {
             System.setProperty("com.ibm.mq.cfg.useIBMCipherMappings", mqConnectionHelper.getUseIBMCipherMappings());
@@ -104,20 +106,17 @@ public class JMSWorker {
 
         try {
             mqConnFactory = mqConnectionHelper.createMQConnFactory();
-            queue = configureQueue(mqConnectionHelper.getQueueName(), mqConnectionHelper.getMbj());
+            queue = configureQueue(mqConnectionHelper.getQueueName(), mqConnectionHelper.isMessageBodyJms());
             if (isExactlyOnceMode) {
-                stateQueue = configureQueue(mqConnectionHelper.getStateQueueName(), "true");
+                stateQueue = configureQueue(mqConnectionHelper.getStateQueueName(), true);
             }
 
-            if (mqConnectionHelper.getTimeToLive() != null) {
-                this.timeToLive = Long.parseLong(mqConnectionHelper.getTimeToLive());
-            }
-            if (mqConnectionHelper.getPersistent() != null) {
-                this.deliveryMode = Boolean.parseBoolean(mqConnectionHelper.getPersistent()) ? DeliveryMode.PERSISTENT
-                        : DeliveryMode.NON_PERSISTENT;
-            }
-            this.messageBuilder = MessageBuilderFactory.getMessageBuilder(props);
-        } catch (JMSException | JMSRuntimeException jmse) {
+            this.timeToLive = mqConnectionHelper.getTimeToLive();
+
+            this.deliveryMode = mqConnectionHelper.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
+
+            this.messageBuilder = MessageBuilderFactory.getMessageBuilder(config);
+        } catch (JMSException | JMSRuntimeException | MalformedURLException jmse) {
             log.error("JMS exception {}", jmse);
             throw new JMSWorkerConnectionException("JMS connection failed", jmse);
         }
@@ -264,20 +263,14 @@ public class JMSWorker {
      *
      * @param queueName
      *                  the name of the queue
-     * @param mbj
+     * @param isJms
      *                  whether the queue supports JMS message body
      * @return the queue object
      */
-    private MQQueue configureQueue(final String queueName, final String mbj)
+    private MQQueue configureQueue(final String queueName, final Boolean isJms)
             throws JMSException {
         final MQQueue queue = new MQQueue(queueName);
-
-        queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_MQ);
-        if (mbj != null) {
-            if (Boolean.parseBoolean(mbj)) {
-                queue.setMessageBodyStyle(WMQConstants.WMQ_MESSAGE_BODY_JMS);
-            }
-        }
+        queue.setMessageBodyStyle(isJms ? WMQConstants.WMQ_MESSAGE_BODY_JMS : WMQConstants.WMQ_MESSAGE_BODY_MQ);
         return queue;
     }
 
@@ -360,7 +353,7 @@ public class JMSWorker {
 
     protected void createJMSContext() {
         if (mqConnectionHelper.getUserName() != null) {
-            jmsCtxt = mqConnFactory.createContext(mqConnectionHelper.getUserName(), mqConnectionHelper.getPassword(),
+            jmsCtxt = mqConnFactory.createContext(mqConnectionHelper.getUserName(), mqConnectionHelper.getPassword().value(),
                     JMSContext.SESSION_TRANSACTED);
         } else {
             jmsCtxt = mqConnFactory.createContext(JMSContext.SESSION_TRANSACTED);

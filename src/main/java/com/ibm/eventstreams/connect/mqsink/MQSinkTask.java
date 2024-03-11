@@ -1,31 +1,30 @@
 /**
  * Copyright 2017, 2020, 2023 IBM Corporation
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.ibm.eventstreams.connect.mqsink;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.jms.JMSException;
 import javax.jms.JMSRuntimeException;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
@@ -44,9 +43,6 @@ public class MQSinkTask extends SinkTask {
 
     protected long retryBackoffMs = 60000;
     private boolean isExactlyOnceMode = false;
-
-    // private ErrantRecordReporter reporter;
-    private Map<String, String> connectorConfigProps;
 
     private HashMap<String, String> lastCommittedOffsetMap;
 
@@ -73,24 +69,23 @@ public class MQSinkTask extends SinkTask {
      * Start the Task. This should handle any configuration parsing and one-time
      * setup of the task.
      *
-     * @param props
-     *              initial configuration
+     * @param props initial configuration
      */
     @Override
     public void start(final Map<String, String> props) {
         log.trace("[{}] Entry {}.start, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
         try {
-            this.isExactlyOnceMode = MQSinkConnector.configSupportsExactlyOnce(props);
+            final AbstractConfig config = new AbstractConfig(MQSinkConfig.config(), props, true);
+
+            this.isExactlyOnceMode = MQSinkConnector.configSupportsExactlyOnce(config);
             if (this.isExactlyOnceMode) {
                 log.info("Exactly-once mode enabled");
             }
-            connectorConfigProps = props;
-            logConfiguration(props);
-            setRetryBackoff(props);
+            setRetryBackoff(config);
             // Construct a worker to interface with MQ
             worker = newJMSWorker();
-            worker.configure(connectorConfigProps);
+            worker.configure(config);
             // Make a connection as an initial test of the configuration
             worker.connect();
         } catch (JMSRuntimeException | JMSWorkerConnectionException e) {
@@ -113,7 +108,7 @@ public class MQSinkTask extends SinkTask {
     /**
      * Put the records in the sink. Usually this should send the records to the sink
      * asynchronously and immediately return.
-     *
+     * <p>
      * If this operation fails, the SinkTask may throw a
      * {@link org.apache.kafka.connect.errors.RetriableException} to indicate that
      * the framework should attempt to retry the same call again. Other exceptions
@@ -121,13 +116,11 @@ public class MQSinkTask extends SinkTask {
      * {@link SinkTaskContext#timeout(long)} can be used to set the maximum time
      * before the batch will be retried.
      *
-     * @param records
-     *                the set of records to send
+     * @param records the set of records to send
      */
     @Override
     public void put(final Collection<SinkRecord> records) {
-        log.trace("[{}] Entry {}.put, records.size={}", Thread.currentThread().getId(), this.getClass().getName(),
-                records.size());
+        log.trace("[{}] Entry {}.put, records.size={}", Thread.currentThread().getId(), this.getClass().getName(), records.size());
         try {
             try {
                 if (isExactlyOnceMode) {
@@ -163,14 +156,10 @@ public class MQSinkTask extends SinkTask {
         for (final SinkRecord record : records) {
             final TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
             if (isRecordAlreadyCommitted(record, topicPartition)) {
-                log.debug(
-                        "Skipping record for topic {}, partition {} and offset {} as it has already been committed",
-                        record.topic(), record.kafkaPartition(), record.kafkaOffset());
+                log.debug("Skipping record for topic {}, partition {} and offset {} as it has already been committed", record.topic(), record.kafkaPartition(), record.kafkaOffset());
                 continue;
             }
-            log.debug("Putting record for topic {}, partition {} and offset {}", record.topic(),
-                    record.kafkaPartition(),
-                    record.kafkaOffset());
+            log.debug("Putting record for topic {}, partition {} and offset {}", record.topic(), record.kafkaPartition(), record.kafkaOffset());
             worker.send(record);
             lastCommittedOffsetMap.put(topicPartition.toString(), String.valueOf(record.kafkaOffset()));
         }
@@ -180,8 +169,7 @@ public class MQSinkTask extends SinkTask {
     }
 
     private boolean isRecordAlreadyCommitted(final SinkRecord record, final TopicPartition topicPartition) {
-        final long lastCommittedOffset = Long.parseLong(lastCommittedOffsetMap
-                .getOrDefault(topicPartition.toString(), "-1"));
+        final long lastCommittedOffset = Long.parseLong(lastCommittedOffsetMap.getOrDefault(topicPartition.toString(), "-1"));
         if (record.kafkaOffset() <= lastCommittedOffset) {
             return true;
         }
@@ -190,9 +178,7 @@ public class MQSinkTask extends SinkTask {
 
     private void putAtLeastOnce(final Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
-            log.debug("Putting record for topic {}, partition {} and offset {}", record.topic(),
-                    record.kafkaPartition(),
-                    record.kafkaOffset());
+            log.debug("Putting record for topic {}, partition {} and offset {}", record.topic(), record.kafkaPartition(), record.kafkaOffset());
             worker.send(record);
         }
         worker.commit();
@@ -239,7 +225,9 @@ public class MQSinkTask extends SinkTask {
         log.trace("[{}]  Exit {}.stop", Thread.currentThread().getId(), this.getClass().getName());
     }
 
-    /** Create a new JMSWorker. */
+    /**
+     * Create a new JMSWorker.
+     */
     protected JMSWorker newJMSWorker() {
         // Construct a worker to interface with MQ
         final JMSWorker worker = new JMSWorker();
@@ -249,35 +237,14 @@ public class MQSinkTask extends SinkTask {
     /**
      * Set the retry backoff time.
      *
-     * @param props
-     *              the configuration properties
+     * @param config the configuration properties
      */
-    private void setRetryBackoff(final Map<String, String> props) {
+    private void setRetryBackoff(final AbstractConfig config) {
         // check if a custom retry time is provided
-        final String retryBackoffMsStr = props.get(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
-        if (retryBackoffMsStr != null) {
-            retryBackoffMs = Long.parseLong(retryBackoffMsStr);
-        }
+        final Long retryBackoffMs = config.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
         log.debug("Setting retry backoff {}", retryBackoffMs);
     }
 
-    /**
-     * Log the configuration properties.
-     *
-     * @param props
-     *              the configuration properties
-     */
-    private void logConfiguration(final Map<String, String> props) {
-        for (final Entry<String, String> entry : props.entrySet()) {
-            final String value;
-            if (entry.getKey().toLowerCase(Locale.ENGLISH).contains("password")) {
-                value = "[hidden]";
-            } else {
-                value = entry.getValue();
-            }
-            log.debug("Task props entry {} : {}", entry.getKey(), value);
-        }
-    }
 
     private void maybeCloseAllWorkers(final Throwable exc) {
         log.debug(" Checking to see if the failed connection should be closed.");

@@ -17,9 +17,11 @@ package com.ibm.eventstreams.connect.mqsink;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
+
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 
 import org.junit.After;
 import org.junit.Test;
@@ -37,7 +39,7 @@ public class JMSWorkerIT extends AbstractJMSContextIT {
         final Map<String, String> connectorProps = getExactlyOnceConnectionDetails();
 
         final JMSWorker jmsWorker = new JMSWorker();
-        jmsWorker.configure(connectorProps);
+        jmsWorker.configure(Configs.customConfig(connectorProps));
 
         assertThat(jmsWorker.readFromStateQueue()).isEqualTo(Optional.empty());
 

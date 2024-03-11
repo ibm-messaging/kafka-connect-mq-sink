@@ -27,6 +27,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
@@ -84,11 +85,11 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
         connectorConfigProps.put("mq.message.builder.key.header", "hello");
 
         final MQSinkTask newConnectTask = new MQSinkTask();
-        final MessageBuilderException exc = assertThrows(MessageBuilderException.class, () -> {
+        final ConfigException exc = assertThrows(ConfigException.class, () -> {
             newConnectTask.start(connectorConfigProps);
         });
 
-        assertEquals("Unsupported MQ message builder key header value", exc.getMessage());
+        assertEquals("Invalid value hello for configuration mq.message.builder.key.header: String must be one of: null, JMSCorrelationID", exc.getMessage());
     }
 
     @Test
@@ -235,7 +236,7 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
     @Test
     public void verifyStringWithDefaultBuilder() throws JMSException {
         final Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
-        connectorConfigProps.put("mq.message.builder.value.converter", "org.apache.kafka.connect.json.StringConverter");
+        connectorConfigProps.put("mq.message.builder.value.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfigProps.put("mq.message.builder",
                 DEFAULT_MESSAGE_BUILDER);
 
@@ -245,7 +246,7 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
     @Test
     public void verifyStringWithJsonBuilder() throws JMSException {
         final Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
-        connectorConfigProps.put("mq.message.builder.value.converter", "org.apache.kafka.connect.json.StringConverter");
+        connectorConfigProps.put("mq.message.builder.value.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfigProps.put("mq.message.builder",
                 "com.ibm.eventstreams.connect.mqsink.builders.JsonMessageBuilder");
 

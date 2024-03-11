@@ -17,100 +17,62 @@ package com.ibm.eventstreams.connect.mqsink;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.net.ssl.SSLContext;
+
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.errors.ConnectException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.ibm.mq.jms.MQConnectionFactory;
 import com.ibm.msg.client.wmq.WMQConstants;
 
 public class MQConnectionHelper {
-    private static final Logger log = LoggerFactory.getLogger(JMSWorker.class);
-    private String queueManager;
-    private String connectionNameList;
-    private String channelName;
-    private String ccdtUrl;
-    private String sslCipherSuite;
-    private String sslPeerName;
-    private String sslKeystoreLocation;
-    private String sslKeystorePassword;
-    private String sslTruststoreLocation;
-    private String sslTruststorePassword;
-    private String useMQCSP;
-    private int transportType;
-    private String connectionMode;
-    private String queueName;
-    private String stateQueueName;
-    private String userName;
-    private String password;
-    private String mbj;
-    private String timeToLive;
-    private String persistent;
-    private String useIBMCipherMappings;
+    private AbstractConfig config;
+
+    public String getQueueManagerName() {
+        return config.getString(MQSinkConfig.CONFIG_NAME_MQ_QUEUE_MANAGER);
+    }
 
     public String getQueueName() {
-        return queueName;
+        return config.getString(MQSinkConfig.CONFIG_NAME_MQ_QUEUE);
     }
 
     public String getStateQueueName() {
-        return stateQueueName;
+        return config.getString(MQSinkConfig.CONFIG_NAME_MQ_EXACTLY_ONCE_STATE_QUEUE);
     }
 
     public String getUserName() {
-        return userName;
+        return config.getString(MQSinkConfig.CONFIG_NAME_MQ_USER_NAME);
     }
 
-    public String getPassword() {
-        return password;
+    public Password getPassword() {
+        return config.getPassword(MQSinkConfig.CONFIG_NAME_MQ_PASSWORD);
     }
 
-    public String getMbj() {
-        return mbj;
+    public boolean isMessageBodyJms() {
+        return config.getBoolean(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
     }
 
-    public String getTimeToLive() {
-        return timeToLive;
+    public Long getTimeToLive() {
+        return config.getLong(MQSinkConfig.CONFIG_NAME_MQ_TIME_TO_LIVE);
     }
 
-    public String getPersistent() {
-        return persistent;
-    }
-
-    public String getConnectionMode() {
-        return connectionMode;
+    public Boolean isPersistent() {
+        return config.getBoolean(MQSinkConfig.CONFIG_NAME_MQ_PERSISTENT);
     }
 
     public String getUseIBMCipherMappings() {
-        return useIBMCipherMappings;
+        return config.getString(MQSinkConfig.CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
     }
 
-    public MQConnectionHelper(final Map<String, String> props) {
-        queueManager = props.get(MQSinkConfig.CONFIG_NAME_MQ_QUEUE_MANAGER);
-        connectionMode = props.get(MQSinkConfig.CONFIG_NAME_MQ_CONNECTION_MODE);
-        connectionNameList = props.get(MQSinkConfig.CONFIG_NAME_MQ_CONNECTION_NAME_LIST);
-        channelName = props.get(MQSinkConfig.CONFIG_NAME_MQ_CHANNEL_NAME);
-        queueName = props.get(MQSinkConfig.CONFIG_NAME_MQ_QUEUE);
-        stateQueueName = props.get(MQSinkConfig.CONFIG_NAME_MQ_EXACTLY_ONCE_STATE_QUEUE);
-        userName = props.get(MQSinkConfig.CONFIG_NAME_MQ_USER_NAME);
-        password = props.get(MQSinkConfig.CONFIG_NAME_MQ_PASSWORD);
-        ccdtUrl = props.get(MQSinkConfig.CONFIG_NAME_MQ_CCDT_URL);
-        mbj = props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BODY_JMS);
-        timeToLive = props.get(MQSinkConfig.CONFIG_NAME_MQ_TIME_TO_LIVE);
-        persistent = props.get(MQSinkConfig.CONFIG_NAME_MQ_PERSISTENT);
-        sslCipherSuite = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_CIPHER_SUITE);
-        sslPeerName = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_PEER_NAME);
-        sslKeystoreLocation = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION);
-        sslKeystorePassword = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD);
-        sslTruststoreLocation = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION);
-        sslTruststorePassword = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD);
-        useMQCSP = props.get(MQSinkConfig.CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP);
-        useIBMCipherMappings = props.get(MQSinkConfig.CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
+    public int getTransportType() {
+        return getTransportType(config.getString(MQSinkConfig.CONFIG_NAME_MQ_CONNECTION_MODE));
+    }
 
-        transportType = getTransportType(connectionMode);
+    public MQConnectionHelper(final AbstractConfig config) {
+        this.config = config;
     }
 
     /**
@@ -129,10 +91,7 @@ public class MQConnectionHelper {
                 transportType = WMQConstants.WMQ_CM_CLIENT;
             } else if (connectionMode.equals(MQSinkConfig.CONFIG_VALUE_MQ_CONNECTION_MODE_BINDINGS)) {
                 transportType = WMQConstants.WMQ_CM_BINDINGS;
-            } else {
-                log.error("Unsupported MQ connection mode {}", connectionMode);
-                throw new JMSWorkerConnectionException("Unsupported MQ connection mode");
-            }
+            } 
         }
         return transportType;
     }
@@ -145,40 +104,31 @@ public class MQConnectionHelper {
      * @return
      * @throws JMSException
      */
-    public MQConnectionFactory createMQConnFactory() throws JMSException {
+    public MQConnectionFactory createMQConnFactory() throws JMSException, MalformedURLException {
         final MQConnectionFactory mqConnFactory = new MQConnectionFactory();
+        final int transportType = getTransportType();
         mqConnFactory.setTransportType(transportType);
-        mqConnFactory.setQueueManager(queueManager);
-        mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, true);
-        if (useMQCSP != null) {
-            mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, Boolean.parseBoolean(useMQCSP));
-        }
+        mqConnFactory.setQueueManager(getQueueManagerName());
+        mqConnFactory.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, 
+            config.getBoolean(MQSinkConfig.CONFIG_NAME_MQ_USER_AUTHENTICATION_MQCSP));
 
         if (transportType == WMQConstants.WMQ_CM_CLIENT) {
+            final String ccdtUrl = config.getString(MQSinkConfig.CONFIG_NAME_MQ_CCDT_URL);
             if (ccdtUrl != null) {
-                final URL ccdtUrlObject;
-                try {
-                    ccdtUrlObject = new URL(ccdtUrl);
-                } catch (final MalformedURLException e) {
-                    log.error("MalformedURLException exception {}", e);
-                    throw new JMSWorkerConnectionException("CCDT file url invalid", e);
-                }
-                mqConnFactory.setCCDTURL(ccdtUrlObject);
+                mqConnFactory.setCCDTURL(new URL(ccdtUrl));
             } else {
-                mqConnFactory.setConnectionNameList(connectionNameList);
-                mqConnFactory.setChannel(channelName);
+                mqConnFactory.setConnectionNameList(config.getString(MQSinkConfig.CONFIG_NAME_MQ_CONNECTION_NAME_LIST));
+                mqConnFactory.setChannel(config.getString(MQSinkConfig.CONFIG_NAME_MQ_CHANNEL_NAME));
             }
 
-            if (sslCipherSuite != null) {
-                mqConnFactory.setSSLCipherSuite(sslCipherSuite);
-                if (sslPeerName != null) {
-                    mqConnFactory.setSSLPeerName(sslPeerName);
-                }
-            }
-
+            mqConnFactory.setSSLCipherSuite(config.getString(MQSinkConfig.CONFIG_NAME_MQ_SSL_CIPHER_SUITE));
+            mqConnFactory.setSSLPeerName(config.getString(MQSinkConfig.CONFIG_NAME_MQ_SSL_PEER_NAME));
+            
+            final String sslKeystoreLocation = config.getString(MQSinkConfig.CONFIG_NAME_MQ_SSL_KEYSTORE_LOCATION);
+            final String sslTruststoreLocation = config.getString(MQSinkConfig.CONFIG_NAME_MQ_SSL_TRUSTSTORE_LOCATION);
             if (sslKeystoreLocation != null || sslTruststoreLocation != null) {
                 final SSLContext sslContext = new SSLContextBuilder().buildSslContext(sslKeystoreLocation,
-                        sslKeystorePassword, sslTruststoreLocation, sslTruststorePassword);
+                        config.getPassword(MQSinkConfig.CONFIG_NAME_MQ_SSL_KEYSTORE_PASSWORD), sslTruststoreLocation, config.getPassword(MQSinkConfig.CONFIG_NAME_MQ_SSL_TRUSTSTORE_PASSWORD));
                 mqConnFactory.setSSLSocketFactory(sslContext.getSocketFactory());
             }
         }

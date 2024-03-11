@@ -33,6 +33,8 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.After;
 import org.junit.Test;
 
+import com.ibm.eventstreams.connect.mqsink.utils.Configs;
+
 public class MQSinkTaskAtLeastOnceIT extends AbstractJMSContextIT {
 
     @After
@@ -47,7 +49,7 @@ public class MQSinkTaskAtLeastOnceIT extends AbstractJMSContextIT {
 
         final MQSinkTask mqSinkTask = getMqSinkTask(connectorProps);
 
-        final JMSWorker jmsWorkerSpy = configureJMSWorkerSpy(connectorProps, mqSinkTask);
+        final JMSWorker jmsWorkerSpy = configureJMSWorkerSpy(Configs.customConfig(connectorProps), mqSinkTask);
 
         final List<SinkRecord> sinkRecords = createSinkRecords(10);
 
