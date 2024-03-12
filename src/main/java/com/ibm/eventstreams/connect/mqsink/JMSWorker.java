@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.mqsink;
 
 import java.net.MalformedURLException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -107,6 +108,21 @@ public class JMSWorker {
         try {
             mqConnFactory = mqConnectionHelper.createMQConnFactory();
             queue = configureQueue(mqConnectionHelper.getQueueName(), mqConnectionHelper.isMessageBodyJms());
+            final Boolean mqmdWriteEnabled = config.getBoolean(MQSinkConfig.CONFIG_NAME_MQ_MQMD_WRITE_ENABLED);
+            queue.setBooleanProperty(WMQConstants.WMQ_MQMD_WRITE_ENABLED, mqmdWriteEnabled);
+
+            if (mqmdWriteEnabled) {
+                String mqmdMessageContext = config.getString(MQSinkConfig.CONFIG_NAME_MQ_MQMD_MESSAGE_CONTEXT);
+                if (mqmdMessageContext != null) {
+                    mqmdMessageContext = mqmdMessageContext.toLowerCase(Locale.ENGLISH);
+                }
+                if ("identity".equals(mqmdMessageContext)) {
+                    queue.setIntProperty(WMQConstants.WMQ_MQMD_MESSAGE_CONTEXT,
+                            WMQConstants.WMQ_MDCTX_SET_IDENTITY_CONTEXT);
+                } else if ("all".equals(mqmdMessageContext)) {
+                    queue.setIntProperty(WMQConstants.WMQ_MQMD_MESSAGE_CONTEXT, WMQConstants.WMQ_MDCTX_SET_ALL_CONTEXT);
+                }
+            }
             if (isExactlyOnceMode) {
                 stateQueue = configureQueue(mqConnectionHelper.getStateQueueName(), true);
             }
