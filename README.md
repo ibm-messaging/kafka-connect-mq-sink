@@ -307,38 +307,40 @@ For troubleshooting, or to better understand the handshake performed by the IBM 
 
 The configuration options for the Kafka Connect sink connector for IBM MQ are as follows:
 
-| Name                                    | Description                                                                           | Type    | Default        | Valid values                      |
-| --------------------------------------- | ------------------------------------------------------------------------------------- | ------- | -------------- | --------------------------------- |
-| topics or topics.regex                  | List of Kafka source topics                                                           | string  |                | topic1[,topic2,...]               |
-| mq.queue.manager                        | The name of the MQ queue manager                                                      | string  |                | MQ queue manager name             |
-| mq.connection.mode                      | The connection mode - bindings or client                                              | string  | client         | client, bindings                  |
-| mq.connection.name.list                 | List of connection names for queue manager                                            | string  |                | host(port)[,host(port),...]       |
-| mq.channel.name                         | The name of the server-connection channel                                             | string  |                | MQ channel name                   |
-| mq.queue                                | The name of the target MQ queue                                                       | string  |                | MQ queue name                     |
-| mq.exactly.once.state.queue             | The name of the MQ queue used to store state when running with exactly-once semantics | string  |                | MQ state queue name               |
-| mq.user.name                            | The user name for authenticating with the queue manager                               | string  |                | User name                         |
-| mq.password                             | The password for authenticating with the queue manager                                | string  |                | Password                          |
-| mq.user.authentication.mqcsp            | Whether to use MQ connection security parameters (MQCSP)                              | boolean | true           |                                   |
-| mq.ccdt.url                             | The URL for the CCDT file containing MQ connection details                            | string  |                | URL for obtaining a CCDT file     |
-| mq.message.builder                      | The class used to build the MQ message                                                | string  |                | Class implementing MessageBuilder |
-| mq.message.body.jms                     | Whether to generate the message body as a JMS message type                            | boolean | false          |                                   |
-| mq.time.to.live                         | Time-to-live in milliseconds for messages sent to MQ                                  | long    | 0 (unlimited)  | [0,...]                           |
-| mq.persistent                           | Send persistent or non-persistent messages to MQ                                      | boolean | true           |                                   |
-| mq.ssl.cipher.suite                     | The name of the cipher suite for TLS (SSL) connection                                 | string  |                | Blank or valid cipher suite       |
-| mq.ssl.peer.name                        | The distinguished name pattern of the TLS (SSL) peer                                  | string  |                | Blank or DN pattern               |
-| mq.ssl.keystore.location                | The path to the JKS keystore to use for SSL (TLS) connections                         | string  | JVM keystore   | Local path to a JKS file          |
-| mq.ssl.keystore.password                | The password of the JKS keystore to use for SSL (TLS) connections                     | string  |                |                                   |
-| mq.ssl.truststore.location              | The path to the JKS truststore to use for SSL (TLS) connections                       | string  | JVM truststore | Local path to a JKS file          |
-| mq.ssl.truststore.password              | The password of the JKS truststore to use for SSL (TLS) connections                   | string  |                |                                   |
-| mq.ssl.use.ibm.cipher.mappings          | Whether to set system property to control use of IBM cipher mappings                  | boolean |                |                                   |
-| mq.message.builder.key.header           | The JMS message header to set from the Kafka record key                               | string  |                | JMSCorrelationID                  |
-| mq.kafka.headers.copy.to.jms.properties | Whether to copy Kafka headers to JMS message properties                               | boolean | false          |                                   |
-| mq.message.builder.value.converter      | The class and prefix for message builder's value converter                            | string  |                | Class implementing Converter      |
-| mq.message.builder.topic.property       | The JMS message property to set from the Kafka topic                                  | string  |                | Blank or valid JMS property name  |
-| mq.message.builder.partition.property   | The JMS message property to set from the Kafka partition                              | string  |                | Blank or valid JMS property name  |
-| mq.message.builder.offset.property      | The JMS message property to set from the Kafka offset                                 | string  |                | Blank or valid JMS property name  |
-| mq.reply.queue                          | The name of the reply-to queue                                                        | string  |                | MQ queue name or queue URI        |
-| mq.retry.backoff.ms                     | Wait time, in milliseconds, before retrying after retriable exceptions                | long    | 60000          | [0,...]                           |
+| Name                                    | Description                                                                                               | Type    | Default        | Valid values                      |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------- | -------------- | --------------------------------- |
+| topics or topics.regex                  | List of Kafka source topics                                                                               | string  |                | topic1[,topic2,...]               |
+| mq.queue.manager                        | The name of the MQ queue manager                                                                          | string  |                | MQ queue manager name             |
+| mq.connection.mode                      | The connection mode - bindings or client                                                                  | string  | client         | client, bindings                  |
+| mq.connection.name.list                 | List of connection names for queue manager                                                                | string  |                | host(port)[,host(port),...]       |
+| mq.channel.name                         | The name of the server-connection channel                                                                 | string  |                | MQ channel name                   |
+| mq.queue                                | The name of the target MQ queue                                                                           | string  |                | MQ queue name                     |
+| mq.exactly.once.state.queue             | The name of the MQ queue used to store state when running with exactly-once semantics                     | string  |                | MQ state queue name               |
+| mq.user.name                            | The user name for authenticating with the queue manager                                                   | string  |                | User name                         |
+| mq.password                             | The password for authenticating with the queue manager                                                    | string  |                | Password                          |
+| mq.user.authentication.mqcsp            | Whether to use MQ connection security parameters (MQCSP)                                                  | boolean | true           |                                   |
+| mq.ccdt.url                             | The URL for the CCDT file containing MQ connection details                                                | string  |                | URL for obtaining a CCDT file     |
+| mq.message.builder                      | The class used to build the MQ message                                                                    | string  |                | Class implementing MessageBuilder |
+| mq.message.body.jms                     | Whether to generate the message body as a JMS message type                                                | boolean | false          |                                   |
+| mq.time.to.live                         | Time-to-live in milliseconds for messages sent to MQ                                                      | long    | 0 (unlimited)  | [0,...]                           |
+| mq.persistent                           | Send persistent or non-persistent messages to MQ                                                          | boolean | true           |                                   |
+| mq.ssl.cipher.suite                     | The name of the cipher suite for TLS (SSL) connection                                                     | string  |                | Blank or valid cipher suite       |
+| mq.ssl.peer.name                        | The distinguished name pattern of the TLS (SSL) peer                                                      | string  |                | Blank or DN pattern               |
+| mq.ssl.keystore.location                | The path to the JKS keystore to use for SSL (TLS) connections                                             | string  | JVM keystore   | Local path to a JKS file          |
+| mq.ssl.keystore.password                | The password of the JKS keystore to use for SSL (TLS) connections                                         | string  |                |                                   |
+| mq.ssl.truststore.location              | The path to the JKS truststore to use for SSL (TLS) connections                                           | string  | JVM truststore | Local path to a JKS file          |
+| mq.ssl.truststore.password              | The password of the JKS truststore to use for SSL (TLS) connections                                       | string  |                |                                   |
+| mq.ssl.use.ibm.cipher.mappings          | Whether to set system property to control use of IBM cipher mappings                                      | boolean |                |                                   |
+| mq.message.builder.key.header           | The JMS message header to set from the Kafka record key                                                   | string  |                | JMSCorrelationID                  |
+| mq.kafka.headers.copy.to.jms.properties | Whether to copy Kafka headers to JMS message properties                                                   | boolean | false          |                                   |
+| mq.message.builder.value.converter      | The class and prefix for message builder's value converter                                                | string  |                | Class implementing Converter      |
+| mq.message.builder.topic.property       | The JMS message property to set from the Kafka topic                                                      | string  |                | Blank or valid JMS property name  |
+| mq.message.builder.partition.property   | The JMS message property to set from the Kafka partition                                                  | string  |                | Blank or valid JMS property name  |
+| mq.message.builder.offset.property      | The JMS message property to set from the Kafka offset                                                     | string  |                | Blank or valid JMS property name  |
+| mq.reply.queue                          | The name of the reply-to queue                                                                            | string  |                | MQ queue name or queue URI        |
+| mq.retry.backoff.ms                     | Wait time, in milliseconds, before retrying after retriable exceptions                                    | long    | 60000          | [0,...]                           |
+| mq.message.mqmd.write                   | Whether to enable a custom message builder to write MQ message descriptors                                | boolean | false          |                                   |
+| mq.message.mqmd.context                 | Message context to set on the destination queue. This is required when setting some message descriptors.  | string  |                | `IDENTITY`, `ALL`                     |
 
 ### Using a CCDT file
 
@@ -427,6 +429,44 @@ You may receive an `org.apache.kafka.common.errors.SslAuthenticationException: S
 
 When configuring TLS connection to MQ, you may find that the queue manager rejects the cipher suite, in spite of the name looking correct. There are two different naming conventions for cipher suites (<https://www.ibm.com/support/knowledgecenter/SSFKSJ_9.1.0/com.ibm.mq.dev.doc/q113220_.htm>). Setting the configuration option `mq.ssl.use.ibm.cipher.mappings=false` often resolves cipher suite problems.
 
+### `MQRC_NOT_AUTHORIZED` exception
+
+When attempting to send a message to an IBM MQ queue, an MQException with code `MQRC_NOT_AUTHORIZED` (reason code `2035`) and completion code 2 is thrown. This indicates insufficient permissions on the queue and the queue manager.
+
+#### Resolving the problem
+
+1. **Review permissions**: Ensure that the user has necessary permissions for accessing the queue and the queue manager.
+2. **Grant authority**: If the user does not have the necessary permissions, assign required authorities to the user.
+3. **Set Context**: Set `WMQ_MQMD_MESSAGE_CONTEXT` property for required properties.
+
+    Configure the `mq.message.mqmd.context` property according to the message context. Options include:
+      - `ALL`, which corresponds to `WMQ_MDCTX_SET_ALL_CONTEXT`
+      - `IDENTITY`, mapped to `WMQ_MDCTX_SET_IDENTITY_CONTEXT`
+
+    **Important:** If your message contains any of the following properties, you must ensure that `WMQ_MQMD_MESSAGE_CONTEXT` is set to either `WMQ_MDCTX_SET_IDENTITY_CONTEXT` or `WMQ_MDCTX_SET_ALL_CONTEXT`:
+      - JMS_IBM_MQMD_UserIdentifier
+      - JMS_IBM_MQMD_AccountingToken
+      - JMS_IBM_MQMD_ApplIdentityData
+
+    Similarly, if your message includes any of the following properties, set the `WMQ_MQMD_MESSAGE_CONTEXT` field to `WMQ_MDCTX_SET_ALL_CONTEXT`:
+      - JMS_IBM_MQMD_PutApplType
+      - JMS_IBM_MQMD_PutApplName
+      - JMS_IBM_MQMD_PutDate
+      - JMS_IBM_MQMD_PutTime
+      - JMS_IBM_MQMD_ApplOriginData
+
+    Other message properties do not require the `mq.message.mqmd.context` property.
+
+#### Additional tips
+
+- Verify that the length of all properties are correctly set within the allowed limit.
+- Do not set the [`JMS_IBM_MQMD_BackoutCount`](https://www.ibm.com/docs/en/ibm-mq/9.3?topic=descriptor-backoutcount-mqlong-mqmd) property.
+- Refer to the IBM MQ documentation for detailed configuration guidance:
+
+  - [IBM MQ JMS Message Object Properties](https://www.ibm.com/docs/en/ibm-mq/9.3?topic=application-jms-message-object-properties): This documentation provides details about various properties that can be set on IBM MQ JMS message objects, including their names, types, and descriptions.
+  - [IBM MQ Developer Community](https://community.ibm.com/community/user/integration/home): The developer community for IBM MQ, where you can find forums, articles, and resources related to development and troubleshooting for IBM MQ.
+  - [IBM MQ troubleshooting guide](https://www.ibm.com/docs/en/ibm-mq/9.3?topic=mq-troubleshooting-support): IBM guide for troubleshooting common issues and errors in IBM MQ.
+
 ## Support
 
 A commercially supported version of this connector is available for customers with a support entitlement for [IBM Event Streams](https://www.ibm.com/cloud/event-streams) or [IBM Cloud Pak for Integration](https://www.ibm.com/cloud/cloud-pak-for-integration).
@@ -437,6 +477,6 @@ For issues relating specifically to this connector, please use the [GitHub issue
 
 ## License
 
-Copyright 2017, 2020, 2023 IBM Corporation
+Copyright 2017, 2020, 2023, 2024 IBM Corporation
 
-The IBM MQ sink connector v2 is available under the IBM Event Automation license and IBM Cloud Pak for Integration license. Please see https://ibm.biz/ea-license for further information.
+The IBM MQ sink connector v2 is available under the IBM Event Automation license and IBM Cloud Pak for Integration license. For more information, see the [Event Automation documentation](https://ibm.biz/ea-license).
