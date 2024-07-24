@@ -57,9 +57,9 @@ body:
       label: Version
       description: What version of our software are you running?
       options:
-        - 2.0.0  (Default)
-        - 1.5.1
-        - older (<1.5.1)
+        - 2.2.0 (Default)
+        - 1.5.2
+        - older (<1.5.2)
     validations:
       required: true
   - type: textarea

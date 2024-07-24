@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Copyright 2017, 2020, 2023 IBM Corporation
+ * Copyright 2017, 2020, 2023, 2024 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
   <groupId>com.ibm.eventstreams.connect</groupId>
   <artifactId>kafka-connect-mq-sink</artifactId>
   <packaging>jar</packaging>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
   <name>kafka-connect-mq-sink</name>
   <organization>
     <name>IBM Corporation</name>
@@ -30,18 +30,13 @@
   <description>
       A Kafka Connect connector for copying data from Apache Kafka into IBM MQ.
   </description>
-  <licenses>
-    <license>
-      <name>IBM International Program License Agreement - IBM Event Automation 1.0.0.0</name>
-      <url>https%3A%2F%2Fwww14.software.ibm.com%2Fcgi-bin%2Fweblap%2Flap.pl%3Fpopup%3DY%26li_formnum%3DL-HRZF-DWHH7A</url>
-      <distribution>manual</distribution>
-    </license>
-    <license>
-      <name>IBM International Program License Agreement - IBM Cloud Pak for Integration 2023.2.1 Standard</name>
-      <url>https%3A%2F%2Fwww14.software.ibm.com%2Fcgi-bin%2Fweblap%2Flap.pl%3Fpopup%3DY%26li_formnum%3DL-YBXJ-ADJNSM</url>
-      <distribution>manual</distribution>
-    </license>
-  </licenses>
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -68,13 +63,13 @@
     <dependency>
       <groupId>com.ibm.mq</groupId>
       <artifactId>com.ibm.mq.allclient</artifactId>
-      <version>9.3.3.0</version>
+      <version>9.3.3.1</version>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -122,20 +117,21 @@
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.3.1</version>
-        <configuration>
-          <resources>
-            <resource>
-              <directory>LICENSES</directory>
-            </resource>
-          </resources>
-          <outputDirectory>${project.build.outputDirectory}/META-INF/LICENSES</outputDirectory>
-        </configuration>
-
-      </plugin>
-
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+          <configuration>
+            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+            <resources>
+              <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                  <include>LICENSE</include>
+                </includes>
+              </resource>
+            </resources>
+          </configuration>
+        </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
