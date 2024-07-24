@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018 IBM Corporation
+ * Copyright 2017, 2018, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,10 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message getJMSMessage(final JMSContext jmsCtxt, final SinkRecord record) {
@@ -99,6 +99,6 @@ public class DefaultMessageBuilder extends BaseMessageBuilder {
             }
         }
 
-        return jmsCtxt.createTextMessage(v.toString());     
+        return jmsCtxt.createTextMessage(v.toString());
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2018, 2019 IBM Corporation
+ * Copyright 2018, 2019, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import com.ibm.eventstreams.connect.mqsink.MQSinkConnector;
+import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
 
 import com.ibm.mq.jms.MQQueue;
 
@@ -53,7 +53,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
     /**
      * Configure this class.
-     * 
+     *
      * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
@@ -61,47 +61,47 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     @Override public void configure(final Map<String, String> props) {
         log.trace("[{}] Entry {}.configure, props={}", Thread.currentThread().getId(), this.getClass().getName(), props);
 
-        final String kh = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER);
+        final String kh = props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_KEY_HEADER);
         if (kh != null) {
-            if (kh.equals(MQSinkConnector.CONFIG_VALUE_MQ_MESSAGE_BUILDER_KEY_HEADER_JMSCORRELATIONID)) {
+            if (kh.equals(MQSinkConfig.CONFIG_VALUE_MQ_MESSAGE_BUILDER_KEY_HEADER_JMSCORRELATIONID)) {
                 keyheader = KeyHeader.CORRELATION_ID;
                 log.debug("Setting JMSCorrelationID header field from Kafka record key");
             } else {
                 log.debug("Unsupported MQ message builder key header value {}", kh);
-                throw new ConnectException("Unsupported MQ message builder key header value");
+                throw new MessageBuilderException("Unsupported MQ message builder key header value");
             }
         }
 
-        final String rtq = props.get(MQSinkConnector.CONFIG_NAME_MQ_REPLY_QUEUE);
+        final String rtq = props.get(MQSinkConfig.CONFIG_NAME_MQ_REPLY_QUEUE);
         if (rtq != null) {
             try {
                 // The queue URI format supports properties, but we only accept "queue://qmgr/queue"
                 if (rtq.contains("?")) {
-                    throw new ConnectException("Reply-to queue URI must not contain properties");
+                    throw new MessageBuilderException("Reply-to queue URI must not contain properties");
                 } else {
                     replyToQueue = new MQQueue(rtq);
                 }
             } catch (final JMSException jmse) {
-                throw new ConnectException("Failed to build reply-to queue", jmse);
+                throw new MessageBuilderException("Failed to build reply-to queue", jmse);
             }
         }
 
-        final String tpn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY);
+        final String tpn = props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_TOPIC_PROPERTY);
         if (tpn != null) {
             topicPropertyName = tpn;
         }
 
-        final String ppn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY);
+        final String ppn = props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_PARTITION_PROPERTY);
         if (ppn != null) {
             partitionPropertyName = ppn;
         }
 
-        final String opn = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
+        final String opn = props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_OFFSET_PROPERTY);
         if (opn != null) {
             offsetPropertyName = opn;
         }
-        
-        final String copyhdr = props.get(MQSinkConnector.CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
+
+        final String copyhdr = props.get(MQSinkConfig.CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
         if (copyhdr != null) {
             copyJmsProperties = Boolean.valueOf(copyhdr);
         }
@@ -111,20 +111,20 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
 
     /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message fromSinkRecord(final JMSContext jmsCtxt, final SinkRecord record) {
@@ -141,7 +141,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                         try {
                             m.setJMSCorrelationIDAsBytes((byte[]) k);
                         } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse); 
+                            throw new ConnectException("Failed to write bytes", jmse);
                         }
                     } else if (k instanceof ByteBuffer) {
                         try {
@@ -224,5 +224,5 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         }
 
         return m;
-    } 
+    }
 }

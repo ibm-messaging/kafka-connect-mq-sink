@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 IBM Corporation
+ * Copyright 2022, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -34,49 +33,53 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.output.WaitingConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.ibm.msg.client.jms.JmsConnectionFactory;
 import com.ibm.msg.client.jms.JmsFactoryFactory;
 import com.ibm.msg.client.wmq.WMQConstants;
 
 public class MQSinkTaskAuthIT {
 
-    private static final String QMGR_NAME = "MYAUTHQMGR";
-    private static final String QUEUE_NAME = "DEV.QUEUE.2";
-    private static final String CHANNEL_NAME = "DEV.APP.SVRCONN";
-    private static final String APP_PASSWORD = "MySuperSecretPassword";
-
+    public static final boolean USER_AUTHENTICATION_MQCSP = true;
 
     @ClassRule
-    public static GenericContainer<?> MQ_CONTAINER = new GenericContainer<>("icr.io/ibm-messaging/mq:latest")
-        .withEnv("LICENSE", "accept")
-        .withEnv("MQ_QMGR_NAME", QMGR_NAME)
-        .withEnv("MQ_ENABLE_EMBEDDED_WEB_SERVER", "false")
-        .withEnv("MQ_APP_PASSWORD", APP_PASSWORD)
-        .withExposedPorts(1414);
-
+    final public static GenericContainer<?> MQ_CONTAINER = new GenericContainer<>(AbstractJMSContextIT.MQ_IMAGE)
+            .withEnv("LICENSE", "accept")
+            .withEnv("MQ_QMGR_NAME", AbstractJMSContextIT.QMGR_NAME)
+            .withEnv("MQ_APP_PASSWORD", AbstractJMSContextIT.APP_PASSWORD)
+            .withExposedPorts(AbstractJMSContextIT.TCP_MQ_EXPOSED_PORT, AbstractJMSContextIT.REST_API_EXPOSED_PORT)
+            .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(
+                    new HostConfig().withPortBindings(
+                            new PortBinding(Ports.Binding.bindPort(AbstractJMSContextIT.TCP_MQ_HOST_PORT),
+                                    new ExposedPort(AbstractJMSContextIT.TCP_MQ_EXPOSED_PORT)),
+                            new PortBinding(Ports.Binding.bindPort(AbstractJMSContextIT.REST_API_HOST_PORT),
+                                    new ExposedPort(AbstractJMSContextIT.REST_API_EXPOSED_PORT)))))
+            .waitingFor(Wait.forListeningPort());
 
     @Test
     public void testAuthenticatedQueueManager() throws Exception {
-        waitForQueueManagerStartup();
+        final Map<String, String> connectorProps = new HashMap<>();
+        connectorProps.put("mq.queue.manager", AbstractJMSContextIT.QMGR_NAME);
+        connectorProps.put("mq.connection.mode", AbstractJMSContextIT.CONNECTION_MODE);
+        connectorProps.put("mq.connection.name.list", AbstractJMSContextIT.HOST_NAME + "("
+                + MQ_CONTAINER.getMappedPort(AbstractJMSContextIT.TCP_MQ_EXPOSED_PORT).toString() + ")");
+        connectorProps.put("mq.channel.name", AbstractJMSContextIT.CHANNEL_NAME);
+        connectorProps.put("mq.queue", AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME);
+        connectorProps.put("mq.user.authentication.mqcsp", String.valueOf(USER_AUTHENTICATION_MQCSP));
+        connectorProps.put("mq.user.name", AbstractJMSContextIT.APP_USERNAME);
+        connectorProps.put("mq.password", AbstractJMSContextIT.APP_PASSWORD);
+        connectorProps.put("mq.message.builder", AbstractJMSContextIT.DEFAULT_MESSAGE_BUILDER);
 
-        Map<String, String> connectorProps = new HashMap<>();
-        connectorProps.put("mq.queue.manager", QMGR_NAME);
-        connectorProps.put("mq.connection.mode", "client");
-        connectorProps.put("mq.connection.name.list", "localhost(" + MQ_CONTAINER.getMappedPort(1414).toString() + ")");
-        connectorProps.put("mq.channel.name", CHANNEL_NAME);
-        connectorProps.put("mq.queue", QUEUE_NAME);
-        connectorProps.put("mq.user.authentication.mqcsp", "true");
-        connectorProps.put("mq.user.name", "app");
-        connectorProps.put("mq.password", APP_PASSWORD);
-        connectorProps.put("mq.message.builder", "com.ibm.eventstreams.connect.mqsink.builders.DefaultMessageBuilder");
-
-        MQSinkTask newConnectTask = new MQSinkTask();
+        final MQSinkTask newConnectTask = new MQSinkTask();
         newConnectTask.start(connectorProps);
 
-        List<SinkRecord> records = new ArrayList<>();
-        SinkRecord record = new SinkRecord("KAFKA.TOPIC", 0,
+        final List<SinkRecord> records = new ArrayList<>();
+        final SinkRecord record = new SinkRecord(AbstractJMSContextIT.TOPIC, 0,
                 null, null,
                 null, "message payload",
                 0);
@@ -86,16 +89,9 @@ public class MQSinkTaskAuthIT {
 
         newConnectTask.stop();
 
-        List<Message> messages = getAllMessagesFromQueue();
+        final List<Message> messages = getAllMessagesFromQueue();
         assertEquals(1, messages.size());
         assertEquals("message payload", messages.get(0).getBody(String.class));
-    }
-
-
-    private void waitForQueueManagerStartup() throws TimeoutException {
-        WaitingConsumer logConsumer = new WaitingConsumer();
-        MQ_CONTAINER.followOutput(logConsumer);
-        logConsumer.waitUntil(logline -> logline.getUtf8String().contains("AMQ5806I: Queued Publish/Subscribe Daemon started for queue manager"));
     }
 
     private List<Message> getAllMessagesFromQueue() throws JMSException {
@@ -104,35 +100,34 @@ public class MQSinkTaskAuthIT {
         Destination destination = null;
         MessageConsumer consumer = null;
 
-        JmsFactoryFactory ff = JmsFactoryFactory.getInstance(WMQConstants.WMQ_PROVIDER);
+        final JmsFactoryFactory ff = JmsFactoryFactory.getInstance(WMQConstants.WMQ_PROVIDER);
 
-        JmsConnectionFactory cf = ff.createConnectionFactory();
-        cf.setStringProperty(WMQConstants.WMQ_HOST_NAME, "localhost");
-        cf.setIntProperty(WMQConstants.WMQ_PORT, MQ_CONTAINER.getMappedPort(1414));
-        cf.setStringProperty(WMQConstants.WMQ_CHANNEL, CHANNEL_NAME);
+        final JmsConnectionFactory cf = ff.createConnectionFactory();
+        cf.setStringProperty(WMQConstants.WMQ_HOST_NAME, AbstractJMSContextIT.HOST_NAME);
+        cf.setIntProperty(WMQConstants.WMQ_PORT, MQ_CONTAINER.getMappedPort(AbstractJMSContextIT.TCP_MQ_EXPOSED_PORT));
+        cf.setStringProperty(WMQConstants.WMQ_CHANNEL, AbstractJMSContextIT.CHANNEL_NAME);
         cf.setIntProperty(WMQConstants.WMQ_CONNECTION_MODE, WMQConstants.WMQ_CM_CLIENT);
-        cf.setStringProperty(WMQConstants.WMQ_QUEUE_MANAGER, QMGR_NAME);
-        cf.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, true);
-        cf.setStringProperty(WMQConstants.USERID, "app");
-        cf.setStringProperty(WMQConstants.PASSWORD, APP_PASSWORD);
+        cf.setStringProperty(WMQConstants.WMQ_QUEUE_MANAGER, AbstractJMSContextIT.QMGR_NAME);
+        cf.setBooleanProperty(WMQConstants.USER_AUTHENTICATION_MQCSP, USER_AUTHENTICATION_MQCSP);
+        cf.setStringProperty(WMQConstants.USERID, AbstractJMSContextIT.APP_USERNAME);
+        cf.setStringProperty(WMQConstants.PASSWORD, AbstractJMSContextIT.APP_PASSWORD);
 
         connection = cf.createConnection();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        destination = session.createQueue(QUEUE_NAME);
+        destination = session.createQueue(AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME);
         consumer = session.createConsumer(destination);
 
         connection.start();
 
-        List<Message> messages = new ArrayList<>();
+        final List<Message> messages = new ArrayList<>();
         Message message;
         do {
             message = consumer.receiveNoWait();
             if (message != null) {
                 messages.add(message);
             }
-        }
-        while (message != null);
+        } while (message != null);
 
         connection.close();
 

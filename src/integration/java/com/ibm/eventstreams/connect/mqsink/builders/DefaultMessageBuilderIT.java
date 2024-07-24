@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 IBM Corporation
+ * Copyright 2022, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,24 +43,24 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
         builder = new DefaultMessageBuilder();
     }
 
-    private SinkRecord generateSinkRecord(Schema valueSchema, Object value) {
-        final String TOPIC = "TOPIC.NAME";
-        final int PARTITION = 0;
-        final long OFFSET = 0;
-        final Schema KEY_SCHEMA = Schema.STRING_SCHEMA;
-        final String KEY = "mykey";
+    private SinkRecord generateSinkRecord(final Schema valueSchema, final Object value) {
+        final String topic = "TOPIC.NAME";
+        final int partition = 0;
+        final long offset = 0;
+        final Schema keySchema = Schema.STRING_SCHEMA;
+        final String key = "mykey";
 
-        return new SinkRecord(TOPIC, PARTITION,
-                              KEY_SCHEMA, KEY,
-                              valueSchema, value,
-                              OFFSET);
+        return new SinkRecord(topic, partition,
+                keySchema, key,
+                valueSchema, value,
+                offset);
     }
-
 
     @Test
     public void buildEmptyMessageWithoutSchema() throws Exception {
         createAndVerifyEmptyMessage(null);
     }
+
     @Test
     public void buildEmptyMessageWithSchema() throws Exception {
         createAndVerifyEmptyMessage(Schema.STRING_SCHEMA);
@@ -70,101 +70,108 @@ public class DefaultMessageBuilderIT extends AbstractJMSContextIT {
     public void buildTextMessageWithoutSchema() throws Exception {
         createAndVerifyStringMessage(null, "Hello World");
     }
+
     @Test
     public void buildTextMessageWithSchema() throws Exception {
         createAndVerifyStringMessage(Schema.STRING_SCHEMA, "Hello World with a schema");
     }
+
     @Test
     public void buildIntMessageWithoutSchema() throws Exception {
         createAndVerifyIntegerMessage(null, 1234);
     }
+
     @Test
     public void buildIntMessageWithSchema() throws Exception {
         createAndVerifyIntegerMessage(Schema.INT32_SCHEMA, 1234);
     }
+
     @Test
     public void buildByteArrayMessageWithoutSchema() throws Exception {
-        String TEST_MESSAGE = "This is a test";
-        createAndVerifyByteMessage(null, TEST_MESSAGE.getBytes(), TEST_MESSAGE);
+        final String testMessage = "This is a test";
+        createAndVerifyByteMessage(null, testMessage.getBytes(), testMessage);
     }
+
     @Test
     public void buildByteArrayMessageWithSchema() throws Exception {
-        String TEST_MESSAGE = "This is another test";
-        createAndVerifyByteMessage(Schema.BYTES_SCHEMA, TEST_MESSAGE.getBytes(), TEST_MESSAGE);
+        final String testMessage = "This is another test";
+        createAndVerifyByteMessage(Schema.BYTES_SCHEMA, testMessage.getBytes(), testMessage);
     }
+
     @Test
     public void buildByteBufferMessageWithoutSchema() throws Exception {
-        String TEST_MESSAGE = "This is also a test!";
-        byte[] payload = TEST_MESSAGE.getBytes();
-        ByteBuffer value = ByteBuffer.allocate(payload.length);
+        final String testMessage = "This is also a test!";
+        final byte[] payload = testMessage.getBytes();
+        final ByteBuffer value = ByteBuffer.allocate(payload.length);
         value.put(payload);
-        createAndVerifyByteMessage(null, value, TEST_MESSAGE);
+        createAndVerifyByteMessage(null, value, testMessage);
     }
+
     @Test
     public void buildByteBufferMessageWithSchema() throws Exception {
-        String TEST_MESSAGE = "This is a bytebuffer test";
-        byte[] payload = TEST_MESSAGE.getBytes();
-        ByteBuffer value = ByteBuffer.allocate(payload.length);
+        final String testMessage = "This is a bytebuffer test";
+        final byte[] payload = testMessage.getBytes();
+        final ByteBuffer value = ByteBuffer.allocate(payload.length);
         value.put(payload);
-        createAndVerifyByteMessage(Schema.BYTES_SCHEMA, value, TEST_MESSAGE);
+        createAndVerifyByteMessage(Schema.BYTES_SCHEMA, value, testMessage);
     }
-    
+
     @Test
     public void buildMessageWithTextHeader() throws Exception {
-        final String TOPIC = "TOPIC.NAME";
-        final int PARTITION = 0;
-        final long OFFSET = 0;
-        
-        final String TEST_HEADER_KEY = "TestHeader";
-        
-        ConnectHeaders headers = new ConnectHeaders();
-        headers.addString(TEST_HEADER_KEY, "This is a test header");
+        final String topic = "TOPIC.NAME";
+        final int partition = 0;
+        final long offset = 0;
 
-        SinkRecord record = new SinkRecord(TOPIC, PARTITION,
-                                           Schema.STRING_SCHEMA, "mykey",
-                                           Schema.STRING_SCHEMA, "Test message",
-                                           OFFSET, 
-                                           null, TimestampType.NO_TIMESTAMP_TYPE,
-                                           headers);
-        
+        final String testHeaderKey = "TestHeader";
+
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addString(testHeaderKey, "This is a test header");
+
+        final SinkRecord record = new SinkRecord(topic, partition,
+                Schema.STRING_SCHEMA, "mykey",
+                Schema.STRING_SCHEMA, "Test message",
+                offset,
+                null, TimestampType.NO_TIMESTAMP_TYPE,
+                headers);
+
         // header should not have been copied across by default
-        Message message = builder.fromSinkRecord(getJmsContext(), record);
-        assertNull(message.getStringProperty(TEST_HEADER_KEY));
-        
+        final Message message = builder.fromSinkRecord(getJmsContext(), record);
+        assertNull(message.getStringProperty(testHeaderKey));
+
         // no message properties should be set by default
         assertFalse(message.getPropertyNames().hasMoreElements());
     }
 
-
-    private void createAndVerifyEmptyMessage(Schema valueSchema) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, null));
+    private void createAndVerifyEmptyMessage(final Schema valueSchema) throws Exception {
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, null));
         assertEquals(null, message.getBody(String.class));
     }
 
-    private void createAndVerifyStringMessage(Schema valueSchema, String value) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+    private void createAndVerifyStringMessage(final Schema valueSchema, final String value) throws Exception {
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
         assertEquals(value, message.getBody(String.class));
 
-        TextMessage textmessage = (TextMessage) message;
+        final TextMessage textmessage = (TextMessage) message;
         assertEquals(value, textmessage.getText());
     }
 
-    private void createAndVerifyIntegerMessage(Schema valueSchema, Integer value) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
-        Integer intValue = Integer.parseInt(message.getBody(String.class));
+    private void createAndVerifyIntegerMessage(final Schema valueSchema, final Integer value) throws Exception {
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+        final Integer intValue = Integer.parseInt(message.getBody(String.class));
         assertEquals(value, intValue);
     }
 
-    private void createAndVerifyByteMessage(Schema valueSchema, Object value, String valueAsString) throws Exception {
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
+    private void createAndVerifyByteMessage(final Schema valueSchema, final Object value, final String valueAsString)
+            throws Exception {
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(valueSchema, value));
 
-        BytesMessage byteMessage = (BytesMessage) message;
+        final BytesMessage byteMessage = (BytesMessage) message;
         byteMessage.reset();
 
         byte[] byteData = null;
         byteData = new byte[(int) byteMessage.getBodyLength()];
         byteMessage.readBytes(byteData);
-        String stringMessage =  new String(byteData);
+        final String stringMessage = new String(byteData);
         assertEquals(valueAsString, stringMessage);
     }
 }

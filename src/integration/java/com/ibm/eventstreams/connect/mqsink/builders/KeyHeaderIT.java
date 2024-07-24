@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 IBM Corporation
+ * Copyright 2022, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.jms.Message;
 
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 
@@ -33,27 +32,26 @@ import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
 
 public class KeyHeaderIT extends AbstractJMSContextIT {
 
-    private SinkRecord generateSinkRecord(Schema keySchema, Object keyValue) {
-        final String TOPIC = "TOPIC.NAME";
-        final int PARTITION = 0;
-        final long OFFSET = 0;
-        final Schema VALUE_SCHEMA = Schema.STRING_SCHEMA;
-        final String VALUE = "message payload";
+    private SinkRecord generateSinkRecord(final Schema keySchema, final Object keyValue) {
+        final String topic = "TOPIC.NAME";
+        final int partition = 0;
+        final long offset = 0;
+        final Schema valueSchema = Schema.STRING_SCHEMA;
+        final String value = "message payload";
 
-        return new SinkRecord(TOPIC, PARTITION,
-                              keySchema, keyValue,
-                              VALUE_SCHEMA, VALUE,
-                              OFFSET);
+        return new SinkRecord(topic, partition,
+                keySchema, keyValue,
+                valueSchema, value,
+                offset);
     }
-
 
     @Test
     public void verifyUnsupportedKeyHeader() throws Exception {
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.message.builder.key.header", "unsupported");
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
-        ConnectException exc = assertThrows(ConnectException.class, () -> {
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final MessageBuilderException exc = assertThrows(MessageBuilderException.class, () -> {
             builder.configure(props);
         });
         assertEquals("Unsupported MQ message builder key header value", exc.getMessage());
@@ -81,9 +79,9 @@ public class KeyHeaderIT extends AbstractJMSContextIT {
 
     @Test
     public void buildByteBufferKeyHeaderWithoutSchema() throws Exception {
-        String key = "this-is-my-key";
-        byte[] payload = key.getBytes();
-        ByteBuffer value = ByteBuffer.allocate(payload.length);
+        final String key = "this-is-my-key";
+        final byte[] payload = key.getBytes();
+        final ByteBuffer value = ByteBuffer.allocate(payload.length);
         value.put(payload);
 
         createAndVerifyBytesKeyHeader(null, value, key);
@@ -91,34 +89,34 @@ public class KeyHeaderIT extends AbstractJMSContextIT {
 
     @Test
     public void buildByteBufferKeyHeaderWithSchema() throws Exception {
-        String key = "this-is-a-key";
-        byte[] payload = key.getBytes();
-        ByteBuffer value = ByteBuffer.allocate(payload.length);
+        final String key = "this-is-a-key";
+        final byte[] payload = key.getBytes();
+        final ByteBuffer value = ByteBuffer.allocate(payload.length);
         value.put(payload);
 
         createAndVerifyBytesKeyHeader(Schema.BYTES_SCHEMA, value, key);
     }
 
-
-    private void createAndVerifyStringKeyHeader(Schema schema, String key) throws Exception {
-        Map<String, String> props = new HashMap<>();
+    private void createAndVerifyStringKeyHeader(final Schema schema, final String key) throws Exception {
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.message.builder.key.header", "JMSCorrelationID");
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(schema, key));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(schema, key));
         assertEquals(key, message.getJMSCorrelationID());
     }
 
-    private void createAndVerifyBytesKeyHeader(Schema schema, Object key, String keyAsString) throws Exception {
-        Map<String, String> props = new HashMap<>();
+    private void createAndVerifyBytesKeyHeader(final Schema schema, final Object key, final String keyAsString)
+            throws Exception {
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.message.builder.key.header", "JMSCorrelationID");
 
-        DefaultMessageBuilder builder = new DefaultMessageBuilder();
+        final DefaultMessageBuilder builder = new DefaultMessageBuilder();
         builder.configure(props);
 
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(schema, key));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(schema, key));
         assertEquals(keyAsString, new String(message.getJMSCorrelationIDAsBytes()));
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 IBM Corporation
+ * Copyright 2023, 2023 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,51 +41,51 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     public void prepareMessageBuilder() {
         builder = new DefaultMessageBuilder();
 
-        Map<String, String> props = new HashMap<>();
+        final Map<String, String> props = new HashMap<>();
         props.put("mq.kafka.headers.copy.to.jms.properties", "true");
         builder.configure(props);
     }
 
-    private SinkRecord generateSinkRecord(ConnectHeaders headers) {
-        final String TOPIC = "TOPIC.NAME";
-        final int PARTITION = 0;
-        final long OFFSET = 0;
-        return new SinkRecord(TOPIC, PARTITION,
-                              Schema.STRING_SCHEMA, "mykey",
-                              Schema.STRING_SCHEMA, "Test message",
-                              OFFSET,
-                              null, TimestampType.NO_TIMESTAMP_TYPE,
-                              headers);
+    private SinkRecord generateSinkRecord(final ConnectHeaders headers) {
+        final String topic = "TOPIC.NAME";
+        final int partition = 0;
+        final long offset = 0;
+        return new SinkRecord(topic, partition,
+                Schema.STRING_SCHEMA, "mykey",
+                Schema.STRING_SCHEMA, "Test message",
+                offset,
+                null, TimestampType.NO_TIMESTAMP_TYPE,
+                headers);
     }
 
     @Test
     public void buildMessageWithNoHeaders() throws Exception {
         // generate MQ message
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(null));
 
         // verify there are no MQ message properties
         assertFalse(message.getPropertyNames().hasMoreElements());
     }
-    
+
     @Test
     public void buildMessageWithStringHeaders() throws Exception {
-        Map<String, String> testHeaders = new HashMap<>();
-        testHeaders.put("HeaderOne",   "This is test header one");
-        testHeaders.put("HeaderTwo",   "This is test header two");
+        final Map<String, String> testHeaders = new HashMap<>();
+        testHeaders.put("HeaderOne", "This is test header one");
+        testHeaders.put("HeaderTwo", "This is test header two");
         testHeaders.put("HeaderThree", "This is test header three");
-        testHeaders.put("HeaderFour",  "This is test header four");
+        testHeaders.put("HeaderFour", "This is test header four");
 
         // prepare Kafka headers for input message
-        ConnectHeaders headers = new ConnectHeaders();
-        for (String key : testHeaders.keySet()) {
+        final ConnectHeaders headers = new ConnectHeaders();
+        for (final String key : testHeaders.keySet()) {
             headers.addString(key, testHeaders.get(key));
         }
 
         // generate MQ message
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
 
         // verify MQ message properties
-        for (String key : testHeaders.keySet()) {
+        for (final String key : testHeaders.keySet()) {
             assertEquals(testHeaders.get(key), message.getStringProperty(key));
         }
     }
@@ -93,15 +93,15 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     @Test
     public void buildMessageWithBooleanHeaders() throws Exception {
         // prepare Kafka headers for input message
-        ConnectHeaders headers = new ConnectHeaders();
-        headers.addBoolean("TestTrue",  true);
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addBoolean("TestTrue", true);
         headers.addBoolean("TestFalse", false);
 
         // generate MQ message
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
 
         // verify MQ message properties
-        assertEquals("true",  message.getStringProperty("TestTrue"));
+        assertEquals("true", message.getStringProperty("TestTrue"));
         assertEquals("false", message.getStringProperty("TestFalse"));
         assertTrue(message.getBooleanProperty("TestTrue"));
         assertFalse(message.getBooleanProperty("TestFalse"));
@@ -110,13 +110,13 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     @Test
     public void buildMessageWithIntegerHeaders() throws Exception {
         // prepare Kafka headers for input message
-        ConnectHeaders headers = new ConnectHeaders();
-        headers.addInt("TestOne",   1);
-        headers.addInt("TestTwo",   2);
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addInt("TestOne", 1);
+        headers.addInt("TestTwo", 2);
         headers.addInt("TestThree", 3);
 
         // generate MQ message
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
 
         // verify MQ message properties
         assertEquals("1", message.getStringProperty("TestOne"));
@@ -130,11 +130,11 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     @Test
     public void buildMessageWithDoubleHeaders() throws Exception {
         // prepare Kafka headers for input message
-        ConnectHeaders headers = new ConnectHeaders();
+        final ConnectHeaders headers = new ConnectHeaders();
         headers.addDouble("TestPi", 3.14159265359);
 
         // generate MQ message
-        Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
 
         // verify MQ message properties
         assertEquals("3.14159265359", message.getStringProperty("TestPi"));
