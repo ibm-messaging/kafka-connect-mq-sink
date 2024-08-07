@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 IBM Corporation
+ * Copyright 2018, 2023, 2024 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import com.ibm.eventstreams.connect.mqsink.MQSinkConnector;
+import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
 
 import java.util.Map;
 
@@ -48,7 +48,7 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Configure this class.
-     * 
+     *
      * @param props initial configuration
      *
      * @throws ConnectException   Operation failed and connector should stop.
@@ -58,7 +58,7 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
         super.configure(props);
 
-        final String converterClass = props.get(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
+        final String converterClass = props.get(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER);
 
         try {
             final Class<? extends Converter> c = Class.forName(converterClass).asSubclass(Converter.class);
@@ -69,10 +69,10 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
             final AbstractConfig ac = new AbstractConfig(new ConfigDef(), props, false);
 
             // Configure the Converter to convert the value, not the key (isKey == false)
-            converter.configure(ac.originalsWithPrefix(MQSinkConnector.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER + "."), false);
+            converter.configure(ac.originalsWithPrefix(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER + "."), false);
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
             log.error("Could not instantiate converter for message builder {}", converterClass);
-            throw new ConnectException("Could not instantiate converter for message builder", exc);
+            throw new MessageBuilderException("Could not instantiate converter for message builder", exc);
         }
 
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
@@ -80,10 +80,10 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
     /**
      * Gets the JMS message for the Kafka Connect SinkRecord.
-     * 
+     *
      * @param context            the JMS context to use for building messages
      * @param record             the Kafka Connect SinkRecord
-     * 
+     *
      * @return the JMS message
      */
     @Override public Message getJMSMessage(final JMSContext jmsCtxt, final SinkRecord record) {
