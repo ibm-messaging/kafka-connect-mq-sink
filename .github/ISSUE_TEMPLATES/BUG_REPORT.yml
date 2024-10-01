@@ -57,7 +57,7 @@ body:
       label: Version
       description: What version of our software are you running?
       options:
-        - 2.2.0 (Default)
+        - 2.2.1 (Default)
         - 1.5.2
         - older (<1.5.2)
     validations:
