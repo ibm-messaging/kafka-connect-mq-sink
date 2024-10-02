@@ -157,12 +157,12 @@ public class MQSinkConfig {
     public static final String CONFIG_DOCUMENTATION_MQ_RETRY_BACKOFF_MS = "Time to wait, in milliseconds, before retrying after retriable exceptions";
     public static final String CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS = "Retry backoff (ms)";
 
-    // https://www.ibm.com/docs/en/ibm-mq/9.3?topic=amffmcja-reading-writing-message-descriptor-from-mq-classes-jms-application
+    // https://www.ibm.com/docs/en/ibm-mq/9.4?topic=amffmcja-reading-writing-message-descriptor-from-mq-classes-jms-application
     public static final String CONFIG_NAME_MQ_MQMD_WRITE_ENABLED = "mq.message.mqmd.write";
     public static final String CONFIG_DISPLAY_MQ_MQMD_WRITE_ENABLED = "Enable a custom message builder to write MQ message descriptors";
     public static final String CONFIG_DOCUMENTATION_MQ_MQMD_WRITE_ENABLED = "This configuration option determines whether the MQMD structure will be written along with the message data. Enabling this option allows control information to accompany the application data during message transmission between sending and receiving applications. Disabling this option will exclude the MQMD structure from the message payload.";
 
-    // https://www.ibm.com/docs/en/ibm-mq/9.3?topic=application-jms-message-object-properties
+    // https://www.ibm.com/docs/en/ibm-mq/9.4?topic=application-jms-message-object-properties
     public static final String CONFIG_NAME_MQ_MQMD_MESSAGE_CONTEXT = "mq.message.mqmd.context";
     public static final String CONFIG_DISPLAY_MQ_MQMD_MESSAGE_CONTEXT = "Message context to set on the destination queue. This is required when setting some message descriptors.";
     public static final String CONFIG_DOCUMENTATION_MQ_MQMD_MESSAGE_CONTEXT = "This configuration option specifies the context in which MQMD properties are applied. Certain properties require this context to be set appropriately for them to take effect. Valid options for WMQ_MQMD_MESSAGE_CONTEXT are IDENTITY for WMQ_MDCTX_SET_IDENTITY_CONTEXT or ALL for WMQ_MDCTX_SET_ALL_CONTEXT.";

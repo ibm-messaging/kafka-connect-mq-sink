@@ -91,7 +91,7 @@ public abstract class AbstractJMSContextIT {
     public static final String CONNECTION_MODE = "client";
     public static final String HOST_NAME = "localhost";
 
-    public static final String MQ_IMAGE = "icr.io/ibm-messaging/mq:9.3.2.1-r2";
+    public static final String MQ_IMAGE = "icr.io/ibm-messaging/mq:9.4.0.5-r2";
     public static final boolean USER_AUTHENTICATION_MQCSP = false;
 
     protected final ObjectMapper mapper = new ObjectMapper();
