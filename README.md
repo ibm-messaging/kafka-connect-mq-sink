@@ -460,12 +460,12 @@ When attempting to send a message to an IBM MQ queue, an MQException with code `
 #### Additional tips
 
 - Verify that the length of all properties are correctly set within the allowed limit.
-- Do not set the [`JMS_IBM_MQMD_BackoutCount`](https://www.ibm.com/docs/en/ibm-mq/9.3?topic=descriptor-backoutcount-mqlong-mqmd) property.
+- Do not set the [`JMS_IBM_MQMD_BackoutCount`](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=descriptor-backoutcount-mqlong-mqmd) property.
 - Refer to the IBM MQ documentation for detailed configuration guidance:
 
-  - [IBM MQ JMS Message Object Properties](https://www.ibm.com/docs/en/ibm-mq/9.3?topic=application-jms-message-object-properties): This documentation provides details about various properties that can be set on IBM MQ JMS message objects, including their names, types, and descriptions.
+  - [IBM MQ JMS Message Object Properties](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=application-jms-message-object-properties): This documentation provides details about various properties that can be set on IBM MQ JMS message objects, including their names, types, and descriptions.
   - [IBM MQ Developer Community](https://community.ibm.com/community/user/integration/home): The developer community for IBM MQ, where you can find forums, articles, and resources related to development and troubleshooting for IBM MQ.
-  - [IBM MQ troubleshooting guide](https://www.ibm.com/docs/en/ibm-mq/9.3?topic=mq-troubleshooting-support): IBM guide for troubleshooting common issues and errors in IBM MQ.
+  - [IBM MQ troubleshooting guide](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=mq-troubleshooting-support): IBM guide for troubleshooting common issues and errors in IBM MQ.
 
 ## Support
 

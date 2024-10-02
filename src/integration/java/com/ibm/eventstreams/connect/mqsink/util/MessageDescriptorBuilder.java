@@ -36,7 +36,7 @@ public class MessageDescriptorBuilder extends DefaultMessageBuilder {
         // JMS_IBM_MQMD_MsgId - byte[]
         // JMS_IBM_MQMD_ApplIdentityData - string
         // JMS_IBM_MQMD_PutApplName - string
-        // https://www.ibm.com/docs/en/ibm-mq/9.3?topic=application-jms-message-object-properties
+        // https://www.ibm.com/docs/en/ibm-mq/9.4?topic=application-jms-message-object-properties
         try {
             message.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID, "ThisIsMyId".getBytes());
             message.setStringProperty(JmsConstants.JMS_IBM_MQMD_APPLIDENTITYDATA, "ThisIsMyApplicationData");
