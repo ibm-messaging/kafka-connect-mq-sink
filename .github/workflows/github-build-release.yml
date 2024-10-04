@@ -8,22 +8,25 @@ name: Build and create release
 jobs:
   build:
     name: Build and upload release binary
-    #if: github.event.base_ref == 'refs/heads/master' # only run if on master branch
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Set up JDK 8
         uses: actions/setup-java@v3
         with:
           java-version: 8
           distribution: 'semeru'
+
       - name: Get java-version
         run: |
           BUILD_VERSION=$( mvn help:evaluate -Dexpression=project.version -q -DforceStdout )
           echo "VERSION=$BUILD_VERSION" >> $GITHUB_ENV
+
       - name: Build
-        run: mvn package
+        run: mvn -B clean package
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -34,6 +37,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
+
       - name: Upload Release Asset With Dependencies
         id: upload-release-asset-with-dependencies
         uses: actions/upload-release-asset@v1
@@ -44,6 +48,7 @@ jobs:
           asset_path: ./target/kafka-connect-mq-sink-${{env.VERSION}}-jar-with-dependencies.jar
           asset_name: kafka-connect-mq-sink-${{env.VERSION}}-jar-with-dependencies.jar
           asset_content_type: application/java-archive
+
       - name: Upload Release Asset With non-MQ Dependencies
         id: upload-release-asset-with-dependencies-exc-mq
         uses: actions/upload-release-asset@v1
@@ -54,6 +59,7 @@ jobs:
           asset_path: ./target/kafka-connect-mq-sink-${{env.VERSION}}-dependencies-exc-mq.jar
           asset_name: kafka-connect-mq-sink-${{env.VERSION}}-dependencies-exc-mq.jar
           asset_content_type: application/java-archive
+
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

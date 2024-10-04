@@ -34,6 +34,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.MountableFile;
 
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
@@ -52,7 +53,9 @@ public class MQSinkTaskAuthIT {
             .withEnv("LICENSE", "accept")
             .withEnv("MQ_QMGR_NAME", AbstractJMSContextIT.QMGR_NAME)
             .withEnv("MQ_APP_PASSWORD", AbstractJMSContextIT.APP_PASSWORD)
+            .withEnv("MQ_ADMIN_PASSWORD", AbstractJMSContextIT.ADMIN_PASSWORD)
             .withExposedPorts(AbstractJMSContextIT.TCP_MQ_EXPOSED_PORT, AbstractJMSContextIT.REST_API_EXPOSED_PORT)
+            .withCopyFileToContainer(MountableFile.forClasspathResource("no-auth-qmgr.mqsc"), "/etc/mqm/99-no-auth-qmgr.mqsc")
             .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(
                     new HostConfig().withPortBindings(
                             new PortBinding(Ports.Binding.bindPort(AbstractJMSContextIT.TCP_MQ_HOST_PORT),

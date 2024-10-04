@@ -43,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.MountableFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -53,7 +54,6 @@ import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper;
-import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 import com.ibm.mq.jms.MQConnectionFactory;
 import com.ibm.msg.client.jms.JmsConnectionFactory;
 import com.ibm.msg.client.jms.JmsFactoryFactory;
@@ -111,7 +111,10 @@ public abstract class AbstractJMSContextIT {
     final public static GenericContainer<?> MQ_CONTAINER = new GenericContainer<>(MQ_IMAGE)
             .withEnv("LICENSE", "accept")
             .withEnv("MQ_QMGR_NAME", QMGR_NAME)
+            .withEnv("MQ_APP_PASSWORD", ADMIN_PASSWORD)
+            .withEnv("MQ_ADMIN_PASSWORD", ADMIN_PASSWORD)
             .withExposedPorts(TCP_MQ_EXPOSED_PORT, REST_API_EXPOSED_PORT)
+            .withCopyFileToContainer(MountableFile.forClasspathResource("no-auth-qmgr.mqsc"), "/etc/mqm/99-no-auth-qmgr.mqsc")
             .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(
                     new HostConfig().withPortBindings(
                             new PortBinding(Ports.Binding.bindPort(TCP_MQ_HOST_PORT),
@@ -155,7 +158,7 @@ public abstract class AbstractJMSContextIT {
             mqcf.setQueueManager(QMGR_NAME);
             mqcf.setConnectionNameList(getConnectionName());
 
-            jmsContext = mqcf.createContext();
+            jmsContext = mqcf.createContext(APP_USERNAME, ADMIN_PASSWORD);
         }
 
         return jmsContext;
