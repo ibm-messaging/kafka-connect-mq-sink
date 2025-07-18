@@ -102,7 +102,7 @@ public class JMSWorker {
         mqConnectionHelper = new MQConnectionHelper(config);
 
         if (mqConnectionHelper.getUseIBMCipherMappings() != null) {
-            System.setProperty("com.ibm.mq.cfg.useIBMCipherMappings", mqConnectionHelper.getUseIBMCipherMappings());
+            System.setProperty("com.ibm.mq.cfg.useIBMCipherMappings", Boolean.toString(mqConnectionHelper.getUseIBMCipherMappings()));
         }
 
         try {
