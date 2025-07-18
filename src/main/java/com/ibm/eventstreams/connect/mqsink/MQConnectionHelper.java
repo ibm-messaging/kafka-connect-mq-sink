@@ -63,8 +63,8 @@ public class MQConnectionHelper {
         return config.getBoolean(MQSinkConfig.CONFIG_NAME_MQ_PERSISTENT);
     }
 
-    public String getUseIBMCipherMappings() {
-        return config.getString(MQSinkConfig.CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
+    public Boolean getUseIBMCipherMappings() {
+        return config.getBoolean(MQSinkConfig.CONFIG_NAME_MQ_SSL_USE_IBM_CIPHER_MAPPINGS);
     }
 
     public int getTransportType() {

@@ -127,6 +127,27 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
         assertEquals("world", messagesInMQ.get(1).getBody(String.class));
     }
 
+     @Test
+    public void verifyMQSslUseIbmCipherMappings() {
+        final Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
+        connectorConfigProps.put("mq.message.builder",
+                DEFAULT_MESSAGE_BUILDER);
+        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings", "true");
+
+        final MQSinkTask newConnectTask = new MQSinkTask();
+        newConnectTask.start(connectorConfigProps);
+
+        // Check if the config reflects the change
+        assertEquals(System.getProperty("com.ibm.mq.cfg.useIBMCipherMappings"), "true");
+
+        // Verify the exception messages
+        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings", "Not a boolean");
+        final ConfigException exc = assertThrows(ConfigException.class, () -> {
+            newConnectTask.start(connectorConfigProps);
+        });
+        assertEquals("Invalid value Not a boolean for configuration mq.ssl.use.ibm.cipher.mappings: Expected value to be either true or false", exc.getMessage());
+    }
+
     @Test
     public void verifyStringJmsMessages() throws JMSException {
         final MQSinkTask newConnectTask = new MQSinkTask();
