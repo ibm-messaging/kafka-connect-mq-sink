@@ -128,7 +128,7 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
     }
 
     @Test
-    public void verifyMqConfig() throws JMSException {
+    public void verifyCipherMappingsConfig() throws JMSException {
         final MQSinkTask newConnectTask = new MQSinkTask();
 
         // configure a sink task for string messages
@@ -142,27 +142,12 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
         // start the task so that it connects to MQ
         newConnectTask.start(connectorConfigProps);
 
-        // create some test messages
-        final List<SinkRecord> records = new ArrayList<>();
-        records.add(generateSinkRecord(null, "hello"));
-        records.add(generateSinkRecord(null, "world"));
-        newConnectTask.put(records);
-
-        // flush the messages
-        final Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
-        final TopicPartition topic = new TopicPartition(TOPIC, PARTITION);
-        final OffsetAndMetadata offset = new OffsetAndMetadata(commonOffset);
-        offsets.put(topic, offset);
-        newConnectTask.flush(offsets);
+        // Check if the config reflects the change
+        String cipherMappingProp = System.getProperty("com.ibm.mq.cfg.useIBMCipherMappings");
+        assertEquals("true", cipherMappingProp);
 
         // stop the task
         newConnectTask.stop();
-
-        // verify that the messages were successfully submitted to MQ
-        final List<Message> messagesInMQ = getAllMessagesFromQueue(DEFAULT_SINK_QUEUE_NAME);
-        assertEquals(2, messagesInMQ.size());
-        assertEquals("hello", messagesInMQ.get(0).getBody(String.class));
-        assertEquals("world", messagesInMQ.get(1).getBody(String.class));
     }
 
     @Test
