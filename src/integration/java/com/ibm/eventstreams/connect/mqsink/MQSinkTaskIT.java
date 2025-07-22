@@ -127,40 +127,25 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
         assertEquals("world", messagesInMQ.get(1).getBody(String.class));
     }
 
-    @Test
-    public void verifyCipherMappingsConfig() throws JMSException {
-        final MQSinkTask newConnectTask = new MQSinkTask();
-
-        // configure a sink task for validating config
+     @Test
+    public void verifyMQSslUseIbmCipherMappings() {
         final Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
         connectorConfigProps.put("mq.message.builder",
                 DEFAULT_MESSAGE_BUILDER);
+        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings", "true");
 
-        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings",
-                "true");       
-
-        // start the task so that it connects to MQ
+        final MQSinkTask newConnectTask = new MQSinkTask();
         newConnectTask.start(connectorConfigProps);
 
         // Check if the config reflects the change
-        String cipherMappingProp = System.getProperty("com.ibm.mq.cfg.useIBMCipherMappings");
-        assertEquals("true", cipherMappingProp);
-
-        // stop the task
-        newConnectTask.stop();
-
-        // configure a sink task for validating config for failure case
-        connectorConfigProps.put("mq.message.builder",
-                DEFAULT_MESSAGE_BUILDER);
-
-        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings",
-                "hello");       
-
+        assertEquals(System.getProperty("com.ibm.mq.cfg.useIBMCipherMappings"), "true");
+        
         // Verify the exception messages
+        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings", "Not a boolean");
         final ConfigException exc = assertThrows(ConfigException.class, () -> {
             newConnectTask.start(connectorConfigProps);
         });
-        assertEquals("Invalid value hello for configuration mq.ssl.use.ibm.cipher.mappings: Expected value to be either true or false", exc.getMessage());
+        assertEquals("Invalid value Not a boolean for configuration mq.ssl.use.ibm.cipher.mappings: Expected value to be either true or false", exc.getMessage());
     }
 
     @Test
