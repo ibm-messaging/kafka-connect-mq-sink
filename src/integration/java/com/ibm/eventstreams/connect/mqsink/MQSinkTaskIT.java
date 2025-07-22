@@ -131,13 +131,13 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
     public void verifyCipherMappingsConfig() throws JMSException {
         final MQSinkTask newConnectTask = new MQSinkTask();
 
-        // configure a sink task for string messages
+        // configure a sink task for validating config
         final Map<String, String> connectorConfigProps = createDefaultConnectorProperties();
         connectorConfigProps.put("mq.message.builder",
                 DEFAULT_MESSAGE_BUILDER);
 
         connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings",
-                "true");        
+                "true");       
 
         // start the task so that it connects to MQ
         newConnectTask.start(connectorConfigProps);
@@ -148,6 +148,19 @@ public class MQSinkTaskIT extends AbstractJMSContextIT {
 
         // stop the task
         newConnectTask.stop();
+
+        // configure a sink task for validating config for failure case
+        connectorConfigProps.put("mq.message.builder",
+                DEFAULT_MESSAGE_BUILDER);
+
+        connectorConfigProps.put("mq.ssl.use.ibm.cipher.mappings",
+                "hello");       
+
+        // Verify the exception messages
+        final ConfigException exc = assertThrows(ConfigException.class, () -> {
+            newConnectTask.start(connectorConfigProps);
+        });
+        assertEquals("Invalid value hello for configuration mq.ssl.use.ibm.cipher.mappings: Expected value to be either true or false", exc.getMessage());
     }
 
     @Test
