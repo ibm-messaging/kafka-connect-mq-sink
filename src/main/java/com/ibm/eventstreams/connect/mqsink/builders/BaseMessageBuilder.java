@@ -1,5 +1,5 @@
 /**
- * Copyright 2018, 2019, 2023, 2024 IBM Corporation
+ * Copyright 2018, 2019, 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 package com.ibm.eventstreams.connect.mqsink.builders;
 
 import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
-
 import com.ibm.mq.jms.MQQueue;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.jms.Destination;
@@ -50,6 +48,10 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public String partitionPropertyName;
     public String offsetPropertyName;
     public boolean copyJmsProperties;
+    public boolean mqmdWriteEnabled;
+
+    // Converter for Kafka headers to JMS properties
+    private final KafkaToJmsHeaderConverter headerConverter = new KafkaToJmsHeaderConverter();
 
     /**
      * Configure this class.
@@ -106,6 +108,14 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             copyJmsProperties = Boolean.valueOf(copyhdr);
         }
 
+        final String mqmdWrite = props.get(MQSinkConfig.CONFIG_NAME_MQ_MQMD_WRITE_ENABLED);
+        if (mqmdWrite != null) {
+            mqmdWriteEnabled = Boolean.valueOf(mqmdWrite);
+        }
+
+        // Configure the header converter with MQMD write setting and context
+        headerConverter.setMqmdWriteEnabled(mqmdWriteEnabled);
+
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
@@ -120,6 +130,20 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
 
     /**
+     * Sets a JMS message property from a Kafka Connect header with IBM MQ-aware type handling.
+     * Uses KafkaToJmsHeaderConverter to convert Kafka header values to the appropriate JMS property types.
+     * Supports both new Source Connector (typed values) and old Source Connector (String values).
+     *
+     * @param message the JMS message to set the property on
+     * @param header  the Kafka Connect header
+     * @throws ConnectException  if the value type is not compatible with the expected property type
+     */
+    private void setJmsProperty(final Message message, final Header header) {
+        headerConverter.copyHeaderToJmsProperty(message, header);
+    }
+
+
+    /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
      *
      * @param context            the JMS context to use for building messages
@@ -129,6 +153,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      */
     @Override public Message fromSinkRecord(final JMSContext jmsCtxt, final SinkRecord record) {
         final Message m = this.getJMSMessage(jmsCtxt, record);
+
 
         if (keyheader != KeyHeader.NONE) {
             final Schema s = record.keySchema();
@@ -180,14 +205,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             }
         }
 
-        if (replyToQueue != null) {
-            try {
-                m.setJMSReplyTo(replyToQueue);
-            } catch (final JMSException jmse) {
-                throw new ConnectException("Failed to set reply-to queue", jmse);
-            }
-        }
-
         if (topicPropertyName != null) {
             try {
                 m.setStringProperty(topicPropertyName, record.topic());
@@ -213,13 +230,23 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         }
 
         if (copyJmsProperties) {
-            for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
-                final Header header = iterator.next();
+            for (final Header header : record.headers()) {
                 try {
-                    m.setStringProperty(header.key(), header.value().toString());
-                } catch (final JMSException jmse) {
-                    throw new ConnectException("Failed to set header", jmse);
+                    setJmsProperty(m, header);
+                } catch (final IllegalArgumentException iae) {
+                    // Bad header name or unconvertible value — skip and continue
+                    log.warn("Skipping header '{}': {}", header.key(), iae.getMessage());
                 }
+            }
+        }
+
+        // Set the JMSReplyTo property if a reply-to queue is configured, if it exists.
+        // This overrides the reply-to queue set from the JMSReplyTo header from source Kafka Connect record.
+        if (replyToQueue != null) {
+            try {
+                m.setJMSReplyTo(replyToQueue);
+            } catch (final JMSException jmse) {
+                throw new ConnectException("Failed to set reply-to queue", jmse);
             }
         }
 
