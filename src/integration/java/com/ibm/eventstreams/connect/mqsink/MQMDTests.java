@@ -33,6 +33,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.RetriableException;
+import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.Test;
@@ -127,9 +128,14 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         // queue manager lacks the necessary permissions. Since MQRC_NOT_AUTHORIZED is
         // considered a retriable exception, the system retries it, leading to
         // RetriableException
-        assertThrows(RetriableException.class, () -> {
-            newConnectTask.put(records);
-        });
+        try {
+            assertThrows(RetriableException.class, () -> {
+                newConnectTask.put(records);
+            });
+        } finally {
+            // Clean up: stop the task to release resources
+            newConnectTask.stop();
+        }
     }
 
     @Test
@@ -243,5 +249,161 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         assertEquals("ThisIsMyApplicationData", messagesInMQ[0].applicationIdData.trim());
         assertEquals("ThisIsMyPutApplicationName", messagesInMQ[0].putApplicationName.trim());
         assertEquals("MYQMGR", messagesInMQ[0].replyToQueueManagerName.trim());
+    }
+
+    /**
+     * Test that MQMD integer headers work correctly after the fix:
+     * - Enable mq.message.mqmd.write=true
+     * - Enable mq.kafka.headers.copy.to.jms.properties=true
+     * - Send a message with JMS_IBM_MQMD_Priority as a String (simulating Source Connector behavior)
+     * - Should succeed with the fix (converts String to Integer automatically)
+     *
+     * Integration test to reproduce and verify fix for customer bug where MQMD integer
+     * headers failed when copied as strings.
+     *
+     * Customer scenario:
+     * 1. MQ Source Connector reads JMS_IBM_MQMD_Priority (integer) from MQ
+     * 2. Source converts it to String and stores in Kafka header
+     * 3. Sink Connector reads the String header
+     * 4. Sink tries to set it as String when mq.message.mqmd.write=true
+     * 5. Without fix: IBM MQ JMS driver rejects it with JMSCC0051 error
+     * 6. With fix: Connector automatically converts String to Integer
+     */
+    @Test
+    public void testMQMDIntegerHeaderWorks() throws Exception {
+        // Grant MQMD context permissions to the app user (required for mq.message.mqmd.write=true)
+        MQ_CONTAINER.execInContainer("setmqaut",
+                "-m", AbstractJMSContextIT.QMGR_NAME,
+                "-n", AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME,
+                "-p", AbstractJMSContextIT.APP_USERNAME,
+                "-t", "queue",
+                "+setall", "+get", "+browse", "+put", "+inq");
+
+        MQ_CONTAINER.execInContainer("setmqaut",
+                "-m", AbstractJMSContextIT.QMGR_NAME,
+                "-p", AbstractJMSContextIT.APP_USERNAME,
+                "-t", "qmgr",
+                "+setall");
+
+        // Create connector configuration with both MQMD write and header copy enabled
+        final Map<String, String> connectorProps = createDefaultConnectorProperties();
+        connectorProps.put("mq.message.builder", AbstractJMSContextIT.DEFAULT_MESSAGE_BUILDER);
+        
+        // Enable header copying (customer's configuration)
+        connectorProps.put("mq.kafka.headers.copy.to.jms.properties", "true");
+
+        // Create and start the sink task
+        final MQSinkTask task = new MQSinkTask();
+        task.initialize(mock(SinkTaskContext.class));
+        task.start(connectorProps);
+
+        try {
+            // Create a SinkRecord with JMS_IBM_MQMD_Priority as a String
+            // This simulates what the MQ Source Connector does (see JmsToKafkaHeaderConverter.java:55)
+            final ConnectHeaders headers = new ConnectHeaders();
+            headers.addString("JMS_IBM_MQMD_Priority", "5");  // Source stores as String, not Integer!
+
+            final SinkRecord record = new SinkRecord(
+                    AbstractJMSContextIT.TOPIC,
+                    AbstractJMSContextIT.PARTITION,
+                    Schema.STRING_SCHEMA,
+                    "key",
+                    Schema.STRING_SCHEMA,
+                    "Test message for MQMD bug reproduction",
+                    0,
+                    null,
+                    null,
+                    headers
+            );
+
+            final List<SinkRecord> records = new ArrayList<>();
+            records.add(record);
+
+            // With the fix, this should succeed - the connector automatically converts
+            // the String "5" to Integer 5 when setting JMS_IBM_MQMD_Priority
+            task.put(records);
+
+            // Flush the message
+            final Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+            final TopicPartition topic = new TopicPartition(AbstractJMSContextIT.TOPIC, AbstractJMSContextIT.PARTITION);
+            final OffsetAndMetadata offset = new OffsetAndMetadata(0L);
+            offsets.put(topic, offset);
+            task.flush(offsets);
+            
+        } finally {
+            task.stop();
+        }
+
+        // Clean up: consume the message from the queue to avoid polluting other tests
+        final MQMessage[] messagesInMQ = mqGet(AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME);
+        assertEquals(1, messagesInMQ.length);
+    }
+
+    /**
+     * Test that MQMD string headers work correctly (no type conversion needed)
+     */
+    @Test
+    public void testMQMDStringHeaderWorksCorrectly() throws Exception {
+        // Grant MQMD context permissions to the app user
+        MQ_CONTAINER.execInContainer("setmqaut",
+                "-m", AbstractJMSContextIT.QMGR_NAME,
+                "-n", AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME,
+                "-p", AbstractJMSContextIT.APP_USERNAME,
+                "-t", "queue",
+                "+setall", "+get", "+browse", "+put", "+inq");
+
+        MQ_CONTAINER.execInContainer("setmqaut",
+                "-m", AbstractJMSContextIT.QMGR_NAME,
+                "-p", AbstractJMSContextIT.APP_USERNAME,
+                "-t", "qmgr",
+                "+setall");
+
+        final Map<String, String> connectorProps = createDefaultConnectorProperties();
+        connectorProps.put("mq.message.builder", AbstractJMSContextIT.DEFAULT_MESSAGE_BUILDER);
+        connectorProps.put("mq.kafka.headers.copy.to.jms.properties", "true");
+
+        final MQSinkTask task = new MQSinkTask();
+        task.initialize(mock(SinkTaskContext.class));
+        task.start(connectorProps);
+
+        try {
+            // String MQMD properties should work fine
+            final ConnectHeaders headers = new ConnectHeaders();
+            headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
+            headers.addString("JMS_IBM_MQMD_ReplyToQ", "REPLY.QUEUE");
+
+            final SinkRecord record = new SinkRecord(
+                    AbstractJMSContextIT.TOPIC,
+                    AbstractJMSContextIT.PARTITION,
+                    Schema.STRING_SCHEMA,
+                    "key",
+                    Schema.STRING_SCHEMA,
+                    "Test message with string MQMD headers",
+                    0,
+                    null,
+                    null,
+                    headers
+            );
+
+            final List<SinkRecord> records = new ArrayList<>();
+            records.add(record);
+
+            // This should succeed - string properties don't need type conversion
+            task.put(records);
+
+            // Flush the message
+            final Map<TopicPartition, OffsetAndMetadata> offsets = new HashMap<>();
+            final TopicPartition topic = new TopicPartition(AbstractJMSContextIT.TOPIC, AbstractJMSContextIT.PARTITION);
+            final OffsetAndMetadata offset = new OffsetAndMetadata(0L);
+            offsets.put(topic, offset);
+            task.flush(offsets);
+            
+        } finally {
+            task.stop();
+        }
+
+        // Clean up: consume the message from the queue to avoid polluting other tests
+        final MQMessage[] messagesInMQ = mqGet(AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME);
+        assertEquals(1, messagesInMQ.length);
     }
 }

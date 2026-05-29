@@ -140,4 +140,42 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertEquals("3.14159265359", message.getStringProperty("TestPi"));
         assertEquals(3.14159265359, message.getDoubleProperty("TestPi"), 0.0000000001);
     }
+
+    /**
+     * Test to reproduce customer bug: MQMD integer headers fail when copied as strings
+     *
+     * This test reproduces the exact scenario from the customer's pipeline:
+     * 1. MQ Source Connector reads JMS_IBM_MQMD_Priority (integer) from MQ
+     * 2. Source converts it to String and stores in Kafka header (see JmsToKafkaHeaderConverter.java:55)
+     * 3. Sink Connector reads the String header
+     * 4. Sink tries to set it as String when mq.message.mqmd.write=true
+     * 5. IBM MQ JMS driver rejects it with JMSCC0051 error
+     *
+     * Expected error: JMSCC0051: The property 'JMS_IBM_MQMD_Priority' should be set
+     * using type 'java.lang.Integer', not 'java.lang.String'.
+     */
+    @Test
+    public void testMQMDIntegerHeadersWorkWithAutomaticTypeConversion() throws Exception {
+        // Reconfigure builder with MQMD write enabled (customer's configuration)
+        final Map<String, String> props = new HashMap<>();
+        props.put("mq.kafka.headers.copy.to.jms.properties", "true");
+        props.put("mq.message.mqmd.write", "true");
+        props.put("mq.message.mqmd.context", "ALL");
+        
+        final MessageBuilder mqmdBuilder = new DefaultMessageBuilder();
+        mqmdBuilder.configure(props);
+        
+        // Simulate what MQ Source Connector does: converts integer MQMD property to String
+        // (see kafka-connect-mq-source: JmsToKafkaHeaderConverter.java line 55)
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addString("JMS_IBM_MQMD_Priority", "5");  // Source stores as String, not Integer
+        
+        // With the fix, this should now work - the connector automatically converts
+        // the String "5" to Integer 5 when setting JMS_IBM_MQMD_Priority
+        final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        
+        // Verify the message was created successfully and the property was set correctly
+        assertTrue(message.propertyExists("JMS_IBM_MQMD_Priority"));
+        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+    }
 }

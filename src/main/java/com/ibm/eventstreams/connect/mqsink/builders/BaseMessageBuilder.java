@@ -20,8 +20,11 @@ import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
 import com.ibm.mq.jms.MQQueue;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import javax.jms.Destination;
 import javax.jms.JMSContext;
@@ -50,6 +53,32 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public String partitionPropertyName;
     public String offsetPropertyName;
     public boolean copyJmsProperties;
+    // MQMD properties that require integer type
+    private static final Set<String> INTEGER_MQMD_PROPERTIES = new HashSet<>(Arrays.asList(
+            "JMS_IBM_MQMD_Report",
+            "JMS_IBM_MQMD_MsgType",
+            "JMS_IBM_MQMD_Expiry",
+            "JMS_IBM_MQMD_Feedback",
+            "JMS_IBM_MQMD_Encoding",
+            "JMS_IBM_MQMD_CodedCharSetId",
+            "JMS_IBM_MQMD_Priority",
+            "JMS_IBM_MQMD_Persistence",
+            "JMS_IBM_MQMD_BackoutCount",
+            "JMS_IBM_MQMD_PutApplType",
+            "JMS_IBM_MQMD_MsgSeqNumber",
+            "JMS_IBM_MQMD_Offset",
+            "JMS_IBM_MQMD_MsgFlags",
+            "JMS_IBM_MQMD_OriginalLength"
+    ));
+
+    // MQMD properties that require byte array type
+    private static final Set<String> BYTE_ARRAY_MQMD_PROPERTIES = new HashSet<>(Arrays.asList(
+            "JMS_IBM_MQMD_MsgId",
+            "JMS_IBM_MQMD_CorrelId",
+            "JMS_IBM_MQMD_AccountingToken",
+            "JMS_IBM_MQMD_GroupId"
+    ));
+
 
     /**
      * Configure this class.
@@ -216,13 +245,85 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
                 final Header header = iterator.next();
                 try {
-                    m.setStringProperty(header.key(), header.value().toString());
+                    setProperty(m, header.key(), header.value().toString());
                 } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to set header", jmse);
+                } catch (final NumberFormatException nfe) {
+                    throw new ConnectException("Failed to parse numeric MQMD property: " + header.key(), nfe);
                 }
             }
         }
 
         return m;
+    }
+
+     /**
+     * Sets a JMS property with the correct type based on the property name.
+     * MQMD properties require specific types according to IBM MQ JMS API.
+     *
+     * @param message      the JMS message
+     * @param propertyName the property name
+     * @param value        the property value as a string
+     * @throws JMSException if setting the property fails
+     * @throws NumberFormatException if parsing a numeric property fails
+     */
+    private void setProperty(final Message message, final String propertyName, final String value) throws JMSException {
+        // Handle MQMD properties with correct types
+        if (propertyName.startsWith("JMS_IBM_MQMD_")) {
+            // Integer MQMD properties
+            if (isIntegerMQMDProperty(propertyName)) { 
+                message.setIntProperty(propertyName, Integer.parseInt(value));
+                return;
+            }
+            
+            // Byte array MQMD properties (stored as hex strings by Source Connector)
+            if (isByteArrayMQMDProperty(propertyName)) {
+                message.setObjectProperty(propertyName, hexStringToByteArray(value));
+                return;
+            }
+            // String MQMD properties (default)
+        }
+        // All other properties are set as strings
+        message.setStringProperty(propertyName, value);
+    }
+
+    /**
+     * Checks if an MQMD property requires integer type.
+     * Based on IBM MQ JMS API documentation.
+     *
+     * @param propertyName the property name
+     * @return true if the property requires integer type
+     */
+    private boolean isIntegerMQMDProperty(final String propertyName) {
+        return INTEGER_MQMD_PROPERTIES.contains(propertyName);
+    }
+
+    /**
+     * Checks if an MQMD property requires byte array type.
+     * Based on IBM MQ JMS API documentation.
+     * Note: Using byte array properties violates the JMS specification.
+     *
+     * @param propertyName the property name
+     * @return true if the property requires byte array type
+     */
+    private boolean isByteArrayMQMDProperty(final String propertyName) {
+        return BYTE_ARRAY_MQMD_PROPERTIES.contains(propertyName);
+    }
+
+    /**
+     * Converts a hex string to a byte array.
+     * The MQ Source Connector stores byte arrays as hex strings.
+     *
+     * @param hexString the hex string
+     * @return the byte array
+     */
+    private byte[] hexStringToByteArray(final String hexString) {
+        final int len = hexString.length();
+        final byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4)
+                    + Character.digit(hexString.charAt(i + 1), 16));
+        }
+        return data;
     }
 }
