@@ -53,7 +53,12 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public String partitionPropertyName;
     public String offsetPropertyName;
     public boolean copyJmsProperties;
-    // MQMD properties that require integer type
+
+    /**
+     * MQMD properties that require Integer type according to IBM MQ JMS specification.
+     * Includes both JMS_IBM_MQMD_* and JMS_IBM_* variants as MQ Source Connector may use either format.
+     * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
+     */
     private static final Set<String> INTEGER_MQMD_PROPERTIES = new HashSet<>(Arrays.asList(
             "JMS_IBM_MQMD_Report",
             "JMS_IBM_MQMD_MsgType",
@@ -68,16 +73,49 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             "JMS_IBM_MQMD_MsgSeqNumber",
             "JMS_IBM_MQMD_Offset",
             "JMS_IBM_MQMD_MsgFlags",
-            "JMS_IBM_MQMD_OriginalLength"
+            "JMS_IBM_MQMD_OriginalLength",
+            // Non-MQMD prefixed variants (also used by MQ Source Connector)
+            "JMS_IBM_Encoding",
+            "JMS_IBM_MsgType",
+            "JMS_IBM_Priority",
+            "JMS_IBM_PutApplType"
     ));
 
-    // MQMD properties that require byte array type
+    /**
+     * MQMD properties that require String type according to IBM MQ JMS specification.
+     */
+    private static final Set<String> STRING_MQMD_PROPERTIES = new HashSet<>(Arrays.asList(
+            "JMS_IBM_MQMD_Format",
+            "JMS_IBM_MQMD_ReplyToQ",
+            "JMS_IBM_MQMD_ReplyToQMgr",
+            "JMS_IBM_MQMD_UserIdentifier",
+            "JMS_IBM_MQMD_ApplIdentityData",
+            "JMS_IBM_MQMD_PutApplName",
+            "JMS_IBM_MQMD_PutDate",
+            "JMS_IBM_MQMD_PutTime",
+            "JMS_IBM_MQMD_ApplOriginData"
+    ));
+
+    /**
+     * MQMD properties that require byte[] (Object) type according to IBM MQ JMS specification.
+     */
     private static final Set<String> BYTE_ARRAY_MQMD_PROPERTIES = new HashSet<>(Arrays.asList(
             "JMS_IBM_MQMD_MsgId",
             "JMS_IBM_MQMD_CorrelId",
             "JMS_IBM_MQMD_AccountingToken",
             "JMS_IBM_MQMD_GroupId"
     ));
+
+    /**
+     * All MQMD properties that require type-aware handling.
+     */
+    private static final Set<String> ALL_MQMD_PROPERTIES = new HashSet<>();
+
+    static {
+        ALL_MQMD_PROPERTIES.addAll(INTEGER_MQMD_PROPERTIES);
+        ALL_MQMD_PROPERTIES.addAll(STRING_MQMD_PROPERTIES);
+        ALL_MQMD_PROPERTIES.addAll(BYTE_ARRAY_MQMD_PROPERTIES);
+    }
 
 
     /**
@@ -245,7 +283,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
                 final Header header = iterator.next();
                 try {
-                    setProperty(m, header.key(), header.value().toString());
+                    setJmsProperty(m, header.key(), header.value());
                 } catch (final JMSException jmse) {
                     throw new ConnectException("Failed to set header", jmse);
                 } catch (final NumberFormatException nfe) {
@@ -257,73 +295,73 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         return m;
     }
 
-     /**
-     * Sets a JMS property with the correct type based on the property name.
-     * MQMD properties require specific types according to IBM MQ JMS API.
+      /**
+     * Sets a JMS message property with proper type casting for MQMD properties.
      *
-     * @param message      the JMS message
-     * @param propertyName the property name
-     * @param value        the property value as a string
-     * @throws JMSException if setting the property fails
-     * @throws NumberFormatException if parsing a numeric property fails
+     * MQMD properties require specific types according to IBM MQ JMS specification:
+     * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
+     *
+     * This method preserves type information for MQMD properties while converting
+     * all other properties to strings for backward compatibility with existing deployments.
+     *
+     * @param message            the JMS message to set the property on
+     * @param key                the property name
+     * @param value              the property value (may be null)
+     * @throws JMSException      if the property cannot be set
+     * @throws ConnectException  if the value type is not compatible with the expected MQMD type
      */
-    private void setProperty(final Message message, final String propertyName, final String value) throws JMSException {
-        // Handle MQMD properties with correct types
-        if (propertyName.startsWith("JMS_IBM_MQMD_")) {
-            // Integer MQMD properties
-            if (isIntegerMQMDProperty(propertyName)) { 
-                message.setIntProperty(propertyName, Integer.parseInt(value));
-                return;
-            }
-            
-            // Byte array MQMD properties (stored as hex strings by Source Connector)
-            if (isByteArrayMQMDProperty(propertyName)) {
-                message.setObjectProperty(propertyName, hexStringToByteArray(value));
-                return;
-            }
-            // String MQMD properties (default)
+    private void setJmsProperty(final Message message, final String key, final Object value) throws JMSException {
+        if (value == null) {
+            // Skip null values as JMS properties cannot be null
+            log.debug("Skipping null value for property '{}'", key);
+            return;
         }
-        // All other properties are set as strings
-        message.setStringProperty(propertyName, value);
-    }
 
-    /**
-     * Checks if an MQMD property requires integer type.
-     * Based on IBM MQ JMS API documentation.
-     *
-     * @param propertyName the property name
-     * @return true if the property requires integer type
-     */
-    private boolean isIntegerMQMDProperty(final String propertyName) {
-        return INTEGER_MQMD_PROPERTIES.contains(propertyName);
-    }
-
-    /**
-     * Checks if an MQMD property requires byte array type.
-     * Based on IBM MQ JMS API documentation.
-     * Note: Using byte array properties violates the JMS specification.
-     *
-     * @param propertyName the property name
-     * @return true if the property requires byte array type
-     */
-    private boolean isByteArrayMQMDProperty(final String propertyName) {
-        return BYTE_ARRAY_MQMD_PROPERTIES.contains(propertyName);
-    }
-
-    /**
-     * Converts a hex string to a byte array.
-     * The MQ Source Connector stores byte arrays as hex strings.
-     *
-     * @param hexString the hex string
-     * @return the byte array
-     */
-    private byte[] hexStringToByteArray(final String hexString) {
-        final int len = hexString.length();
-        final byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) << 4)
-                    + Character.digit(hexString.charAt(i + 1), 16));
+        // Check if this is an MQMD property that requires type-aware handling
+        if (INTEGER_MQMD_PROPERTIES.contains(key)) {
+            // Handle Integer MQMD properties
+            if (value instanceof Integer) {
+                message.setIntProperty(key, (Integer) value);
+            } else if (value instanceof Number) {
+                // Allow conversion from other numeric types (Long, Double, etc.) to Integer
+                message.setIntProperty(key, ((Number) value).intValue());
+            } else if (value instanceof String) {
+                try {
+                    message.setIntProperty(key, Integer.parseInt((String) value));
+                } catch (final NumberFormatException e) {
+                    log.warn("Cannot convert string value '{}' to integer for MQMD property '{}'", value, key);
+                    throw new ConnectException("Failed to set MQMD property '" + key +
+                            "': expected integer but got '" + value + "'", e);
+                }
+            } else {
+                log.warn("Cannot convert type {} to integer for MQMD property '{}'",
+                        value.getClass().getName(), key);
+                throw new ConnectException("Failed to set MQMD property '" + key +
+                        "': unsupported type " + value.getClass().getName());
+            }
+        } else if (STRING_MQMD_PROPERTIES.contains(key)) {
+            // Handle String MQMD properties
+            message.setStringProperty(key, value.toString());
+        } else if (BYTE_ARRAY_MQMD_PROPERTIES.contains(key)) {
+            // Handle byte[] MQMD properties
+            if (value instanceof byte[]) {
+                message.setObjectProperty(key, value);
+            } else if (value instanceof String) {
+                // MQ Source Connector may output byte arrays as Java toString() representations (e.g., "[B@42969b24")
+                // These cannot be converted back to actual bytes, so we set an empty byte array
+                log.debug("Setting empty byte array for MQMD property '{}' (cannot convert from string: {})", key, value);
+                message.setObjectProperty(key, new byte[0]);
+            } else {
+                log.warn("Cannot convert type {} to byte array for MQMD property '{}'",
+                        value.getClass().getName(), key);
+                throw new ConnectException("Failed to set MQMD property '" + key +
+                        "': expected byte array but got " + value.getClass().getName());
+            }
+        } else {
+            // For non-MQMD properties, convert everything to string for backward compatibility
+            message.setStringProperty(key, value.toString());
+            log.debug("Set property '{}' as string (non-MQMD): {}", key, value);
         }
-        return data;
     }
+
 }

@@ -15,8 +15,10 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -141,41 +143,213 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertEquals(3.14159265359, message.getDoubleProperty("TestPi"), 0.0000000001);
     }
 
-    /**
-     * Test to reproduce customer bug: MQMD integer headers fail when copied as strings
-     *
-     * This test reproduces the exact scenario from the customer's pipeline:
-     * 1. MQ Source Connector reads JMS_IBM_MQMD_Priority (integer) from MQ
-     * 2. Source converts it to String and stores in Kafka header (see JmsToKafkaHeaderConverter.java:55)
-     * 3. Sink Connector reads the String header
-     * 4. Sink tries to set it as String when mq.message.mqmd.write=true
-     * 5. IBM MQ JMS driver rejects it with JMSCC0051 error
-     *
-     * Expected error: JMSCC0051: The property 'JMS_IBM_MQMD_Priority' should be set
-     * using type 'java.lang.Integer', not 'java.lang.String'.
-     */
-    @Test
-    public void testMQMDIntegerHeadersWorkWithAutomaticTypeConversion() throws Exception {
-        // Reconfigure builder with MQMD write enabled (customer's configuration)
-        final Map<String, String> props = new HashMap<>();
-        props.put("mq.kafka.headers.copy.to.jms.properties", "true");
-        props.put("mq.message.mqmd.write", "true");
-        props.put("mq.message.mqmd.context", "ALL");
-        
-        final MessageBuilder mqmdBuilder = new DefaultMessageBuilder();
-        mqmdBuilder.configure(props);
-        
-        // Simulate what MQ Source Connector does: converts integer MQMD property to String
-        // (see kafka-connect-mq-source: JmsToKafkaHeaderConverter.java line 55)
+@Test
+    public void buildMessageWithMQMDIntegerProperties() throws Exception {
+        // Test MQMD Integer properties according to IBM MQ documentation:
+        // https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
+        //
+        // The following MQMD properties require Integer type:
+        // - JMS_IBM_MQMD_Report (Integer)
+        // - JMS_IBM_MQMD_MsgType (Integer)
+        // - JMS_IBM_MQMD_Expiry (Integer)
+        // - JMS_IBM_MQMD_Feedback (Integer)
+        // - JMS_IBM_MQMD_Encoding (Integer)
+        // - JMS_IBM_MQMD_CodedCharSetId (Integer)
+        // - JMS_IBM_MQMD_Priority (Integer)
+        // - JMS_IBM_MQMD_Persistence (Integer)
+        // - JMS_IBM_MQMD_PutApplType (Integer)
+        // - JMS_IBM_MQMD_MsgSeqNumber (Integer)
+        // - JMS_IBM_MQMD_Offset (Integer)
+        // - JMS_IBM_MQMD_MsgFlags (Integer)
+        // - JMS_IBM_MQMD_OriginalLength (Integer)
+
         final ConnectHeaders headers = new ConnectHeaders();
-        headers.addString("JMS_IBM_MQMD_Priority", "5");  // Source stores as String, not Integer
-        
-        // With the fix, this should now work - the connector automatically converts
-        // the String "5" to Integer 5 when setting JMS_IBM_MQMD_Priority
-        final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
-        
-        // Verify the message was created successfully and the property was set correctly
-        assertTrue(message.propertyExists("JMS_IBM_MQMD_Priority"));
+
+        // Priority property - Integer (0-9)
+        headers.addInt("JMS_IBM_MQMD_Priority", 5);
+
+        // Expiry property - Integer (time-to-live in tenths of a second, or MQEXPIRY_DEFAULT, MQEXPIRY_UNLIMITED)
+        headers.addInt("JMS_IBM_MQMD_Expiry", 36000); // 1 hour in tenths of a second
+
+        // MsgType property - Integer
+        headers.addInt("JMS_IBM_MQMD_MsgType", 1); // MQMT_REQUEST
+
+        // Report property - Integer (report options)
+        headers.addInt("JMS_IBM_MQMD_Report", 0);
+
+        // Encoding property - Integer (numeric encoding)
+        headers.addInt("JMS_IBM_MQMD_Encoding", 546); // MQENC_NATIVE
+
+        // CodedCharSetId property - Integer (character set)
+        headers.addInt("JMS_IBM_MQMD_CodedCharSetId", 819); // UTF-8
+
+        // Persistence property - Integer (MQPER_PERSISTENT, MQPER_NOT_PERSISTENT)
+        headers.addInt("JMS_IBM_MQMD_Persistence", 1); // MQPER_PERSISTENT
+
+        // Feedback property - Integer (feedback code)
+        headers.addInt("JMS_IBM_MQMD_Feedback", 0);
+
+        // PutApplType property - Integer (application type)
+        headers.addInt("JMS_IBM_MQMD_PutApplType", 11); // MQAT_WINDOWS
+
+        // MsgSeqNumber property - Integer
+        headers.addInt("JMS_IBM_MQMD_MsgSeqNumber", 1);
+
+        // Offset property - Integer
+        headers.addInt("JMS_IBM_MQMD_Offset", 0);
+
+        // MsgFlags property - Integer
+        headers.addInt("JMS_IBM_MQMD_MsgFlags", 0);
+
+        // OriginalLength property - Integer
+        headers.addInt("JMS_IBM_MQMD_OriginalLength", -1); // MQOL_UNDEFINED
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify each MQMD integer property can be retrieved with correct type
         assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+        assertEquals(36000, message.getIntProperty("JMS_IBM_MQMD_Expiry"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_MQMD_MsgType"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_Report"));
+        assertEquals(546, message.getIntProperty("JMS_IBM_MQMD_Encoding"));
+        assertEquals(819, message.getIntProperty("JMS_IBM_MQMD_CodedCharSetId"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_MQMD_Persistence"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_Feedback"));
+        assertEquals(11, message.getIntProperty("JMS_IBM_MQMD_PutApplType"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_MQMD_MsgSeqNumber"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_Offset"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_MsgFlags"));
+        assertEquals(-1, message.getIntProperty("JMS_IBM_MQMD_OriginalLength"));
     }
+
+    @Test
+    public void buildMessageWithMQMDStringProperties() throws Exception {
+        // Test MQMD String properties according to IBM MQ documentation:
+        // The following MQMD properties require String type:
+        // - JMS_IBM_MQMD_Format (String)
+        // - JMS_IBM_MQMD_ReplyToQ (String)
+        // - JMS_IBM_MQMD_ReplyToQMgr (String)
+        // - JMS_IBM_MQMD_UserIdentifier (String)
+        // - JMS_IBM_MQMD_ApplIdentityData (String)
+        // - JMS_IBM_MQMD_PutApplName (String)
+        // - JMS_IBM_MQMD_PutDate (String)
+        // - JMS_IBM_MQMD_PutTime (String)
+        // - JMS_IBM_MQMD_ApplOriginData (String)
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
+        headers.addString("JMS_IBM_MQMD_ReplyToQ", "REPLY.QUEUE");
+        headers.addString("JMS_IBM_MQMD_ReplyToQMgr", "REPLY.QMGR");
+        headers.addString("JMS_IBM_MQMD_UserIdentifier", "testuser");
+        headers.addString("JMS_IBM_MQMD_ApplIdentityData", "ApplicationID123");
+        headers.addString("JMS_IBM_MQMD_PutApplName", "TestApplication");
+        headers.addString("JMS_IBM_MQMD_PutDate", "20240129");
+        headers.addString("JMS_IBM_MQMD_PutTime", "14302156");
+        headers.addString("JMS_IBM_MQMD_ApplOriginData", "OriginData");
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify each MQMD string property can be retrieved with correct type
+        assertEquals("MQSTR", message.getStringProperty("JMS_IBM_MQMD_Format"));
+        assertEquals("REPLY.QUEUE", message.getStringProperty("JMS_IBM_MQMD_ReplyToQ"));
+        assertEquals("REPLY.QMGR", message.getStringProperty("JMS_IBM_MQMD_ReplyToQMgr"));
+        assertEquals("testuser", message.getStringProperty("JMS_IBM_MQMD_UserIdentifier"));
+        assertEquals("ApplicationID123", message.getStringProperty("JMS_IBM_MQMD_ApplIdentityData"));
+        assertEquals("TestApplication", message.getStringProperty("JMS_IBM_MQMD_PutApplName"));
+        assertEquals("20240129", message.getStringProperty("JMS_IBM_MQMD_PutDate"));
+        assertEquals("14302156", message.getStringProperty("JMS_IBM_MQMD_PutTime"));
+        assertEquals("OriginData", message.getStringProperty("JMS_IBM_MQMD_ApplOriginData"));
+    }
+
+    @Test
+    public void buildMessageWithMQMDByteArrayProperties() throws Exception {
+        // Test MQMD byte[] properties according to IBM MQ documentation:
+        // The following MQMD properties have Object (byte[]) type:
+        // - JMS_IBM_MQMD_MsgId (Object byte[])
+        // - JMS_IBM_MQMD_CorrelId (Object byte[])
+        // - JMS_IBM_MQMD_AccountingToken (Object byte[])
+        // - JMS_IBM_MQMD_GroupId (Object byte[])
+        //
+        // See: MessageDescriptorBuilder.java for example usage of setObjectProperty()
+        // https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        // These are byte array values - Kafka headers supports byte arrays
+        byte[] msgId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                    0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        byte[] correlId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                      0x00, 0x00, 0x00, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E};
+        byte[] accountingToken = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                              0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+                                              0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+                                              0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20};
+        byte[] groupId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                      0x00, 0x00, 0x00, 0x05, 0x06, 0x07, 0x08, 0x09};
+
+        headers.addBytes("JMS_IBM_MQMD_MsgId", msgId);
+        headers.addBytes("JMS_IBM_MQMD_CorrelId", correlId);
+        headers.addBytes("JMS_IBM_MQMD_AccountingToken", accountingToken);
+        headers.addBytes("JMS_IBM_MQMD_GroupId", groupId);
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify byte[] properties can be retrieved as Object properties
+        // JMS spec: byte[] properties are retrieved as Object type
+        Object msgIdObj = message.getObjectProperty("JMS_IBM_MQMD_MsgId");
+        assertNotNull("JMS_IBM_MQMD_MsgId property should not be null", msgIdObj);
+        assertTrue("JMS_IBM_MQMD_MsgId should be a byte array", msgIdObj instanceof byte[]);
+        assertArrayEquals("JMS_IBM_MQMD_MsgId should match the original byte array", msgId, (byte[]) msgIdObj);
+
+        Object correlIdObj = message.getObjectProperty("JMS_IBM_MQMD_CorrelId");
+        assertNotNull("JMS_IBM_MQMD_CorrelId property should not be null", correlIdObj);
+        assertTrue("JMS_IBM_MQMD_CorrelId should be a byte array", correlIdObj instanceof byte[]);
+        assertArrayEquals("JMS_IBM_MQMD_CorrelId should match the original byte array", correlId, (byte[]) correlIdObj);
+
+        Object accountingTokenObj = message.getObjectProperty("JMS_IBM_MQMD_AccountingToken");
+        assertNotNull("JMS_IBM_MQMD_AccountingToken property should not be null", accountingTokenObj);
+        assertTrue("JMS_IBM_MQMD_AccountingToken should be a byte array", accountingTokenObj instanceof byte[]);
+        assertArrayEquals("JMS_IBM_MQMD_AccountingToken should match the original byte array", accountingToken, (byte[]) accountingTokenObj);
+
+        Object groupIdObj = message.getObjectProperty("JMS_IBM_MQMD_GroupId");
+        assertNotNull("JMS_IBM_MQMD_GroupId property should not be null", groupIdObj);
+        assertTrue("JMS_IBM_MQMD_GroupId should be a byte array", groupIdObj instanceof byte[]);
+        assertArrayEquals("JMS_IBM_MQMD_GroupId should match the original byte array", groupId, (byte[]) groupIdObj);
+    }
+
+    @Test
+    public void buildMessageWithMixedTypeHeaders() throws Exception {
+        // Comprehensive test with all supported numeric JMS property types
+        // to ensure type preservation when copying Kafka headers to JMS properties
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        // Add various typed headers
+        headers.addString("StringProp", "test_value");
+        headers.addInt("IntProp", 42);
+        headers.addLong("LongProp", 1234567890L);
+        headers.addBoolean("BoolProp", true);
+        headers.addDouble("DoubleProp", 3.14159);
+        headers.addFloat("FloatProp", 2.71828f);
+        headers.addByte("ByteProp", (byte) 127);
+        headers.addShort("ShortProp", (short) 32000);
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify each property can be retrieved with its correct type
+        assertEquals("test_value", message.getStringProperty("StringProp"));
+        assertEquals(42, message.getIntProperty("IntProp"));
+        assertEquals(1234567890L, message.getLongProperty("LongProp"));
+        assertEquals(true, message.getBooleanProperty("BoolProp"));
+        assertEquals(3.14159, message.getDoubleProperty("DoubleProp"), 0.0001);
+        assertEquals(2.71828f, message.getFloatProperty("FloatProp"), 0.0001f);
+        assertEquals((byte) 127, message.getByteProperty("ByteProp"));
+        assertEquals((short) 32000, message.getShortProperty("ShortProp"));
+    }
+
 }
