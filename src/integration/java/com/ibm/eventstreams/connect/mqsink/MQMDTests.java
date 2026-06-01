@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 IBM Corporation
+ * Copyright 2024, 2026 IBM Corporation
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,7 +245,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         assertEquals("ThisIsMyPutApplicationName", messagesInMQ[0].putApplicationName.trim());
         assertEquals("MYQMGR", messagesInMQ[0].replyToQueueManagerName.trim());
     }
-    
+
     @Test
     public void testMQMDIntegerHeaderWorksWhenSetAsString() throws Exception {
      // Test that MQMD integer headers work correctly when set as String:
@@ -253,7 +253,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
      // - Enable mq.kafka.headers.copy.to.jms.properties=true
      // - Send a message with JMS_IBM_MQMD_Priority as a String (simulating Source Connector behavior)
      // - Should succeed (converts String to Integer automatically)
-     
+
         // Grant MQMD context permissions to the app user (required for mq.message.mqmd.write=true)
         MQ_CONTAINER.execInContainer("setmqaut",
                 "-m", AbstractJMSContextIT.QMGR_NAME,
@@ -271,7 +271,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         // Create connector configuration with both MQMD write and header copy enabled
         final Map<String, String> connectorProps = createDefaultConnectorProperties();
         connectorProps.put("mq.message.builder", AbstractJMSContextIT.DEFAULT_MESSAGE_BUILDER);
-        
+
         // Enable header copying (customer's configuration)
         connectorProps.put("mq.kafka.headers.copy.to.jms.properties", "true");
 
@@ -303,7 +303,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
 
             //The connector automatically converts the String "5"
             // to Integer 5 when setting JMS_IBM_MQMD_Priority
-        
+
             task.put(records);
 
             // Flush the message
@@ -312,7 +312,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             final OffsetAndMetadata offset = new OffsetAndMetadata(0L);
             offsets.put(topic, offset);
             task.flush(offsets);
-            
+
         } finally {
             task.stop();
         }
@@ -322,7 +322,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         assertEquals(1, messagesInMQ.length);
     }
 
-    
+
     @Test
     public void testMQMDStringHeaderWorks() throws Exception {
         // Grant MQMD context permissions to the app user
@@ -377,7 +377,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             final OffsetAndMetadata offset = new OffsetAndMetadata(0L);
             offsets.put(topic, offset);
             task.flush(offsets);
-            
+
         } finally {
             task.stop();
         }
@@ -447,7 +447,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             final OffsetAndMetadata offset = new OffsetAndMetadata(0L);
             offsets.put(topic, offset);
             task.flush(offsets);
-            
+
         } finally {
             task.stop();
         }
@@ -490,7 +490,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         try {
             // Create headers with all MQMD fields as Strings (simulating MQ Source Connector output)
             final ConnectHeaders headers = new ConnectHeaders();
-            
+
             // Integer fields (will be converted from String to Integer)
             headers.addString("JMS_IBM_MQMD_Priority", "2");
             headers.addString("JMS_IBM_MQMD_CodedCharSetId", "437");
@@ -511,29 +511,56 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             headers.addString("JMS_IBM_MQMD_MsgType", "1");
             headers.addString("JMS_IBM_MQMD_Encoding", "546");
             headers.addString("JMS_IBM_MQMD_OriginalLength", "-1");
-            
+
             // String fields (no conversion needed)
             headers.addString("JMS_IBM_Character_Set", "IBM437");
             headers.addString("JMS_IBM_MQMD_PutApplName", "test.exe");
-            headers.addString("JMS_IBM_Format", "MQSTR   ");
-            headers.addString("JMS_IBM_MQMD_UserIdentifier", "aumqemcgdsa ");
-            headers.addString("JMS_IBM_MQMD_ApplOriginData", "    ");
+            headers.addString("JMS_IBM_Format", "MQSTR");
+            headers.addString("JMS_IBM_MQMD_UserIdentifier", "aumqemcgdsa");
+            headers.addString("JMS_IBM_MQMD_ApplOriginData", "data");
             headers.addString("JMS_IBM_PutTime", "10214957");
             headers.addString("JMS_IBM_MQMD_PutDate", "20260521");
-            headers.addString("JMSXUserID", "aumqemcgdsa ");
-            headers.addString("JMS_IBM_MQMD_Format", "MQSTR   ");
-            headers.addString("JMS_IBM_MQMD_ReplyToQMgr", "AU3CGS1.MQ                                      ");
+            headers.addString("JMSXUserID", "aumqemcgdsa");
+            headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
+            headers.addString("JMS_IBM_MQMD_ReplyToQMgr", "AU3CGS1.MQ");
             headers.addString("JMSXAppID", "test");
             headers.addString("JMS_IBM_PutDate", "20260521");
-            headers.addString("JMS_IBM_MQMD_ApplIdentityData", "                                ");
+            headers.addString("JMS_IBM_MQMD_ApplIdentityData", "data");
             headers.addString("JMS_IBM_MQMD_ReplyToQ", "test");
-            
-            // Byte array fields (stored as String representation, e.g., "[B@69249b24")
-            // These will be handled by the connector - we just pass them as strings
-            headers.addString("JMS_IBM_MQMD_CorrelId", "[B@42969b24");
-            headers.addString("JMS_IBM_MQMD_GroupId", "[B@f35ac3");
-            headers.addString("JMS_IBM_MQMD_MsgId", "[B@15a79416");
-            headers.addString("JMS_IBM_MQMD_AccountingToken", "[B@5abcds");
+
+            // Byte array fields - these should be actual byte arrays, not string representations
+            // MsgId - 24 bytes
+            byte[] msgId = new byte[] {
+                0x41, 0x4d, 0x51, 0x20, 0x41, 0x55, 0x33, 0x43,
+                0x47, 0x53, 0x31, 0x2e, 0x4d, 0x51, 0x20, 0x20,
+                0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x01
+            };
+            headers.addBytes("JMS_IBM_MQMD_MsgId", msgId);
+
+            // CorrelId - 24 bytes
+            byte[] correlId = new byte[] {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            };
+            headers.addBytes("JMS_IBM_MQMD_CorrelId", correlId);
+
+            // GroupId - 24 bytes
+            byte[] groupId = new byte[] {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            };
+            headers.addBytes("JMS_IBM_MQMD_GroupId", groupId);
+
+            // AccountingToken - 32 bytes
+            byte[] accountingToken = new byte[] {
+                0x05, 0x39, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30,
+                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
+                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
+                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30
+            };
+            headers.addBytes("JMS_IBM_MQMD_AccountingToken", accountingToken);
 
             final SinkRecord record = new SinkRecord(
                     AbstractJMSContextIT.TOPIC,
@@ -563,7 +590,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             final OffsetAndMetadata offset = new OffsetAndMetadata(0L);
             offsets.put(topic, offset);
             task.flush(offsets);
-            
+
         } finally {
             task.stop();
         }

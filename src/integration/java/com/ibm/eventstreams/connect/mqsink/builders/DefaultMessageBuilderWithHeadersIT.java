@@ -1,5 +1,5 @@
 /**
- * Copyright 2023, 2023, 2024 IBM Corporation
+ * Copyright 2023, 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertEquals(3.14159265359, message.getDoubleProperty("TestPi"), 0.0000000001);
     }
 
-@Test
+    @Test
     public void buildMessageWithMQMDIntegerProperties() throws Exception {
         // Test MQMD Integer properties according to IBM MQ documentation:
         // https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
@@ -352,4 +352,171 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertEquals((short) 32000, message.getShortProperty("ShortProp"));
     }
 
+    @Test
+    public void buildMessageWithJMSIBMIntegerProperties() throws Exception {
+        // Test JMS_IBM Integer properties (non-MQMD) according to IBM MQ documentation:
+        // https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=messages-jms-fields-properties-corresponding-mqmd-fields
+        //
+        // The following JMS_IBM properties require Integer type and can be set by applications:
+        // - JMS_IBM_Report_Exception (Integer)
+        // - JMS_IBM_Report_Expiration (Integer)
+        // - JMS_IBM_Report_COA (Integer)
+        // - JMS_IBM_Report_COD (Integer)
+        // - JMS_IBM_Report_PAN (Integer)
+        // - JMS_IBM_Report_NAN (Integer)
+        // - JMS_IBM_Report_Pass_Msg_ID (Integer)
+        // - JMS_IBM_Report_Pass_Correl_ID (Integer)
+        // - JMS_IBM_Report_Discard_Msg (Integer)
+        // - JMS_IBM_MsgType (Integer)
+        // - JMS_IBM_Feedback (Integer)
+        // - JMS_IBM_Encoding (Integer)
+        // - JMS_IBM_Character_Set (Integer)
+        // - JMS_IBM_PutApplType (Integer)
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        // Report options - Integer values
+        headers.addInt("JMS_IBM_Report_Exception", 1);
+        headers.addInt("JMS_IBM_Report_Expiration", 1);
+        headers.addInt("JMS_IBM_Report_COA", 1);
+        headers.addInt("JMS_IBM_Report_COD", 1);
+        headers.addInt("JMS_IBM_Report_PAN", 0);
+        headers.addInt("JMS_IBM_Report_NAN", 0);
+        headers.addInt("JMS_IBM_Report_Pass_Msg_ID", 1);
+        headers.addInt("JMS_IBM_Report_Pass_Correl_ID", 1);
+        headers.addInt("JMS_IBM_Report_Discard_Msg", 0);
+
+        // Message type - Integer
+        headers.addInt("JMS_IBM_MsgType", 8); // MQMT_DATAGRAM
+
+        // Feedback - Integer
+        headers.addInt("JMS_IBM_Feedback", 0);
+
+        // Encoding - Integer (numeric encoding)
+        headers.addInt("JMS_IBM_Encoding", 546); // MQENC_NATIVE
+
+        // Character Set - Integer
+        headers.addInt("JMS_IBM_Character_Set", 819); // UTF-8
+
+        // Put Application Type - Integer
+        headers.addInt("JMS_IBM_PutApplType", 11); // MQAT_WINDOWS
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify each JMS_IBM integer property can be retrieved with correct type
+        assertEquals(1, message.getIntProperty("JMS_IBM_Report_Exception"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_Report_Expiration"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_Report_COA"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_Report_COD"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_Report_PAN"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_Report_NAN"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_Report_Pass_Msg_ID"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_Report_Pass_Correl_ID"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_Report_Discard_Msg"));
+        assertEquals(8, message.getIntProperty("JMS_IBM_MsgType"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_Feedback"));
+        assertEquals(546, message.getIntProperty("JMS_IBM_Encoding"));
+        assertEquals(819, message.getIntProperty("JMS_IBM_Character_Set"));
+        assertEquals(11, message.getIntProperty("JMS_IBM_PutApplType"));
+    }
+
+    @Test
+    public void buildMessageWithJMSIBMBooleanProperties() throws Exception {
+        // Test JMS_IBM Boolean properties (non-MQMD) according to IBM MQ documentation:
+        // JMS_IBM_Last_Msg_In_Group requires Boolean type
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        // Last message in group - Boolean
+        headers.addBoolean("JMS_IBM_Last_Msg_In_Group", true);
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify JMS_IBM boolean property can be retrieved with correct type
+        assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
+    }
+
+    @Test
+    public void buildMessageWithJMSIBMStringProperties() throws Exception {
+        // Test JMS_IBM String properties (non-MQMD) according to IBM MQ documentation:
+        // The following JMS_IBM properties require String type and can be set:
+        // - JMS_IBM_Format (String)
+        //
+        // Note: JMS_IBM_PutAppl, JMS_IBM_PutDate, JMS_IBM_PutTime are read-only
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        headers.addString("JMS_IBM_Format", "MQSTR");
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify JMS_IBM string property can be retrieved with correct type
+        assertEquals("MQSTR", message.getStringProperty("JMS_IBM_Format"));
+    }
+
+    @Test
+    public void buildMessageWithMixedMQMDAndJMSIBMProperties() throws Exception {
+        // Comprehensive test with both MQMD and JMS_IBM properties
+        // to ensure all IBM MQ property types are handled correctly
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        // MQMD Integer properties
+        headers.addInt("JMS_IBM_MQMD_Priority", 5);
+        headers.addInt("JMS_IBM_MQMD_Expiry", 36000);
+        headers.addInt("JMS_IBM_MQMD_Encoding", 546);
+
+        // MQMD String properties
+        headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
+        headers.addString("JMS_IBM_MQMD_ReplyToQ", "REPLY.QUEUE");
+
+        // MQMD byte[] properties
+        byte[] mqmdMsgId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        headers.addBytes("JMS_IBM_MQMD_MsgId", mqmdMsgId);
+
+        // JMS_IBM Integer properties
+        headers.addInt("JMS_IBM_Encoding", 546);
+        headers.addInt("JMS_IBM_Character_Set", 819);
+        headers.addInt("JMS_IBM_MsgType", 8);
+
+        // JMS_IBM String properties
+        headers.addString("JMS_IBM_Format", "MQSTR");
+
+        // JMS_IBM Boolean properties
+        headers.addBoolean("JMS_IBM_Last_Msg_In_Group", true);
+
+        // Regular properties (should be converted to strings)
+        headers.addString("CustomStringProp", "custom_value");
+        headers.addInt("CustomIntProp", 999);
+
+        // generate MQ message
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify MQMD properties
+        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+        assertEquals(36000, message.getIntProperty("JMS_IBM_MQMD_Expiry"));
+        assertEquals(546, message.getIntProperty("JMS_IBM_MQMD_Encoding"));
+        assertEquals("MQSTR", message.getStringProperty("JMS_IBM_MQMD_Format"));
+        assertEquals("REPLY.QUEUE", message.getStringProperty("JMS_IBM_MQMD_ReplyToQ"));
+
+        Object mqmdMsgIdObj = message.getObjectProperty("JMS_IBM_MQMD_MsgId");
+        assertNotNull(mqmdMsgIdObj);
+        assertTrue(mqmdMsgIdObj instanceof byte[]);
+        assertArrayEquals(mqmdMsgId, (byte[]) mqmdMsgIdObj);
+
+        // Verify JMS_IBM properties
+        assertEquals(546, message.getIntProperty("JMS_IBM_Encoding"));
+        assertEquals(819, message.getIntProperty("JMS_IBM_Character_Set"));
+        assertEquals(8, message.getIntProperty("JMS_IBM_MsgType"));
+        assertEquals("MQSTR", message.getStringProperty("JMS_IBM_Format"));
+        assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
+
+        // Verify regular properties (converted to strings)
+        assertEquals("custom_value", message.getStringProperty("CustomStringProp"));
+        assertEquals("999", message.getStringProperty("CustomIntProp"));
+    }
 }
