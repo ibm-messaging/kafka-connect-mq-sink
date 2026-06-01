@@ -15,10 +15,8 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -34,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
+import com.ibm.eventstreams.connect.mqsink.util.MessageDescriptorBuilder;
 
 public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
 
@@ -265,63 +264,6 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     }
 
     @Test
-    public void buildMessageWithMQMDByteArrayProperties() throws Exception {
-        // Test MQMD byte[] properties according to IBM MQ documentation:
-        // The following MQMD properties have Object (byte[]) type:
-        // - JMS_IBM_MQMD_MsgId (Object byte[])
-        // - JMS_IBM_MQMD_CorrelId (Object byte[])
-        // - JMS_IBM_MQMD_AccountingToken (Object byte[])
-        // - JMS_IBM_MQMD_GroupId (Object byte[])
-        //
-        // See: MessageDescriptorBuilder.java for example usage of setObjectProperty()
-        // https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
-
-        final ConnectHeaders headers = new ConnectHeaders();
-
-        // These are byte array values - Kafka headers supports byte arrays
-        byte[] msgId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                    0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
-        byte[] correlId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                      0x00, 0x00, 0x00, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E};
-        byte[] accountingToken = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-                                              0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
-                                              0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-                                              0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20};
-        byte[] groupId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                      0x00, 0x00, 0x00, 0x05, 0x06, 0x07, 0x08, 0x09};
-
-        headers.addBytes("JMS_IBM_MQMD_MsgId", msgId);
-        headers.addBytes("JMS_IBM_MQMD_CorrelId", correlId);
-        headers.addBytes("JMS_IBM_MQMD_AccountingToken", accountingToken);
-        headers.addBytes("JMS_IBM_MQMD_GroupId", groupId);
-
-        // generate MQ message
-        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
-
-        // Verify byte[] properties can be retrieved as Object properties
-        // JMS spec: byte[] properties are retrieved as Object type
-        Object msgIdObj = message.getObjectProperty("JMS_IBM_MQMD_MsgId");
-        assertNotNull("JMS_IBM_MQMD_MsgId property should not be null", msgIdObj);
-        assertTrue("JMS_IBM_MQMD_MsgId should be a byte array", msgIdObj instanceof byte[]);
-        assertArrayEquals("JMS_IBM_MQMD_MsgId should match the original byte array", msgId, (byte[]) msgIdObj);
-
-        Object correlIdObj = message.getObjectProperty("JMS_IBM_MQMD_CorrelId");
-        assertNotNull("JMS_IBM_MQMD_CorrelId property should not be null", correlIdObj);
-        assertTrue("JMS_IBM_MQMD_CorrelId should be a byte array", correlIdObj instanceof byte[]);
-        assertArrayEquals("JMS_IBM_MQMD_CorrelId should match the original byte array", correlId, (byte[]) correlIdObj);
-
-        Object accountingTokenObj = message.getObjectProperty("JMS_IBM_MQMD_AccountingToken");
-        assertNotNull("JMS_IBM_MQMD_AccountingToken property should not be null", accountingTokenObj);
-        assertTrue("JMS_IBM_MQMD_AccountingToken should be a byte array", accountingTokenObj instanceof byte[]);
-        assertArrayEquals("JMS_IBM_MQMD_AccountingToken should match the original byte array", accountingToken, (byte[]) accountingTokenObj);
-
-        Object groupIdObj = message.getObjectProperty("JMS_IBM_MQMD_GroupId");
-        assertNotNull("JMS_IBM_MQMD_GroupId property should not be null", groupIdObj);
-        assertTrue("JMS_IBM_MQMD_GroupId should be a byte array", groupIdObj instanceof byte[]);
-        assertArrayEquals("JMS_IBM_MQMD_GroupId should match the original byte array", groupId, (byte[]) groupIdObj);
-    }
-
-    @Test
     public void buildMessageWithMixedTypeHeaders() throws Exception {
         // Comprehensive test with all supported numeric JMS property types
         // to ensure type preservation when copying Kafka headers to JMS properties
@@ -473,10 +415,8 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
         headers.addString("JMS_IBM_MQMD_ReplyToQ", "REPLY.QUEUE");
 
-        // MQMD byte[] properties
-        byte[] mqmdMsgId = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
-        headers.addBytes("JMS_IBM_MQMD_MsgId", mqmdMsgId);
+        // NOTE: MQMD byte[] properties (MsgId, CorrelId, etc.) are not set here
+        // as they violate JMS specification and should use MQMD API instead
 
         // JMS_IBM Integer properties
         headers.addInt("JMS_IBM_Encoding", 546);
@@ -502,11 +442,6 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertEquals(546, message.getIntProperty("JMS_IBM_MQMD_Encoding"));
         assertEquals("MQSTR", message.getStringProperty("JMS_IBM_MQMD_Format"));
         assertEquals("REPLY.QUEUE", message.getStringProperty("JMS_IBM_MQMD_ReplyToQ"));
-
-        Object mqmdMsgIdObj = message.getObjectProperty("JMS_IBM_MQMD_MsgId");
-        assertNotNull(mqmdMsgIdObj);
-        assertTrue(mqmdMsgIdObj instanceof byte[]);
-        assertArrayEquals(mqmdMsgId, (byte[]) mqmdMsgIdObj);
 
         // Verify JMS_IBM properties
         assertEquals(546, message.getIntProperty("JMS_IBM_Encoding"));

@@ -528,39 +528,18 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             headers.addString("JMS_IBM_MQMD_ApplIdentityData", "data");
             headers.addString("JMS_IBM_MQMD_ReplyToQ", "test");
 
-            // Byte array fields - these should be actual byte arrays, not string representations
-            // MsgId - 24 bytes
-            byte[] msgId = new byte[] {
-                0x41, 0x4d, 0x51, 0x20, 0x41, 0x55, 0x33, 0x43,
-                0x47, 0x53, 0x31, 0x2e, 0x4d, 0x51, 0x20, 0x20,
-                0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x01
-            };
-            headers.addBytes("JMS_IBM_MQMD_MsgId", msgId);
-
-            // CorrelId - 24 bytes
-            byte[] correlId = new byte[] {
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-            };
-            headers.addBytes("JMS_IBM_MQMD_CorrelId", correlId);
-
-            // GroupId - 24 bytes
-            byte[] groupId = new byte[] {
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-            };
-            headers.addBytes("JMS_IBM_MQMD_GroupId", groupId);
-
-            // AccountingToken - 32 bytes
-            byte[] accountingToken = new byte[] {
-                0x05, 0x39, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30,
-                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
-                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
-                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30
-            };
-            headers.addBytes("JMS_IBM_MQMD_AccountingToken", accountingToken);
+            // NOTE: Byte array MQMD fields (MsgId, CorrelId, GroupId, AccountingToken) are NOT set here
+            // because according to IBM MQ documentation: "The use of byte array properties on a message
+            // violates the JMS specification."
+            //
+            // These fields should be set through the MQMD API (MessageDescriptorBuilder) rather than as
+            // JMS properties. If byte array headers are present, they will be converted to strings by
+            // the connector (falling back to default string conversion).
+            //
+            // For proper MQMD byte field handling, use MessageDescriptorBuilder with mq.message.mqmd.write=true
+            // and mq.message.mqmd.context=ALL configuration.
+            //
+            // Reference: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
 
             final SinkRecord record = new SinkRecord(
                     AbstractJMSContextIT.TOPIC,

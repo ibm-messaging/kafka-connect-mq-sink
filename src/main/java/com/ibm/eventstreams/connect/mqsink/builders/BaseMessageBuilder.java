@@ -56,6 +56,12 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
 
     /**
      * MQMD properties that require Integer type according to IBM MQ JMS specification.
+     *
+     * IMPORTANT NOTES about JMS Specification Compliance:
+     * - JMS_IBM_MQMD_Priority: Values outside 0-9 range violate JMS specification
+     * - These properties are IBM MQ extensions and may not be fully JMS-compliant
+     * - The connector passes values through; IBM MQ will validate/reject invalid values
+     *
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=messages-jms-fields-properties-corresponding-mqmd-fields
      */
@@ -92,9 +98,18 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     ));
 
     /**
-     * MQMD properties that require byte[] (Object) type according to IBM MQ JMS specification.
+     * MQMD byte array properties that should be skipped when setting JMS properties.
+     *
+     * NOTE: According to IBM MQ documentation, "The use of byte array properties on a message
+     * violates the JMS specification." These properties should be set through the MQMD API
+     * (MessageDescriptor) rather than as JMS properties.
+     *
+     * These properties are explicitly skipped to avoid JMS spec violations. Use MessageDescriptorBuilder
+     * with mq.message.mqmd.write=true and mq.message.mqmd.context=ALL to set these fields properly.
+     *
+     * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
      */
-    private static final Set<String> MQMD_BYTES_PROPERTIES = new HashSet<>(Arrays.asList(
+    private static final Set<String> MQMD_BYTES_PROPERTIES_TO_SKIP = new HashSet<>(Arrays.asList(
             "JMS_IBM_MQMD_MsgId",
             "JMS_IBM_MQMD_CorrelId",
             "JMS_IBM_MQMD_AccountingToken",
@@ -259,16 +274,13 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         } else if (MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key)) {
             // Handle String properties (both MQMD and JMS_IBM)
             message.setStringProperty(key, value.toString());
-        } else if (MQMD_BYTES_PROPERTIES.contains(key)) {
-            // Handle byte[] properties (both MQMD and JMS_IBM)
-            if (value instanceof byte[]) {
-                message.setObjectProperty(key, value);
-            } else {
-                log.warn("Cannot convert type {} to byte array for property '{}'",
-                        value.getClass().getName(), key);
-                throw new ConnectException("Failed to set property '" + key +
-                        "': expected byte array but got " + value.getClass().getName());
-            }
+        } else if (MQMD_BYTES_PROPERTIES_TO_SKIP.contains(key)) {
+            // Skip byte[] MQMD properties - these violate JMS specification
+            // See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
+            // "The use of byte array properties on a message violates the JMS specification"
+            // Use MQMD API (MessageDescriptor) to set these fields instead
+            log.debug("Skipping byte array MQMD property '{}' - use MQMD API instead", key);
+            return;
         } else if (JMS_IBM_BOOLEAN_PROPERTIES.contains(key)) {
             // Handle Boolean properties (JMS_IBM only)
             if (value instanceof Boolean) {
