@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.mqsink.builders;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -32,7 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
-import com.ibm.eventstreams.connect.mqsink.util.MessageDescriptorBuilder;
 
 public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
 
@@ -223,6 +223,65 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     }
 
     @Test
+    public void buildMessageWithMQMDIntegerPropertiesAsStrings() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        headers.addString("JMS_IBM_MQMD_Priority", "5");
+        headers.addString("JMS_IBM_MQMD_Expiry", "36000");
+        headers.addString("JMS_IBM_MQMD_MsgType", "1");
+        headers.addString("JMS_IBM_MQMD_Encoding", "546");
+        headers.addString("JMS_IBM_MQMD_CodedCharSetId", "819");
+        headers.addString("JMS_IBM_MQMD_Persistence", "1");
+        headers.addString("JMS_IBM_MQMD_Feedback", "0");
+        headers.addString("JMS_IBM_MQMD_PutApplType", "11");
+        headers.addString("JMS_IBM_MQMD_MsgSeqNumber", "1");
+        headers.addString("JMS_IBM_MQMD_Offset", "0");
+        headers.addString("JMS_IBM_MQMD_MsgFlags", "0");
+        headers.addString("JMS_IBM_MQMD_OriginalLength", "-1");
+
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+        assertEquals(36000, message.getIntProperty("JMS_IBM_MQMD_Expiry"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_MQMD_MsgType"));
+        assertEquals(546, message.getIntProperty("JMS_IBM_MQMD_Encoding"));
+        assertEquals(819, message.getIntProperty("JMS_IBM_MQMD_CodedCharSetId"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_MQMD_Persistence"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_Feedback"));
+        assertEquals(11, message.getIntProperty("JMS_IBM_MQMD_PutApplType"));
+        assertEquals(1, message.getIntProperty("JMS_IBM_MQMD_MsgSeqNumber"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_Offset"));
+        assertEquals(0, message.getIntProperty("JMS_IBM_MQMD_MsgFlags"));
+        assertEquals(-1, message.getIntProperty("JMS_IBM_MQMD_OriginalLength"));
+    }
+
+    @Test
+    public void buildMessageWithInvalidMQMDIntegerPropertyAsStringFails() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addString("JMS_IBM_MQMD_Priority", "abc");
+
+        assertThrows(Exception.class, () -> builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers)));
+    }
+
+    @Test
+    public void buildMessageWithMQMDIntegerPropertyAsLong() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addLong("JMS_IBM_MQMD_Priority", 5L);
+
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+    }
+
+    @Test
+    public void buildMessageWithMQMDIntegerPropertyAsDouble() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addDouble("JMS_IBM_MQMD_Priority", 5.0d);
+
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+    }
+
+    @Test
     public void buildMessageWithMQMDStringProperties() throws Exception {
         // Test MQMD String properties according to IBM MQ documentation:
         // The following MQMD properties require String type:
@@ -378,6 +437,33 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
 
         // Verify JMS_IBM boolean property can be retrieved with correct type
         assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
+    }
+
+    @Test
+    public void buildMessageWithJMSIBMBooleanPropertyAsInteger() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addInt("JMS_IBM_Last_Msg_In_Group", 1);
+
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
+    }
+
+    @Test
+    public void buildMessageWithJMSIBMBooleanPropertyAsStringTrue() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addString("JMS_IBM_Last_Msg_In_Group", "true");
+
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
+    }
+
+    @Test
+    public void buildMessageWithJMSIBMBooleanPropertyAsStringFalse() throws Exception {
+        final ConnectHeaders headers = new ConnectHeaders();
+        headers.addString("JMS_IBM_Last_Msg_In_Group", "false");
+
+        final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+        assertEquals(false, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
     }
 
     @Test
