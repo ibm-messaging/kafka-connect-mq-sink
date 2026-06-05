@@ -241,7 +241,7 @@ public class MQSinkTask extends SinkTask {
      */
     private void setRetryBackoff(final AbstractConfig config) {
         // check if a custom retry time is provided
-        final Long retryBackoffMs = config.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
+        retryBackoffMs = config.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
         log.debug("Setting retry backoff {}", retryBackoffMs);
     }
 
