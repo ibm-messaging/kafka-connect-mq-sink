@@ -254,4 +254,32 @@ public class MQSinkTaskExceptionHandlingIT extends AbstractJMSContextIT {
         verify(connectTaskSpy.getContext(), times(1)).timeout(connectTaskSpy.retryBackoffMs);
         verify(connectTaskSpy, times(0)).stop();
     }
+
+    @Test
+    public void testRetryBackoffTimeoutIsSetCorrectly()
+            throws JsonProcessingException, JMSRuntimeException, JMSException {
+        // Test with custom retry backoff value
+        final Map<String, String> connectorConfigProps = getExactlyOnceConnectionDetails();
+        connectorConfigProps.put(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS, "30000");
+
+        final MQSinkTask connectTaskSpy = spy(getMqSinkTask(connectorConfigProps));
+
+        final JMSWorker jmsWorkerSpy = spy(JMSWorker.class);
+        // Simulate MQRC_NOT_AUTHORIZED (2035) - the error from customer logs
+        final MQException authException = new MQException(1, 2035, getClass());
+        when(connectTaskSpy.newJMSWorker()).thenReturn(jmsWorkerSpy);
+        doThrow(new RetriableException("Authorization failed", authException))
+                .when(jmsWorkerSpy)
+                .readFromStateQueue();
+
+        connectTaskSpy.start(connectorConfigProps);
+        final List<SinkRecord> sinkRecords = createSinkRecords(1);
+
+        assertThrows(RetriableException.class, () -> {
+            connectTaskSpy.put(sinkRecords);
+        });
+
+        // Verify that context.timeout() was called with the configured backoff value (30000ms)
+        verify(connectTaskSpy.getContext(), times(1)).timeout(30000L);
+    }
 }
