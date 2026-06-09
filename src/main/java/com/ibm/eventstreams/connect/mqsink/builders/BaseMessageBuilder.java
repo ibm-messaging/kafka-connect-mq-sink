@@ -99,18 +99,11 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     ));
 
     /**
-     * MQMD byte array properties that should be skipped when setting JMS properties.
-     *
-     * NOTE: According to IBM MQ documentation, "The use of byte array properties on a message
-     * violates the JMS specification." These properties should be set through the MQMD API
-     * (MessageDescriptor) rather than as JMS properties.
-     *
-     * These properties are explicitly skipped to avoid JMS spec violations. Use MessageDescriptorBuilder
-     * with mq.message.mqmd.write=true and mq.message.mqmd.context=ALL to set these fields properly.
+     * MQMD properties that require byte array type according to IBM MQ JMS specification.
      *
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
      */
-    private static final Set<String> MQMD_BYTES_PROPERTIES_TO_SKIP = new HashSet<>(Arrays.asList(
+    private static final Set<String> MQMD_BYTES_PROPERTIES = new HashSet<>(Arrays.asList(
             JmsConstants.JMS_IBM_MQMD_MSGID,
             JmsConstants.JMS_IBM_MQMD_CORRELID,
             JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN,
@@ -124,8 +117,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      *
      * Note: Many JMS_IBM properties are read-only (set by IBM MQ) and cannot be set by applications.
      * Only settable properties are included here.
-     * Note: JMS_IBM_MsgId and JMS_IBM_CorrelId are read-only and cannot be set directly.
-     * JMS_IBM_ConnectionId is also read-only.
      */
     private static final Set<String> JMS_IBM_INTEGER_PROPERTIES = new HashSet<>(Arrays.asList(
             JmsConstants.JMS_IBM_REPORT_EXCEPTION,
@@ -153,7 +144,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     ));
 
     /**
-     * JMS_IBM properties (non-MQMD) that require Boolean type.
+     * JMS_IBM properties that require Boolean type.
      */
     private static final Set<String> JMS_IBM_BOOLEAN_PROPERTIES = new HashSet<>(Arrays.asList(
             JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP
@@ -248,44 +239,76 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      */
     private void setJmsProperty(final Message message, final String key, final Object value) throws JMSException {
         if (value == null) {
-            // Skip null values as JMS properties cannot be null
             log.debug("Skipping null value for property '{}'", key);
             return;
         }
 
-        if (MQMD_BYTES_PROPERTIES_TO_SKIP.contains(key)) {
-            // Skip byte[] MQMD properties - these violate JMS specification
-            // See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
-            // "The use of byte array properties on a message violates the JMS specification"
-            // Use MQMD API (MessageDescriptor) to set these fields instead
-            log.debug("Skipping byte array MQMD property '{}' - use MQMD API instead", key);
-            return;
+        // Determine property type based on IBM MQ property sets
+        if (MQMD_BYTES_PROPERTIES.contains(key)) {
+            setByteArrayProperty(message, key, value);
+        } else if (MQMD_INTEGER_PROPERTIES.contains(key) || JMS_IBM_INTEGER_PROPERTIES.contains(key)) {
+            setIntegerProperty(message, key, value);
+        } else if (JMS_IBM_BOOLEAN_PROPERTIES.contains(key)) {
+            setBooleanProperty(message, key, value);
+        } else if (MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key)) {
+            setStringProperty(message, key, value);
+        } else {
+           // Default: preserve the original type
+            message.setObjectProperty(key, value);
+            log.debug("Set property '{}' with type {}: {}", key, value.getClass().getSimpleName(), value);
         }
-
-        final boolean isIntegerProperty = MQMD_INTEGER_PROPERTIES.contains(key) || JMS_IBM_INTEGER_PROPERTIES.contains(key);
-        final boolean isStringProperty = MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key);
-        final boolean isBooleanProperty = JMS_IBM_BOOLEAN_PROPERTIES.contains(key);
-
-        // Apply IBM MQ-specific type handling where the JMS client enforces property types.
-        if (isIntegerProperty || isStringProperty || isBooleanProperty) {
-            Object propertyValue = value;
-
-            // IBM MQ JMS does not accept non-Integer Number types directly for integer-classified properties.
-            if (isIntegerProperty && value instanceof Number && !(value instanceof Integer)) {
-                propertyValue = Integer.valueOf(((Number) value).intValue());
-            // IBM MQ JMS does not accept Integer 0/1 directly for boolean-classified properties.
-            } else if (isBooleanProperty && value instanceof Integer) {
-                propertyValue = Boolean.valueOf(((Integer) value) != 0);
-            }
-
-            message.setObjectProperty(key, propertyValue);
-            return;
-        }
-
-        // For non-IBM MQ properties, convert everything to string for backward compatibility
-        message.setStringProperty(key, value.toString());
-        log.debug("Set property '{}' as string (non-IBM MQ): {}", key, value);
     }
+
+    private void setByteArrayProperty(final Message message, final String key, final Object value) throws JMSException {
+        if (value instanceof byte[]) {
+            message.setObjectProperty(key, (byte[]) value);
+        } else if (value instanceof String) {
+            log.debug("Skipping byte array property '{}' with string value: {}", key, value);
+        } else {
+            log.debug("Skipping byte array property '{}' with unsupported type: {}", key, value.getClass().getName());
+        }
+    }
+
+    private void setIntegerProperty(final Message message, final String key, final Object value) throws JMSException {
+        if (value instanceof Integer) {
+            message.setObjectProperty(key, value);
+        } else if (value instanceof Number) {
+            message.setObjectProperty(key, ((Number) value).intValue());
+        } else if (value instanceof String) {
+            try {
+                message.setObjectProperty(key, Integer.valueOf((String) value));
+            } catch (final NumberFormatException e) {
+                log.debug("Cannot parse string '{}' to integer for property '{}'", value, key);
+                throw new ConnectException("Failed to parse integer property '" + key + "': " + value, e);
+            }
+        } else {
+            throw new ConnectException("Property '" + key + "' requires Integer type, got: " + value.getClass().getName());
+        }
+    }
+
+    private void setBooleanProperty(final Message message, final String key, final Object value) throws JMSException {
+        if (value instanceof Boolean) {
+            message.setObjectProperty(key, value);
+        } else if (value instanceof Integer) {
+            message.setObjectProperty(key, ((Integer) value) != 0);
+        } else if (value instanceof String) {
+            final String strValue = (String) value;
+            if ("true".equalsIgnoreCase(strValue) || "1".equals(strValue)) {
+                message.setObjectProperty(key, Boolean.TRUE);
+            } else if ("false".equalsIgnoreCase(strValue) || "0".equals(strValue)) {
+                message.setObjectProperty(key, Boolean.FALSE);
+            } else {
+                throw new ConnectException("Failed to parse boolean property '" + key + "': " + value);
+            }
+        } else {
+            throw new ConnectException("Property '" + key + "' requires Boolean type, got: " + value.getClass().getName());
+        }
+    }
+
+    private void setStringProperty(final Message message, final String key, final Object value) throws JMSException {
+        message.setObjectProperty(key, value instanceof String ? value : value.toString());
+    }
+
 
     /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
