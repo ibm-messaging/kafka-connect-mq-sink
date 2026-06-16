@@ -53,7 +53,6 @@ public class KafkaToJmsHeaderConverter {
             JmsConstants.JMS_IBM_MQMD_CODEDCHARSETID,
             JmsConstants.JMS_IBM_MQMD_PRIORITY,
             JmsConstants.JMS_IBM_MQMD_PERSISTENCE,
-            JmsConstants.JMS_IBM_MQMD_BACKOUTCOUNT,
             JmsConstants.JMS_IBM_MQMD_PUTAPPLTYPE,
             JmsConstants.JMS_IBM_MQMD_MSGSEQNUMBER,
             JmsConstants.JMS_IBM_MQMD_OFFSET,
@@ -89,7 +88,7 @@ public class KafkaToJmsHeaderConverter {
     ));
 
     /**
-     * JMS_IBM properties (non-MQMD) that require Integer type.
+     * JMS_IBM properties that require Integer type.
      * These are standard JMS properties that map to MQMD fields and can be set by applications.
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=messages-jms-fields-properties-corresponding-mqmd-fields
      *
@@ -183,12 +182,54 @@ public class KafkaToJmsHeaderConverter {
             return convertToString(value);
         }
 
-        // For all other properties, preserve the original type
-        return value;
+        // For all other properties, check if the type is supported by JMS setObjectProperty()
+        // JMS only supports: Boolean, Byte, Short, Integer, Long, Float, Double, String, byte[]
+        // For unsupported types, convert to String
+        return ensureJmsSupportedType(key, value);
     }
 
     /**
-     * Convert value to byte array.
+     * Ensure the value is a type supported by JMS setObjectProperty().
+     * JMS supports: Boolean, Byte, Short, Integer, Long, Float, Double, String, byte[]
+     *
+     * For unsupported types (Struct, Map, Array, Date, Time, Timestamp, Decimal, etc.),
+     * convert to String representation.
+     *
+     * @param key   the property key (for logging)
+     * @param value the property value
+     * @return the value if it's a supported JMS type, or String representation otherwise
+     */
+    private Object ensureJmsSupportedType(final String key, final Object value) {
+        // Check if value is already a JMS-supported type
+        if (isJmsSupportedType(value)) {
+            return value;
+        }
+
+        // For unsupported types, convert to String
+        log.debug("Converting property '{}' from unsupported type {} to String",
+                  key, value.getClass().getSimpleName());
+        return value.toString();
+    }
+
+    /**
+     * Check if the value is a type supported by JMS setObjectProperty().
+     * JMS supports: Boolean, Byte, Short, Integer, Long, Float, Double, String, byte[]
+     *
+     * @param value the value to check
+     * @return true if the type is supported by JMS, false otherwise
+     */
+    private boolean isJmsSupportedType(final Object value) {
+        // Check primitive wrapper types
+        if (value instanceof Boolean || value instanceof String || value instanceof byte[]) {
+            return true;
+        }
+        
+        // Check numeric types
+        return value instanceof Number;
+    }
+
+    /**
+     * Convert value to byte array. 
      * Returns null if conversion is not possible (e.g., String from an old Source Connector version).
      */
     private Object convertToByteArray(final String key, final Object value) {

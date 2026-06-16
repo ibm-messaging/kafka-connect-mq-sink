@@ -1,5 +1,5 @@
 /**
- * Copyright 2018, 2019, 2023, 2024, 2026 IBM Corporation
+ * Copyright 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,5 +266,88 @@ public class KafkaToJmsHeaderConverterTest {
 
         verify(message, never()).setObjectProperty(eq("nullHeader"), eq(null));
         verify(message, never()).setStringProperty(eq("nullHeader"), eq(null));
+    }
+
+    @Test
+    public void testUnsupportedTypeConvertedToString() throws Exception {
+        // Test that unsupported types (like Date, Struct, etc.) are converted to String
+        // to avoid JMSException from setObjectProperty()
+        
+        final java.util.Date dateValue = new java.util.Date(1234567890000L);
+        final Header header = new ConnectHeaders().add("DateProp", dateValue, null)
+                .lastWithName("DateProp");
+        
+        converter.copyHeaderToJmsProperty(message, header);
+        
+        // Should convert Date to String
+        verify(message).setObjectProperty("DateProp", dateValue.toString());
+    }
+
+    @Test
+    public void testJmsSupportedTypesPreserved() throws Exception {
+        // Test that JMS-supported types are preserved as-is for custom properties
+        
+        // Boolean
+        Header header = new ConnectHeaders().addBoolean("BoolProp", true).lastWithName("BoolProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("BoolProp", Boolean.TRUE);
+        
+        // Byte
+        header = new ConnectHeaders().addByte("ByteProp", (byte) 127).lastWithName("ByteProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("ByteProp", (byte) 127);
+        
+        // Short
+        header = new ConnectHeaders().addShort("ShortProp", (short) 32000).lastWithName("ShortProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("ShortProp", (short) 32000);
+        
+        // Integer
+        header = new ConnectHeaders().addInt("IntProp", 42).lastWithName("IntProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("IntProp", 42);
+        
+        // Long
+        header = new ConnectHeaders().addLong("LongProp", 1234567890L).lastWithName("LongProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("LongProp", 1234567890L);
+        
+        // Float
+        header = new ConnectHeaders().addFloat("FloatProp", 3.14f).lastWithName("FloatProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("FloatProp", 3.14f);
+        
+        // Double
+        header = new ConnectHeaders().addDouble("DoubleProp", 2.71828).lastWithName("DoubleProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("DoubleProp", 2.71828);
+        
+        // String
+        header = new ConnectHeaders().addString("StringProp", "test").lastWithName("StringProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("StringProp", "test");
+        
+        // byte[]
+        final byte[] bytes = new byte[]{1, 2, 3};
+        header = new ConnectHeaders().addBytes("BytesProp", bytes).lastWithName("BytesProp");
+        converter.copyHeaderToJmsProperty(message, header);
+        verify(message).setObjectProperty("BytesProp", bytes);
+    }
+
+    @Test
+    public void testComplexTypeConvertedToString() throws Exception {
+        // Test that complex types like Map are converted to String
+        
+        final java.util.Map<String, Object> mapValue = new java.util.HashMap<>();
+        mapValue.put("key1", "value1");
+        mapValue.put("key2", 42);
+        
+        final Header header = new ConnectHeaders().add("MapProp", mapValue, null)
+                .lastWithName("MapProp");
+        
+        converter.copyHeaderToJmsProperty(message, header);
+        
+        // Should convert Map to String
+        verify(message).setObjectProperty("MapProp", mapValue.toString());
     }
 }
