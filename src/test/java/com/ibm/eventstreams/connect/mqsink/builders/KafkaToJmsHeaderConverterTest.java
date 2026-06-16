@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import javax.jms.Message;
 
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.header.Header;
 import org.junit.Test;
@@ -73,7 +72,7 @@ public class KafkaToJmsHeaderConverterTest {
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_PRIORITY, "abc")
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_PRIORITY);
 
-        assertThrows(ConnectException.class, () -> converter.copyHeaderToJmsProperty(message, header));
+        assertThrows(IllegalArgumentException.class, () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
     @Test
@@ -241,7 +240,7 @@ public class KafkaToJmsHeaderConverterTest {
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_PRIORITY, "abc")
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_PRIORITY);
 
-        final ConnectException exception = assertThrows(ConnectException.class,
+        final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> converter.copyHeaderToJmsProperty(message, header));
 
         assertNotNull(exception.getCause());
@@ -253,19 +252,34 @@ public class KafkaToJmsHeaderConverterTest {
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, "invalid")
                 .lastWithName(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP);
 
-        assertThrows(ConnectException.class, () -> converter.copyHeaderToJmsProperty(message, header));
+        assertThrows(IllegalArgumentException.class, () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
 
     @Test
-    public void skipsNullHeaderValue() throws Exception {
+    public void setsNullHeaderValue() throws Exception {
+        // Test that null values are set as properties (JMS allows null values)
         final Header header = new ConnectHeaders().add("nullHeader", null, Schema.OPTIONAL_STRING_SCHEMA)
                 .lastWithName("nullHeader");
 
         converter.copyHeaderToJmsProperty(message, header);
 
-        verify(message, never()).setObjectProperty(eq("nullHeader"), eq(null));
-        verify(message, never()).setStringProperty(eq("nullHeader"), eq(null));
+        // Verify that null value is set as a property
+        verify(message).setObjectProperty("nullHeader", null);
+    }
+
+    @Test
+    public void testNullIntegerPropertyIsSet() throws Exception {
+        // Test that null values for MQMD integer properties like JMS_IBM_MQMD_Priority
+        // are set correctly without throwing JMSException
+        
+        final Header header = new ConnectHeaders().add("JMS_IBM_MQMD_Priority", null, Schema.OPTIONAL_INT32_SCHEMA)
+                .lastWithName("JMS_IBM_MQMD_Priority");
+        
+        converter.copyHeaderToJmsProperty(message, header);
+        
+        // Verify that null value is set as a property (JMS allows null for Object properties)
+        verify(message).setObjectProperty("JMS_IBM_MQMD_Priority", null);
     }
 
     @Test
@@ -349,5 +363,50 @@ public class KafkaToJmsHeaderConverterTest {
         
         // Should convert Map to String
         verify(message).setObjectProperty("MapProp", mapValue.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidIntegerStringThrowsIllegalArgumentException() throws Exception {
+        // Test that invalid integer strings throw IllegalArgumentException 
+        
+        final Header header = new ConnectHeaders().addString("JMS_IBM_MQMD_Priority", "not-a-number")
+                .lastWithName("JMS_IBM_MQMD_Priority");
+        
+        // Should throw IllegalArgumentException for invalid integer string
+        converter.copyHeaderToJmsProperty(message, header);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidIntegerTypeThrowsIllegalArgumentException() throws Exception {
+        // Test that incompatible types for integer properties throw IllegalArgumentException
+        
+        final Header header = new ConnectHeaders().add("JMS_IBM_MQMD_Priority", new Object(), null)
+                .lastWithName("JMS_IBM_MQMD_Priority");
+        
+        // Should throw IllegalArgumentException for incompatible type
+        converter.copyHeaderToJmsProperty(message, header);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidBooleanStringThrowsIllegalArgumentException() throws Exception {
+        // Test that invalid boolean strings throw IllegalArgumentException
+        
+        final Header header = new ConnectHeaders().addString("JMS_IBM_Report_Exception", "not-a-boolean")
+                .lastWithName("JMS_IBM_Report_Exception");
+        
+        // Should throw IllegalArgumentException for invalid boolean string
+        converter.copyHeaderToJmsProperty(message, header);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidBooleanTypeThrowsIllegalArgumentException() throws Exception {
+        // Test that incompatible types for boolean properties throw IllegalArgumentException
+        
+        final Header header = new ConnectHeaders().add("JMS_IBM_Report_Exception", new Object(), null)
+                .lastWithName("JMS_IBM_Report_Exception");
+        
+        // Should throw IllegalArgumentException for incompatible type
+        converter.copyHeaderToJmsProperty(message, header);
+        converter.copyHeaderToJmsProperty(message, header);
     }
 }

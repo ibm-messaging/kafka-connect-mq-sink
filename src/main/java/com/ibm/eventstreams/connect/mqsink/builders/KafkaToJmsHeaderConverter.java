@@ -145,7 +145,9 @@ public class KafkaToJmsHeaderConverter {
         final Object value = header.value();
         
         if (value == null) {
-            log.debug("Skipping null value for header '{}'", key);
+            // Set null value as property - JMS allows null values
+            message.setObjectProperty(key, null);
+            log.debug("Set property '{}' with null value", key);
             return;
         }
 
@@ -245,6 +247,8 @@ public class KafkaToJmsHeaderConverter {
     /**
      * Convert value to Integer.
      * Supports Integer, Number, and String (for backward compatibility with old Source Connector versions).
+     *
+     * @throws IllegalArgumentException if the value cannot be converted to Integer
      */
     private Object convertToInteger(final String key, final Object value) {
         if (value instanceof Integer) {
@@ -259,17 +263,19 @@ public class KafkaToJmsHeaderConverter {
             try {
                 return Integer.valueOf((String) value);
             } catch (final NumberFormatException e) {
-                throw new ConnectException("Failed to parse integer property '" + key + "': " + value, e);
+                throw new IllegalArgumentException("Failed to parse integer property '" + key + "': " + value, e);
             }
         }
         
-        throw new ConnectException("Property '" + key + "' requires Integer type, got: " + 
-                                    value.getClass().getName());
+        throw new IllegalArgumentException("Property '" + key + "' requires Integer type, got: " +
+                                           value.getClass().getName());
     }
 
     /**
      * Convert value to Boolean.
      * Supports Boolean, Integer (0/1), and String (for backward compatibility with old Source Connector versions).
+     *
+     * @throws IllegalArgumentException if the value cannot be converted to Boolean
      */
     private Object convertToBoolean(final String key, final Object value) {
         if (value instanceof Boolean) {
@@ -288,11 +294,11 @@ public class KafkaToJmsHeaderConverter {
             if ("false".equalsIgnoreCase(strValue) || "0".equals(strValue)) {
                 return Boolean.FALSE;
             }
-            throw new ConnectException("Failed to parse boolean property '" + key + "': " + value);
+            throw new IllegalArgumentException("Failed to parse boolean property '" + key + "': " + value);
         }
         
-        throw new ConnectException("Property '" + key + "' requires Boolean type, got: " + 
-                                    value.getClass().getName());
+        throw new IllegalArgumentException("Property '" + key + "' requires Boolean type, got: " +
+                                           value.getClass().getName());
     }
 
     /**

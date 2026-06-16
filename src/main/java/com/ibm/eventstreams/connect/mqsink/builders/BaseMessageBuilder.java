@@ -234,7 +234,11 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                 final Header header = iterator.next();
                 try {
                     setJmsProperty(m, header);
+                } catch (final IllegalArgumentException iae) {
+                    // Skip invalid header values (e.g., non-parseable integers) - log and continue
+                    log.warn("Skipping header '{}': {}", header.key(), iae.getMessage());
                 } catch (final JMSException jmse) {
+                    // JMS errors (connection, MQ issues) are critical - fail fast
                     throw new ConnectException("Failed to set header '" + header.key() + "'", jmse);
                 }
             }
