@@ -462,8 +462,8 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         // Test that all MQMD headers work correctly:
         // - Enable mq.message.mqmd.write=true
         // - Enable mq.kafka.headers.copy.to.jms.properties=true
-        // - Send a message with all MQMD headers as Strings (as they come from MQ Source Connector)
-        // - Should succeed with automatic type conversion for integer/byte array fields
+        // - Send a message with all MQMD headers as Strings (as they come from previous versions of MQ Source Connector)
+        // - Should succeed with automatic type conversion
 
         // Grant MQMD context permissions to the app user
         MQ_CONTAINER.execInContainer("setmqaut",
@@ -528,18 +528,6 @@ public class MQMDTests extends MQSinkTaskAuthIT {
             headers.addString("JMS_IBM_MQMD_ApplIdentityData", "data");
             headers.addString("JMS_IBM_MQMD_ReplyToQ", "test");
 
-            // NOTE: Byte array MQMD fields (MsgId, CorrelId, GroupId, AccountingToken) are NOT set here
-            // because according to IBM MQ documentation: "The use of byte array properties on a message
-            // violates the JMS specification."
-            //
-            // These fields should be set through the MQMD API (MessageDescriptorBuilder) rather than as
-            // JMS properties. If byte array headers are present, they will be converted to strings by
-            // the connector (falling back to default string conversion).
-            //
-            // For proper MQMD byte field handling, use MessageDescriptorBuilder with mq.message.mqmd.write=true
-            // and mq.message.mqmd.context=ALL configuration.
-            //
-            // Reference: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
 
             final SinkRecord record = new SinkRecord(
                     AbstractJMSContextIT.TOPIC,
@@ -578,4 +566,5 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         final MQMessage[] messagesInMQ = mqGet(AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME);
         assertEquals(1, messagesInMQ.length);
     }
+
 }

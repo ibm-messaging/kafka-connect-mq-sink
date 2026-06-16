@@ -49,6 +49,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public String partitionPropertyName;
     public String offsetPropertyName;
     public boolean copyJmsProperties;
+    public boolean mqmdWriteEnabled;
 
     // Converter for Kafka headers to JMS properties
     private final KafkaToJmsHeaderConverter headerConverter = new KafkaToJmsHeaderConverter();
@@ -107,6 +108,14 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         if (copyhdr != null) {
             copyJmsProperties = Boolean.valueOf(copyhdr);
         }
+
+        final String mqmdWrite = props.get(MQSinkConfig.CONFIG_NAME_MQ_MQMD_WRITE_ENABLED);
+        if (mqmdWrite != null) {
+            mqmdWriteEnabled = Boolean.valueOf(mqmdWrite);
+        }
+        
+        // Configure the header converter with MQMD write setting
+        headerConverter.setMqmdWriteEnabled(mqmdWriteEnabled);
 
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
@@ -234,9 +243,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
                 final Header header = iterator.next();
                 try {
                     setJmsProperty(m, header);
-                } catch (final IllegalArgumentException iae) {
-                    // Skip invalid header values (e.g., non-parseable integers) - log and continue
-                    log.warn("Skipping header '{}': {}", header.key(), iae.getMessage());
                 } catch (final JMSException jmse) {
                     // JMS errors (connection, MQ issues) are critical - fail fast
                     throw new ConnectException("Failed to set header '" + header.key() + "'", jmse);

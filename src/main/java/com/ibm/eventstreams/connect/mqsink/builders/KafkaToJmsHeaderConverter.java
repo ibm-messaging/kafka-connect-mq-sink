@@ -32,6 +32,16 @@ import java.util.Set;
  */
 public class KafkaToJmsHeaderConverter {
     private static final Logger log = LoggerFactory.getLogger(KafkaToJmsHeaderConverter.class);
+    
+    private boolean mqmdWriteEnabled = false;
+    
+    /**
+     * Sets whether MQMD write is enabled (mq.message.mqmd.write=true).
+     * @param enabled true if MQMD write is enabled
+     */
+    public void setMqmdWriteEnabled(final boolean enabled) {
+        this.mqmdWriteEnabled = enabled;
+    }
 
     /**
      * MQMD properties that require Integer type according to IBM MQ JMS specification.
@@ -88,6 +98,21 @@ public class KafkaToJmsHeaderConverter {
     ));
 
     /**
+     * All MQMD properties (Integer, String, and byte[]) that can only be set when mq.message.mqmd.write=true.
+     * This is a combined set of all MQMD_INTEGER_PROPERTIES, MQMD_STRING_PROPERTIES, and MQMD_BYTES_PROPERTIES.
+     *
+     * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
+     */
+    private static final Set<String> ALL_MQMD_PROPERTIES;
+    
+    static {
+        ALL_MQMD_PROPERTIES = new HashSet<>();
+        ALL_MQMD_PROPERTIES.addAll(MQMD_INTEGER_PROPERTIES);
+        ALL_MQMD_PROPERTIES.addAll(MQMD_STRING_PROPERTIES);
+        ALL_MQMD_PROPERTIES.addAll(MQMD_BYTES_PROPERTIES);
+    }
+
+    /**
      * JMS_IBM properties that require Integer type.
      * These are standard JMS properties that map to MQMD fields and can be set by applications.
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=messages-jms-fields-properties-corresponding-mqmd-fields
@@ -129,7 +154,7 @@ public class KafkaToJmsHeaderConverter {
 
     /**
      * Copy a Kafka Connect header to a JMS message property with appropriate type conversion.
-     * 
+     *
      * IBM MQ properties require specific types according to IBM MQ JMS specification:
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
      * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=messages-jms-fields-properties-corresponding-mqmd-fields
@@ -146,6 +171,7 @@ public class KafkaToJmsHeaderConverter {
         
         if (value == null) {
             // Set null value as property - JMS allows null values
+            // Source connector copies jms headers with null values to kafka headers.
             message.setObjectProperty(key, null);
             log.debug("Set property '{}' with null value", key);
             return;
@@ -154,10 +180,19 @@ public class KafkaToJmsHeaderConverter {
         final Object convertedValue = convertHeaderValue(key, value);
         
         if (convertedValue != null) {
+            // ALL MQMD properties can only be set when mq.message.mqmd.write=true
+            if (ALL_MQMD_PROPERTIES.contains(key)) {
+                if (!mqmdWriteEnabled) {
+                    log.debug("Skipping MQMD property '{}' - requires mq.message.mqmd.write=true", key);
+                    return;
+                }
+            }
+            
             message.setObjectProperty(key, convertedValue);
             log.debug("Set property '{}' with type {}: {}", key, convertedValue.getClass().getSimpleName(), convertedValue);
         }
     }
+    
 
     /**
      * Convert Kafka header value to the expected JMS property type based on IBM MQ requirements.
@@ -168,31 +203,37 @@ public class KafkaToJmsHeaderConverter {
      * @return the converted value, or null if the value should be skipped
      */
     Object convertHeaderValue(final String key, final Object value) {
-        if (MQMD_BYTES_PROPERTIES.contains(key)) {
-            return convertToByteArray(key, value);
-        }
-        
-        if (MQMD_INTEGER_PROPERTIES.contains(key) || JMS_IBM_INTEGER_PROPERTIES.contains(key)) {
-            return convertToInteger(key, value);
-        }
-        
-        if (JMS_IBM_BOOLEAN_PROPERTIES.contains(key)) {
-            return convertToBoolean(key, value);
-        }
-        
-        if (MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key)) {
-            return convertToString(value);
-        }
+        try {
+            if (MQMD_BYTES_PROPERTIES.contains(key)) {
+                return convertToByteArray(key, value);
+            }
+            
+            if (MQMD_INTEGER_PROPERTIES.contains(key) || JMS_IBM_INTEGER_PROPERTIES.contains(key)) {
+                return convertToInteger(key, value);
+            }
+            
+            if (JMS_IBM_BOOLEAN_PROPERTIES.contains(key)) {
+                return convertToBoolean(key, value);
+            }
+            
+            if (MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key)) {
+                return convertToString(value);
+            }
 
-        // For all other properties, check if the type is supported by JMS setObjectProperty()
-        // JMS only supports: Boolean, Byte, Short, Integer, Long, Float, Double, String, byte[]
-        // For unsupported types, convert to String
-        return ensureJmsSupportedType(key, value);
+
+            // JMS only supports: Boolean, Byte, Short, Integer, Long, Float, Double, String
+            // For unsupported types, convert to String
+            return ensureJmsSupportedType(key, value);
+        } catch (final IllegalArgumentException e) {
+            // Invalid value for the expected type - return null to skip this property
+            log.warn("Skipping header '{}': {}", key, e.getMessage());
+            return null;
+        }
     }
 
     /**
-     * Ensure the value is a type supported by JMS setObjectProperty().
-     * JMS supports: Boolean, Byte, Short, Integer, Long, Float, Double, String, byte[]
+     * Ensure the value is a type supported by JMS API
+     * JMS supports: Boolean, Byte, Short, Integer, Long, Float, Double, String
      *
      * For unsupported types (Struct, Map, Array, Date, Time, Timestamp, Decimal, etc.),
      * convert to String representation.
@@ -203,7 +244,7 @@ public class KafkaToJmsHeaderConverter {
      */
     private Object ensureJmsSupportedType(final String key, final Object value) {
         // Check if value is already a JMS-supported type
-        if (isJmsSupportedType(value)) {
+        if (value instanceof Boolean || value instanceof String || value instanceof Number) {
             return value;
         }
 
@@ -211,23 +252,6 @@ public class KafkaToJmsHeaderConverter {
         log.debug("Converting property '{}' from unsupported type {} to String",
                   key, value.getClass().getSimpleName());
         return value.toString();
-    }
-
-    /**
-     * Check if the value is a type supported by JMS setObjectProperty().
-     * JMS supports: Boolean, Byte, Short, Integer, Long, Float, Double, String, byte[]
-     *
-     * @param value the value to check
-     * @return true if the type is supported by JMS, false otherwise
-     */
-    private boolean isJmsSupportedType(final Object value) {
-        // Check primitive wrapper types
-        if (value instanceof Boolean || value instanceof String || value instanceof byte[]) {
-            return true;
-        }
-        
-        // Check numeric types
-        return value instanceof Number;
     }
 
     /**
