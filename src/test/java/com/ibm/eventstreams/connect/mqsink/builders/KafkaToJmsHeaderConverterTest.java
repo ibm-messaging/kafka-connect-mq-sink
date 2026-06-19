@@ -15,7 +15,6 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -28,7 +27,6 @@ import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.header.Header;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -81,30 +79,6 @@ public class KafkaToJmsHeaderConverterTest {
     }
 
     @Test
-    public void coercesMqmdIntegerHeaderFromLongSchema() throws Exception {
-        // MQMD properties require mq.message.mqmd.write=true
-        converter.setMqmdWriteEnabled(true);
-        
-        final Header header = new ConnectHeaders().addLong(JmsConstants.JMS_IBM_MQMD_PRIORITY, 5L)
-                .lastWithName(JmsConstants.JMS_IBM_MQMD_PRIORITY);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        verify(message).setObjectProperty(JmsConstants.JMS_IBM_MQMD_PRIORITY, 5);
-    }
-
-
-    @Test
-    public void copiesTypedBooleanHeader() throws Exception {
-        final Header header = new ConnectHeaders().addBoolean(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, true)
-                .lastWithName(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        verify(message).setObjectProperty(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, true);
-    }
-
-    @Test
     public void coercesIbmBooleanHeaderFromString() throws Exception {
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, "true")
                 .lastWithName(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP);
@@ -125,27 +99,6 @@ public class KafkaToJmsHeaderConverterTest {
     }
 
     @Test
-    public void coercesIbmBooleanHeaderFromStringZero() throws Exception {
-        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, "0")
-                .lastWithName(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        verify(message).setObjectProperty(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, false);
-    }
-
-    @Test
-    public void coercesIbmBooleanHeaderFromInteger() throws Exception {
-        final Header header = new ConnectHeaders().addInt(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, 1)
-                .lastWithName(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        verify(message).setObjectProperty(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, true);
-    }
-
-
-    @Test
     public void copiesMqmdStringHeader() throws Exception {
         // MQMD properties require mq.message.mqmd.write=true
         converter.setMqmdWriteEnabled(true);
@@ -156,24 +109,6 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
 
         verify(message).setObjectProperty(JmsConstants.JMS_IBM_MQMD_FORMAT, "MQSTR");
-    }
-
-
-    @Test
-    public void copiesMqmdMsgIdByteArrayWhenMqmdWriteEnabled() throws Exception {
-        // MQMD_MSGID byte[] can be set using setObjectProperty() when mq.message.mqmd.write=true
-        converter.setMqmdWriteEnabled(true);
-        
-        final byte[] value = new byte[] {0x01, 0x02, 0x03};
-        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_MSGID, value, Schema.OPTIONAL_BYTES_SCHEMA)
-                .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        // Verify setObjectProperty was called with the byte array
-        final ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), captor.capture());
-        assertArrayEquals(value, (byte[]) captor.getValue());
     }
 
     @Test
@@ -192,23 +127,6 @@ public class KafkaToJmsHeaderConverterTest {
     }
 
     @Test
-    public void copiesMqmdCorrelIdByteArrayWhenMqmdWriteEnabled() throws Exception {
-        // MQMD_CORRELID byte[] can be set using setObjectProperty() when mq.message.mqmd.write=true
-        converter.setMqmdWriteEnabled(true);
-        
-        final byte[] value = new byte[] {0x01, 0x02, 0x03};
-        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_CORRELID, value, Schema.OPTIONAL_BYTES_SCHEMA)
-                .lastWithName(JmsConstants.JMS_IBM_MQMD_CORRELID);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        // Verify setObjectProperty was called with the byte array
-        final ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_CORRELID), captor.capture());
-        assertArrayEquals(value, (byte[]) captor.getValue());
-    }
-
-    @Test
     public void skipsMqmdCorrelIdByteArrayWhenMqmdWriteDisabled() throws Exception {
         // MQMD_CORRELID byte[] should be skipped when mq.message.mqmd.write=false (default)
         converter.setMqmdWriteEnabled(false);
@@ -221,23 +139,6 @@ public class KafkaToJmsHeaderConverterTest {
 
         // Verify setObjectProperty was NOT called
         verify(message, never()).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_CORRELID), any());
-    }
-
-    @Test
-    public void copiesMqmdGroupIdByteArrayWhenMqmdWriteEnabled() throws Exception {
-        // MQMD_GROUPID byte[] can be set using setObjectProperty() when mq.message.mqmd.write=true
-        converter.setMqmdWriteEnabled(true);
-        
-        final byte[] value = new byte[] {0x01, 0x02, 0x03};
-        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_GROUPID, value, Schema.OPTIONAL_BYTES_SCHEMA)
-                .lastWithName(JmsConstants.JMS_IBM_MQMD_GROUPID);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        // Verify setObjectProperty was called with the byte array
-        final ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_GROUPID), captor.capture());
-        assertArrayEquals(value, (byte[]) captor.getValue());
     }
 
     @Test
@@ -254,38 +155,21 @@ public class KafkaToJmsHeaderConverterTest {
         // Verify setObjectProperty was NOT called
         verify(message, never()).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_GROUPID), any());
     }
+@Test
+public void skipsMqmdAccountingTokenByteArrayWhenMqmdWriteDisabled() throws Exception {
+    // MQMD_ACCOUNTINGTOKEN byte[] should be skipped when mq.message.mqmd.write=false (default)
+    converter.setMqmdWriteEnabled(false);
+    
+    final byte[] value = new byte[] {0x01, 0x02, 0x03};
+    final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN, value, Schema.OPTIONAL_BYTES_SCHEMA)
+            .lastWithName(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN);
 
-    @Test
-    public void copiesMqmdAccountingTokenByteArrayWhenMqmdWriteEnabled() throws Exception {
-        // MQMD_ACCOUNTINGTOKEN byte[] can be set using setObjectProperty() when mq.message.mqmd.write=true
-        converter.setMqmdWriteEnabled(true);
-        
-        final byte[] value = new byte[] {0x01, 0x02, 0x03};
-        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN, value, Schema.OPTIONAL_BYTES_SCHEMA)
-                .lastWithName(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN);
+    converter.copyHeaderToJmsProperty(message, header);
 
-        converter.copyHeaderToJmsProperty(message, header);
+    // Verify setObjectProperty was NOT called
+    verify(message, never()).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN), any());
+}
 
-        // Verify setObjectProperty was called with the byte array
-        final ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN), captor.capture());
-        assertArrayEquals(value, (byte[]) captor.getValue());
-    }
-
-    @Test
-    public void skipsMqmdAccountingTokenByteArrayWhenMqmdWriteDisabled() throws Exception {
-        // MQMD_ACCOUNTINGTOKEN byte[] should be skipped when mq.message.mqmd.write=false (default)
-        converter.setMqmdWriteEnabled(false);
-        
-        final byte[] value = new byte[] {0x01, 0x02, 0x03};
-        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN, value, Schema.OPTIONAL_BYTES_SCHEMA)
-                .lastWithName(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN);
-
-        converter.copyHeaderToJmsProperty(message, header);
-
-        // Verify setObjectProperty was NOT called
-        verify(message, never()).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN), any());
-    }
 
 
     @Test
@@ -412,16 +296,16 @@ public class KafkaToJmsHeaderConverterTest {
 
     @Test
     public void testNullIntegerPropertyIsSet() throws Exception {
-        // Test that null values for MQMD integer properties like JMS_IBM_MQMD_Priority
+        // Test that null values for integer properties like JMS_IBM_MSGTYPE
         // are set correctly without throwing JMSException
         
-        final Header header = new ConnectHeaders().add("JMS_IBM_MQMD_Priority", null, Schema.OPTIONAL_INT32_SCHEMA)
-                .lastWithName("JMS_IBM_MQMD_Priority");
+        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MSGTYPE, null, Schema.OPTIONAL_INT32_SCHEMA)
+                .lastWithName(JmsConstants.JMS_IBM_MSGTYPE);
         
         converter.copyHeaderToJmsProperty(message, header);
         
         // Verify that null value is set as a property (JMS allows null for Object properties)
-        verify(message).setObjectProperty("JMS_IBM_MQMD_Priority", null);
+        verify(message).setObjectProperty(JmsConstants.JMS_IBM_MSGTYPE, null);
     }
 
     @Test

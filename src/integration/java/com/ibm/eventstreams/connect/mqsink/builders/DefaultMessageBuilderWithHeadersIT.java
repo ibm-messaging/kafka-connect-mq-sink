@@ -632,4 +632,33 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertFalse(message.propertyExists("JMS_IBM_MQMD_MsgId"));
         assertFalse(message.propertyExists("JMS_IBM_MQMD_CorrelId"));
     }
+
+    @Test
+    public void buildMessageSkipsJmsMqmdBackoutCount() throws Exception {
+        // Test that JMS_IBM_MQMD_BackoutCount is NOT set even when it is present
+        // Create builder with mq.message.mqmd.write=true to ensure other MQMD properties work
+        final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
+        final Map<String, String> props = new HashMap<>();
+        props.put("mq.kafka.headers.copy.to.jms.properties", "true");
+        props.put("mq.message.mqmd.write", "true");
+        mqmdBuilder.configure(props);
+
+        final ConnectHeaders headers = new ConnectHeaders();
+        
+        // Add JMS_IBM_MQMD_BackoutCount - this should be skipped
+        headers.addInt("JMS_IBM_MQMD_BackoutCount", 5);
+        
+        // Add another MQMD property to verify mqmd.write is working
+        headers.addInt("JMS_IBM_MQMD_Priority", 7);
+
+        // Generate MQ message
+        final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify JMS_IBM_MQMD_BackoutCount was NOT set (connector skips it)
+        assertFalse(message.propertyExists("JMS_IBM_MQMD_BackoutCount"));
+        
+        // Verify other MQMD property WAS set (to confirm mqmd.write is working)
+        assertTrue(message.propertyExists("JMS_IBM_MQMD_Priority"));
+        assertEquals(7, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+    }
 }

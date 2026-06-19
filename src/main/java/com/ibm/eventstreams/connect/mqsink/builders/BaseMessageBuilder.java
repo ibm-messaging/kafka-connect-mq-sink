@@ -114,8 +114,11 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             mqmdWriteEnabled = Boolean.valueOf(mqmdWrite);
         }
         
-        // Configure the header converter with MQMD write setting
+        final String mqmdContext = props.get(MQSinkConfig.CONFIG_NAME_MQ_MQMD_MESSAGE_CONTEXT);
+        
+        // Configure the header converter with MQMD write setting and context
         headerConverter.setMqmdWriteEnabled(mqmdWriteEnabled);
+        headerConverter.setMqmdMessageContext(mqmdContext);
 
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
