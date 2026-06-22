@@ -19,7 +19,6 @@ import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
 import com.ibm.mq.jms.MQQueue;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.jms.Destination;
@@ -113,12 +112,9 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         if (mqmdWrite != null) {
             mqmdWriteEnabled = Boolean.valueOf(mqmdWrite);
         }
-        
-        final String mqmdContext = props.get(MQSinkConfig.CONFIG_NAME_MQ_MQMD_MESSAGE_CONTEXT);
-        
+
         // Configure the header converter with MQMD write setting and context
         headerConverter.setMqmdWriteEnabled(mqmdWriteEnabled);
-        headerConverter.setMqmdMessageContext(mqmdContext);
 
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
@@ -242,13 +238,15 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         }
 
         if (copyJmsProperties) {
-            for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
-                final Header header = iterator.next();
+            for (final Header header : record.headers()) {
                 try {
                     setJmsProperty(m, header);
                 } catch (final JMSException jmse) {
                     // JMS errors (connection, MQ issues) are critical - fail fast
                     throw new ConnectException("Failed to set header '" + header.key() + "'", jmse);
+                } catch (final IllegalArgumentException iae) {
+                    // Bad header name or unconvertible value — skip and continue
+                    log.warn("Skipping header '{}': {}", header.key(), iae.getMessage());
                 }
             }
         }

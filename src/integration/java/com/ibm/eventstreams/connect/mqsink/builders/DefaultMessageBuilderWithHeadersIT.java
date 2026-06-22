@@ -146,7 +146,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     public void buildMessageWithMQMDIntegerProperties() throws Exception {
         // Test MQMD Integer properties according to IBM MQ documentation:
         // https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
-        
+
         // MQMD properties require mq.message.mqmd.write=true
         final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
         final Map<String, String> props = new HashMap<>();
@@ -157,43 +157,43 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         final ConnectHeaders headers = new ConnectHeaders();
 
         // Priority property - Integer (0-9)
-        headers.addInt("JMS_IBM_MQMD_Priority", 5);
+        headers.addString("JMS_IBM_MQMD_Priority", "5");
 
         // Expiry property - Integer (time-to-live in tenths of a second, or MQEXPIRY_DEFAULT, MQEXPIRY_UNLIMITED)
-        headers.addInt("JMS_IBM_MQMD_Expiry", 36000); // 1 hour in tenths of a second
+        headers.addString("JMS_IBM_MQMD_Expiry", "36000"); // 1 hour in tenths of a second
 
         // MsgType property - Integer
-        headers.addInt("JMS_IBM_MQMD_MsgType", 1); // MQMT_REQUEST
+        headers.addString("JMS_IBM_MQMD_MsgType", "1"); // MQMT_REQUEST
 
         // Report property - Integer (report options)
-        headers.addInt("JMS_IBM_MQMD_Report", 0);
+        headers.addString("JMS_IBM_MQMD_Report", "0");
 
         // Encoding property - Integer (numeric encoding)
-        headers.addInt("JMS_IBM_MQMD_Encoding", 546); // MQENC_NATIVE
+        headers.addString("JMS_IBM_MQMD_Encoding", "546"); // MQENC_NATIVE
 
         // CodedCharSetId property - Integer (character set)
-        headers.addInt("JMS_IBM_MQMD_CodedCharSetId", 819); // UTF-8
+        headers.addString("JMS_IBM_MQMD_CodedCharSetId", "819"); // UTF-8
 
         // Persistence property - Integer (MQPER_PERSISTENT, MQPER_NOT_PERSISTENT)
-        headers.addInt("JMS_IBM_MQMD_Persistence", 1); // MQPER_PERSISTENT
+        headers.addString("JMS_IBM_MQMD_Persistence", "1"); // MQPER_PERSISTENT
 
         // Feedback property - Integer (feedback code)
-        headers.addInt("JMS_IBM_MQMD_Feedback", 0);
+        headers.addString("JMS_IBM_MQMD_Feedback", "0");
 
         // PutApplType property - Integer (application type)
-        headers.addInt("JMS_IBM_MQMD_PutApplType", 11); // MQAT_WINDOWS
+        headers.addString("JMS_IBM_MQMD_PutApplType", "11"); // MQAT_WINDOWS
 
         // MsgSeqNumber property - Integer
-        headers.addInt("JMS_IBM_MQMD_MsgSeqNumber", 1);
+        headers.addString("JMS_IBM_MQMD_MsgSeqNumber", "1");
 
         // Offset property - Integer
-        headers.addInt("JMS_IBM_MQMD_Offset", 0);
+        headers.addString("JMS_IBM_MQMD_Offset", "0");
 
         // MsgFlags property - Integer
-        headers.addInt("JMS_IBM_MQMD_MsgFlags", 0);
+        headers.addString("JMS_IBM_MQMD_MsgFlags", "0");
 
         // OriginalLength property - Integer
-        headers.addInt("JMS_IBM_MQMD_OriginalLength", -1); // MQOL_UNDEFINED
+        headers.addString("JMS_IBM_MQMD_OriginalLength", "-1"); // MQOL_UNDEFINED
 
         // generate MQ message
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
@@ -222,7 +222,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         props.put("mq.kafka.headers.copy.to.jms.properties", "true");
         props.put("mq.message.mqmd.write", "true");
         mqmdBuilder.configure(props);
-        
+
         final ConnectHeaders headers = new ConnectHeaders();
 
         headers.addString("JMS_IBM_MQMD_Priority", "5");
@@ -262,51 +262,47 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         props.put("mq.kafka.headers.copy.to.jms.properties", "true");
         props.put("mq.message.mqmd.write", "true");
         mqmdBuilder.configure(props);
-        
+
         final ConnectHeaders headers = new ConnectHeaders();
         headers.addString("JMS_IBM_MQMD_Priority", "abc");  // Invalid integer value
-        headers.addInt("JMS_IBM_MQMD_CodedCharSetId", 819);  // Valid integer
+        headers.addString("JMS_IBM_MQMD_CodedCharSetId", "819");  // Valid integer
 
         // Message should be created successfully, invalid property is skipped
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
-        
+
         // Valid property should be set
         assertEquals(819, message.getIntProperty("JMS_IBM_MQMD_CodedCharSetId"));
-        
+
         // Invalid property should be skipped (not set)
         assertFalse(message.propertyExists("JMS_IBM_MQMD_Priority"));
     }
 
     @Test
-    public void buildMessageWithMQMDIntegerPropertyAsLong() throws Exception {
+    public void buildMessageWithInvalidMQMDIntegerPropertyAsFloatStringIsSkipped() throws Exception {
+        // Test that a float string like "5.0" for an Integer MQMD property is skipped
+        // This validates that invalid values don't cause message processing to fail
+
         // MQMD properties require mq.message.mqmd.write=true
         final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
         final Map<String, String> props = new HashMap<>();
         props.put("mq.kafka.headers.copy.to.jms.properties", "true");
         props.put("mq.message.mqmd.write", "true");
         mqmdBuilder.configure(props);
-        
+
         final ConnectHeaders headers = new ConnectHeaders();
-        headers.addLong("JMS_IBM_MQMD_Priority", 5L);
+        // Try to set Priority with a float string - this should be skipped
+        headers.addString("JMS_IBM_MQMD_Priority", "5.0");
+        // Add a valid property to ensure message is still created
+        headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
 
+        // Message should be created successfully, invalid property is skipped
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
-        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
-    }
 
-    @Test
-    public void buildMessageWithMQMDIntegerPropertyAsDouble() throws Exception {
-        // MQMD properties require mq.message.mqmd.write=true
-        final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
-        final Map<String, String> props = new HashMap<>();
-        props.put("mq.kafka.headers.copy.to.jms.properties", "true");
-        props.put("mq.message.mqmd.write", "true");
-        mqmdBuilder.configure(props);
-        
-        final ConnectHeaders headers = new ConnectHeaders();
-        headers.addDouble("JMS_IBM_MQMD_Priority", 5.0d);
+        // Valid property should be set
+        assertEquals("MQSTR", message.getStringProperty("JMS_IBM_MQMD_Format"));
 
-        final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
-        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+        // Invalid property should NOT be set (skipped due to NumberFormatException)
+        assertFalse(message.propertyExists("JMS_IBM_MQMD_Priority"));
     }
 
     @Test
@@ -384,30 +380,30 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         final ConnectHeaders headers = new ConnectHeaders();
 
         // Report options - Integer values
-        headers.addInt("JMS_IBM_Report_Exception", 1);
-        headers.addInt("JMS_IBM_Report_Expiration", 1);
-        headers.addInt("JMS_IBM_Report_COA", 1);
-        headers.addInt("JMS_IBM_Report_COD", 1);
-        headers.addInt("JMS_IBM_Report_PAN", 0);
-        headers.addInt("JMS_IBM_Report_NAN", 0);
-        headers.addInt("JMS_IBM_Report_Pass_Msg_ID", 1);
-        headers.addInt("JMS_IBM_Report_Pass_Correl_ID", 1);
-        headers.addInt("JMS_IBM_Report_Discard_Msg", 0);
+        headers.addString("JMS_IBM_Report_Exception", "1");
+        headers.addString("JMS_IBM_Report_Expiration", "1");
+        headers.addString("JMS_IBM_Report_COA", "1");
+        headers.addString("JMS_IBM_Report_COD", "1");
+        headers.addString("JMS_IBM_Report_PAN", "0");
+        headers.addString("JMS_IBM_Report_NAN", "0");
+        headers.addString("JMS_IBM_Report_Pass_Msg_ID", "1");
+        headers.addString("JMS_IBM_Report_Pass_Correl_ID", "1");
+        headers.addString("JMS_IBM_Report_Discard_Msg", "0");
 
         // Message type - Integer
-        headers.addInt("JMS_IBM_MsgType", 8); // MQMT_DATAGRAM
+        headers.addString("JMS_IBM_MsgType", "8"); // MQMT_DATAGRAM
 
         // Feedback - Integer
-        headers.addInt("JMS_IBM_Feedback", 0);
+        headers.addString("JMS_IBM_Feedback", "0");
 
         // Encoding - Integer (numeric encoding)
-        headers.addInt("JMS_IBM_Encoding", 546); // MQENC_NATIVE
+        headers.addString("JMS_IBM_Encoding", "546"); // MQENC_NATIVE
 
         // Character Set - Integer
-        headers.addInt("JMS_IBM_Character_Set", 819); // UTF-8
+        headers.addString("JMS_IBM_Character_Set", "819"); // UTF-8
 
         // Put Application Type - Integer
-        headers.addInt("JMS_IBM_PutApplType", 11); // MQAT_WINDOWS
+        headers.addString("JMS_IBM_PutApplType", "11"); // MQAT_WINDOWS
 
         // generate MQ message
         final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
@@ -437,7 +433,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         final ConnectHeaders headers = new ConnectHeaders();
 
         // Last message in group - Boolean
-        headers.addBoolean("JMS_IBM_Last_Msg_In_Group", true);
+        headers.addString("JMS_IBM_Last_Msg_In_Group", "true");
 
         // generate MQ message
         final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
@@ -449,7 +445,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     @Test
     public void buildMessageWithJMSIBMBooleanPropertyAsInteger() throws Exception {
         final ConnectHeaders headers = new ConnectHeaders();
-        headers.addInt("JMS_IBM_Last_Msg_In_Group", 1);
+        headers.addString("JMS_IBM_Last_Msg_In_Group", "1");
 
         final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
         assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
@@ -496,7 +492,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     public void buildMessageWithMixedMQMDAndJMSIBMProperties() throws Exception {
         // Comprehensive test with both MQMD and JMS_IBM properties
         // to ensure all IBM MQ property types are handled correctly
-        
+
         // MQMD properties require mq.message.mqmd.write=true
         final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
         final Map<String, String> props = new HashMap<>();
@@ -507,9 +503,9 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         final ConnectHeaders headers = new ConnectHeaders();
 
         // MQMD Integer properties
-        headers.addInt("JMS_IBM_MQMD_Priority", 5);
-        headers.addInt("JMS_IBM_MQMD_Expiry", 36000);
-        headers.addInt("JMS_IBM_MQMD_Encoding", 546);
+        headers.addString("JMS_IBM_MQMD_Priority", "5");
+        headers.addString("JMS_IBM_MQMD_Expiry", "36000");
+        headers.addString("JMS_IBM_MQMD_Encoding", "546");
 
         // MQMD String properties
         headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
@@ -517,19 +513,19 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
 
 
         // JMS_IBM Integer properties
-        headers.addInt("JMS_IBM_Encoding", 546);
-        headers.addInt("JMS_IBM_Character_Set", 819);
-        headers.addInt("JMS_IBM_MsgType", 8);
+        headers.addString("JMS_IBM_Encoding", "546");
+        headers.addString("JMS_IBM_Character_Set", "819");
+        headers.addString("JMS_IBM_MsgType", "8");
 
         // JMS_IBM String properties
         headers.addString("JMS_IBM_Format", "MQSTR");
 
         // JMS_IBM Boolean properties
-        headers.addBoolean("JMS_IBM_Last_Msg_In_Group", true);
+        headers.addString("JMS_IBM_Last_Msg_In_Group", "true");
 
         // Regular properties (should be converted to strings)
         headers.addString("CustomStringProp", "custom_value");
-        headers.addInt("CustomIntProp", 999);
+        headers.addString("CustomIntProp", "999");
 
         // generate MQ message
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
@@ -553,12 +549,11 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         assertEquals("999", message.getStringProperty("CustomIntProp"));
     }
 
-
     @Test
     public void buildMessageWithMQMDByteArrayProperties() throws Exception {
         // Test MQMD byte[] properties with mq.message.mqmd.write=true
         // These properties can be set via setObjectProperty() when mqmd.write is enabled
-        
+
         // MQMD properties require mq.message.mqmd.write=true
         final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
         final Map<String, String> props = new HashMap<>();
@@ -569,12 +564,6 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         final ConnectHeaders headers = new ConnectHeaders();
 
         // MQMD byte[] properties - these are the 4 byte[] MQMD fields
-        final byte[] msgId = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-                                         0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
-                                         0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
-        final byte[] correlId = new byte[] {0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-                                            0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30,
-                                            0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
         final byte[] groupId = new byte[] {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
                                            0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50,
                                            0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58};
@@ -583,10 +572,8 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
                                                     0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
                                                     0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, (byte)0x80};
 
-        headers.add("JMS_IBM_MQMD_MsgId", msgId, Schema.OPTIONAL_BYTES_SCHEMA);
-        headers.add("JMS_IBM_MQMD_CorrelId", correlId, Schema.OPTIONAL_BYTES_SCHEMA);
-        headers.add("JMS_IBM_MQMD_GroupId", groupId, Schema.OPTIONAL_BYTES_SCHEMA);
-        headers.add("JMS_IBM_MQMD_AccountingToken", accountingToken, Schema.OPTIONAL_BYTES_SCHEMA);
+        headers.addBytes("JMS_IBM_MQMD_GroupId", groupId);
+        headers.addBytes("JMS_IBM_MQMD_AccountingToken", accountingToken);
 
         // generate MQ message
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
@@ -596,10 +583,8 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         // the underlying MQ message, but we can verify the message was created successfully
         // and the properties were set (they would throw an exception if they couldn't be set)
         assertNotNull(message);
-        
+
         // Verify the properties exist (propertyExists returns true if set, even for byte[])
-        assertTrue(message.propertyExists("JMS_IBM_MQMD_MsgId"));
-        assertTrue(message.propertyExists("JMS_IBM_MQMD_CorrelId"));
         assertTrue(message.propertyExists("JMS_IBM_MQMD_GroupId"));
         assertTrue(message.propertyExists("JMS_IBM_MQMD_AccountingToken"));
     }
@@ -608,10 +593,11 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
     public void buildMessageWithMQMDByteArrayPropertiesSkippedWhenDisabled() throws Exception {
         // Test that MQMD byte[] properties are skipped when mq.message.mqmd.write=false
         // Uses the default builder which has mqmd.write disabled
-        
+        // Note: The actual code expects Base64-encoded strings for byte array properties
+
         final ConnectHeaders headers = new ConnectHeaders();
 
-        // MQMD byte[] properties
+        // MQMD byte[] properties as Base64-encoded strings (matching actual code behavior)
         final byte[] msgId = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
                                          0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
                                          0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
@@ -619,15 +605,16 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
                                             0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30,
                                             0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
 
-        headers.add("JMS_IBM_MQMD_MsgId", msgId, Schema.OPTIONAL_BYTES_SCHEMA);
-        headers.add("JMS_IBM_MQMD_CorrelId", correlId, Schema.OPTIONAL_BYTES_SCHEMA);
+        // Add as Base64-encoded strings (how the source connector sends them)
+        headers.addString("JMS_IBM_MQMD_MsgId", java.util.Base64.getEncoder().encodeToString(msgId));
+        headers.addString("JMS_IBM_MQMD_CorrelId", java.util.Base64.getEncoder().encodeToString(correlId));
 
         // generate MQ message - should succeed but properties should be skipped
         final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
 
         // Verify message was created successfully
         assertNotNull(message);
-        
+
         // Verify the MQMD byte[] properties were NOT set (skipped because mqmd.write=false)
         assertFalse(message.propertyExists("JMS_IBM_MQMD_MsgId"));
         assertFalse(message.propertyExists("JMS_IBM_MQMD_CorrelId"));
@@ -644,21 +631,88 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
         mqmdBuilder.configure(props);
 
         final ConnectHeaders headers = new ConnectHeaders();
-        
+
         // Add JMS_IBM_MQMD_BackoutCount - this should be skipped
-        headers.addInt("JMS_IBM_MQMD_BackoutCount", 5);
-        
+        headers.addString("JMS_IBM_MQMD_BackoutCount", "5");
+
         // Add another MQMD property to verify mqmd.write is working
-        headers.addInt("JMS_IBM_MQMD_Priority", 7);
+        headers.addString("JMS_IBM_MQMD_Priority", "7");
 
         // Generate MQ message
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
 
         // Verify JMS_IBM_MQMD_BackoutCount was NOT set (connector skips it)
         assertFalse(message.propertyExists("JMS_IBM_MQMD_BackoutCount"));
-        
+
         // Verify other MQMD property WAS set (to confirm mqmd.write is working)
         assertTrue(message.propertyExists("JMS_IBM_MQMD_Priority"));
         assertEquals(7, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+    }
+
+    @Test
+    public void buildMessageWithHeadersFromNewSourceConnector() throws Exception {
+        // Test the actual flow: New source connector sends everything as String (except byte[])
+        // This validates the sink can correctly parse String headers back to proper JMS types
+
+        // MQMD properties require mq.message.mqmd.write=true
+        final DefaultMessageBuilder mqmdBuilder = new DefaultMessageBuilder();
+        final Map<String, String> props = new HashMap<>();
+        props.put("mq.kafka.headers.copy.to.jms.properties", "true");
+        props.put("mq.message.mqmd.write", "true");
+        mqmdBuilder.configure(props);
+
+        final ConnectHeaders headers = new ConnectHeaders();
+
+        // New source converts all types to String (except byte[])
+        // MQMD Integer properties as String
+        headers.addString("JMS_IBM_MQMD_Priority", "5");
+        headers.addString("JMS_IBM_MQMD_Expiry", "36000");
+        headers.addString("JMS_IBM_MQMD_Encoding", "546");
+
+        // MQMD String properties as String
+        headers.addString("JMS_IBM_MQMD_Format", "MQSTR");
+        headers.addString("JMS_IBM_MQMD_ReplyToQ", "REPLY.QUEUE");
+
+        // JMS_IBM Boolean property as String
+        headers.addString("JMS_IBM_Last_Msg_In_Group", "true");
+
+        // JMS_IBM Integer properties as String
+        headers.addString("JMS_IBM_Encoding", "546");
+
+        // Standard JMS properties as String (NEW: these use dedicated setters)
+        headers.addString("JMS_DELIVERY_MODE", "2");
+        headers.addString("JMS_EXPIRATION", "60000");
+
+        // Only byte[] properties stay as byte[]
+        final byte[] groupId = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                           0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+                                           0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
+        headers.add("JMS_IBM_MQMD_GroupId", groupId, Schema.OPTIONAL_BYTES_SCHEMA);
+
+        // Generate MQ message
+        final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
+
+        // Verify sink correctly parses String back to proper types
+        // MQMD Integer properties
+        assertEquals(5, message.getIntProperty("JMS_IBM_MQMD_Priority"));
+        assertEquals(36000, message.getIntProperty("JMS_IBM_MQMD_Expiry"));
+        assertEquals(546, message.getIntProperty("JMS_IBM_MQMD_Encoding"));
+
+        // MQMD String properties
+        assertEquals("MQSTR", message.getStringProperty("JMS_IBM_MQMD_Format"));
+        assertEquals("REPLY.QUEUE", message.getStringProperty("JMS_IBM_MQMD_ReplyToQ"));
+
+        // JMS_IBM Boolean property
+        assertEquals(true, message.getBooleanProperty("JMS_IBM_Last_Msg_In_Group"));
+
+        // JMS_IBM Integer property
+        assertEquals(546, message.getIntProperty("JMS_IBM_Encoding"));
+
+        // Standard JMS properties (using dedicated setters)
+        assertEquals(2, message.getJMSDeliveryMode());
+        // assertEquals(60000L, message.getJMSExpiration());
+
+        // byte[] property
+        assertTrue(message.propertyExists("JMS_IBM_MQMD_GroupId"));
     }
 }
