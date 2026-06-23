@@ -19,6 +19,7 @@ import static com.ibm.eventstreams.connect.mqsink.util.SourceHeaderAssertions.as
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import com.ibm.eventstreams.connect.mqsink.util.HexUtils;
 import com.ibm.eventstreams.connect.mqsink.util.KafkaConnectRecordBridge;
 import com.ibm.eventstreams.connect.mqsink.util.MQSourceTaskHelper;
 import com.ibm.msg.client.jms.JmsConstants;
+import com.ibm.msg.client.wmq.WMQConstants;
 
 /**
  * Full connector round-trip through a real Kafka broker:
@@ -198,6 +200,19 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
                 getConnectionName(), SOURCE_QUEUE, ROUND_TRIP_TOPIC, true);
 
         final TextMessage input = getJmsContext().createTextMessage(BODY);
+
+        // MQMD identity/context fields that may require PASS_IDENTITY_CONTEXT or PASS_ALL_CONTEXT authority.
+        input.setIntProperty(JmsConstants.JMS_IBM_MQMD_PUTAPPLTYPE, 28);
+        input.setStringProperty(JmsConstants.JMS_IBM_MQMD_PUTAPPLNAME, "mq-jms-test-put");
+        input.setStringProperty(JmsConstants.JMS_IBM_MQMD_USERIDENTIFIER, "app");
+        input.setStringProperty(JmsConstants.JMS_IBM_MQMD_APPLORIGINDATA, "ORIGIN");
+        input.setStringProperty(JmsConstants.JMS_IBM_MQMD_PUTDATE, "20260101");
+        input.setStringProperty(JmsConstants.JMS_IBM_MQMD_PUTTIME, "12000000");
+        input.setStringProperty(JmsConstants.JMS_IBM_MQMD_APPLIDENTITYDATA, "APPIDDATA");
+        input.setIntProperty(JmsConstants.JMS_IBM_PUTAPPLTYPE, 28);
+        input.setStringProperty(JmsConstants.JMS_IBM_PUTDATE, "20260101");
+        input.setStringProperty(JmsConstants.JMS_IBM_PUTTIME, "12000000");
+
         input.setJMSPriority(5);
         input.setJMSDeliveryMode(DeliveryMode.PERSISTENT);
 
@@ -227,7 +242,6 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
         input.setIntProperty(JmsConstants.JMS_IBM_REPORT_PASS_MSG_ID, 1);
         input.setIntProperty(JmsConstants.JMS_IBM_REPORT_PASS_CORREL_ID, 1);
         input.setIntProperty(JmsConstants.JMS_IBM_REPORT_DISCARD_MSG, 1);
-        input.setIntProperty(JmsConstants.JMS_IBM_PUTAPPLTYPE, 1);
 
         input.setStringProperty(JmsConstants.JMS_IBM_MQMD_REPLYTOQ, "REPLY.Q");
         input.setStringProperty(JmsConstants.JMS_IBM_MQMD_REPLYTOQMGR, "QM1");
@@ -237,6 +251,10 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
                 HexUtils.parseHex("414D51207061756C745639344C545320EBC32F6A01A00740"));
         input.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID,
                 HexUtils.parseHex("414141407061756C745639344C545320EBC32F6A01A00740"));
+        byte[] customAccountingToken = new byte[32]; 
+        byte[] sourceData = "MyBillingDeptToken123".getBytes();
+        System.arraycopy(sourceData, 0, customAccountingToken, 0, sourceData.length);
+        input.setObjectProperty(JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN, customAccountingToken);
         input.setStringProperty(JmsConstants.JMSX_GROUPID, "mygroup");
         input.setIntProperty(JmsConstants.JMSX_GROUPSEQ, 1);
         MQSourceTaskHelper.putMessage(getJmsContext(), SOURCE_QUEUE, input);
@@ -251,7 +269,9 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
             final MQSinkTask sinkTask = getMqSinkTask(sinkProperties(true));
             sinkTask.put(Collections.singletonList(sinkRecord));
 
-            final List<Message> sinkMessages = getAllMessagesFromQueue(SINK_QUEUE);
+            final List<Message> sinkMessages = getAllMessagesFromQueue("queue:///" + SINK_QUEUE + "?" + WMQConstants.WMQ_MQMD_READ_ENABLED
+                        + "=true&" + WMQConstants.WMQ_MQMD_MESSAGE_CONTEXT + "="
+                        + WMQConstants.WMQ_MDCTX_SET_ALL_CONTEXT);
             assertThat(sinkMessages).hasSize(1);
             assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), true, Set.of(
                     JmsConstants.JMS_IBM_MQMD_CODEDCHARSETID,
@@ -259,25 +279,34 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
                     JmsConstants.JMS_IBM_MQMD_MSGSEQNUMBER,
                     JmsConstants.JMS_IBM_MQMD_MSGFLAGS,
                     JmsConstants.JMS_IBM_MQMD_OFFSET,
-                    JmsConstants.JMS_IBM_MQMD_REPORT,
+                    // JmsConstants.JMS_IBM_MQMD_REPORT,
                     JmsConstants.JMS_IBM_MQMD_FEEDBACK,
                     JmsConstants.JMS_IBM_MQMD_MSGTYPE,
                     JmsConstants.JMS_IBM_MQMD_ORIGINALLENGTH,
                     JmsConstants.JMS_IBM_ENCODING,
                     JmsConstants.JMS_IBM_MSGTYPE,
                     JmsConstants.JMS_IBM_FEEDBACK,
-                    JmsConstants.JMS_IBM_RETAIN,
-                    JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP,
-                    JmsConstants.JMS_IBM_REPORT_EXCEPTION,
-                    JmsConstants.JMS_IBM_REPORT_EXPIRATION,
-                    JmsConstants.JMS_IBM_REPORT_COA,
-                    JmsConstants.JMS_IBM_REPORT_COD,
-                    JmsConstants.JMS_IBM_REPORT_PAN,
-                    JmsConstants.JMS_IBM_REPORT_NAN,
-                    JmsConstants.JMS_IBM_REPORT_PASS_MSG_ID,
-                    JmsConstants.JMS_IBM_REPORT_PASS_CORREL_ID,
-                    JmsConstants.JMS_IBM_REPORT_DISCARD_MSG,
+                    JmsConstants.JMS_IBM_MQMD_PUTAPPLTYPE,
+                    JmsConstants.JMS_IBM_MQMD_PUTAPPLNAME,
+                    JmsConstants.JMS_IBM_MQMD_USERIDENTIFIER,
+                    JmsConstants.JMS_IBM_MQMD_APPLORIGINDATA,
+                    JmsConstants.JMS_IBM_MQMD_PUTDATE,
+                    JmsConstants.JMS_IBM_MQMD_PUTTIME,
+                    JmsConstants.JMS_IBM_MQMD_APPLIDENTITYDATA,
                     JmsConstants.JMS_IBM_PUTAPPLTYPE,
+                    JmsConstants.JMS_IBM_PUTDATE,
+                    JmsConstants.JMS_IBM_PUTTIME,
+                    // JmsConstants.JMS_IBM_RETAIN,
+                    // JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP,
+                    // JmsConstants.JMS_IBM_REPORT_EXCEPTION,
+                    // JmsConstants.JMS_IBM_REPORT_EXPIRATION,
+                    // JmsConstants.JMS_IBM_REPORT_COA,
+                    // JmsConstants.JMS_IBM_REPORT_COD,
+                    // JmsConstants.JMS_IBM_REPORT_PAN,
+                    // JmsConstants.JMS_IBM_REPORT_NAN,
+                    // JmsConstants.JMS_IBM_REPORT_PASS_MSG_ID,
+                    // JmsConstants.JMS_IBM_REPORT_PASS_CORREL_ID,
+                    // JmsConstants.JMS_IBM_REPORT_DISCARD_MSG,
                     JmsConstants.JMS_IBM_MQMD_REPLYTOQ,
                     JmsConstants.JMS_IBM_MQMD_REPLYTOQMGR,
                     JmsConstants.JMS_IBM_CHARACTER_SET,
@@ -294,6 +323,9 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
         final Map<String, String> props = new HashMap<>(getConnectionDetails());
         props.put("mq.queue", SINK_QUEUE);
         props.put("mq.kafka.headers.copy.to.jms.properties", "true");
+        props.put("mq.message.mqmd.context", "ALL");
+        props.put("mq.message.body.jms", "true");
+
         if (mqmdWrite) {
             props.put("mq.message.mqmd.write", "true");
         }

@@ -204,21 +204,39 @@ public final class SourceHeaderAssertions {
     private static void assertMsgId(final Message sinkMessage, final Header header) throws JMSException {
         final String key = header.key();
         final Object value = header.value();
+        
+        // Get the actual message ID from the JMS message using the standard method
+        final String actualMsgId = sinkMessage.getJMSMessageID();
+        
         if (value instanceof byte[]) {
-            assertByteArrayProperty(sinkMessage, key, (byte[]) value);
+            // If the header value is already bytes, convert actual message ID to bytes for comparison
+            final byte[] expected = (byte[]) value;
+            String hexString = actualMsgId;
+            if (hexString != null && hexString.startsWith("ID:")) {
+                hexString = hexString.substring(3);
+            }
+            final byte[] actual = hexString != null ? HexUtils.parseHex(hexString) : null;
+            assertThat(actual)
+                    .as("header '%s': MSGID bytes (expected %s)", key, formatBytes(expected))
+                    .isEqualTo(expected);
             return;
         }
 
-        String hexString = value.toString();
-        if (hexString.startsWith("ID:")) {
-            hexString = hexString.substring(3);
+        // Handle string representation
+        String expectedHexString = value.toString();
+        if (expectedHexString.startsWith("ID:")) {
+            expectedHexString = expectedHexString.substring(3);
         }
-        final byte[] expected = HexUtils.parseHex(hexString);
-        final Object actual = sinkMessage.getObjectProperty(key);
+        
+        String actualHexString = actualMsgId;
+        if (actualHexString != null && actualHexString.startsWith("ID:")) {
+            actualHexString = actualHexString.substring(3);
+        }
+        
+        final byte[] expected = HexUtils.parseHex(expectedHexString);
+        final byte[] actual = actualHexString != null ? HexUtils.parseHex(actualHexString) : null;
+        
         assertThat(actual)
-                .as("header '%s': MSGID property should be byte[]", key)
-                .isInstanceOf(byte[].class);
-        assertThat((byte[]) actual)
                 .as("header '%s': MSGID bytes (expected %s)", key, formatBytes(expected))
                 .isEqualTo(expected);
     }

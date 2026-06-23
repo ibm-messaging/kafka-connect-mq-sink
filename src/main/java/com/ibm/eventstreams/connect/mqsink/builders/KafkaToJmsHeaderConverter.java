@@ -233,7 +233,6 @@ public class KafkaToJmsHeaderConverter {
             return;
         }
 
-
         final Object converted = convertToJmsType(key, value);
         message.setObjectProperty(key, converted);
         log.debug("Set property '{}' as {}: {}",
