@@ -54,6 +54,7 @@ import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper;
+import com.ibm.eventstreams.connect.mqsink.util.MqContainerAuthHelper;
 import com.ibm.mq.jms.MQConnectionFactory;
 import com.ibm.msg.client.jms.JmsConnectionFactory;
 import com.ibm.msg.client.jms.JmsFactoryFactory;
@@ -228,6 +229,14 @@ public abstract class AbstractJMSContextIT {
 
     protected void clearAllMessages(final String queue) throws JMSException {
         getAllMessagesFromQueue(queue);
+    }
+
+    /**
+     * Grants authorities for {@link com.ibm.eventstreams.connect.mqsink.util.JmsMqPutHelper} puts
+     * with MQMD write and all-context on the given queue.
+     */
+    protected void grantAppUserMqmdPutOnQueue(final String queueName) throws Exception {
+        MqContainerAuthHelper.grantAppUserMqmdPut(MQ_CONTAINER, QMGR_NAME, queueName, APP_USERNAME);
     }
 
     @NotNull

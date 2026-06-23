@@ -107,6 +107,28 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- integration tests: simulate Kafka headers produced by MQ source connector -->
+    <dependency>
+      <groupId>com.ibm.eventstreams.connect</groupId>
+      <artifactId>kafka-connect-mq-source</artifactId>
+      <version>2.9.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>3.7.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>kafka</artifactId>
+      <version>1.21.4</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -154,6 +176,8 @@
           <additionalClasspathElements>
             <additionalClasspathElement>src/test/resources</additionalClasspathElement>
           </additionalClasspathElements>
+          <reuseForks>false</reuseForks>
+          <forkCount>1</forkCount>
         </configuration>
       </plugin>
 
@@ -342,15 +366,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.4.0</version>
-        <configuration>
-            <reuseForks>false</reuseForks>
-            <forkCount>1</forkCount>
-        </configuration>
       </plugin>
     </plugins>
     <testResources>
