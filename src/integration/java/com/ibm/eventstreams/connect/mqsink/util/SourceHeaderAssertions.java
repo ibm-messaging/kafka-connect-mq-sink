@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -100,6 +101,8 @@ public final class SourceHeaderAssertions {
             JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP
     ));
 
+    private static final HexFormat HEX = HexFormat.of();
+
     private SourceHeaderAssertions() {
     }
 
@@ -127,14 +130,18 @@ public final class SourceHeaderAssertions {
 
         if (value == null) {
             assertThat(sinkMessage.propertyExists(key))
-                    .as("property '%s' should exist with null value", key)
+                    .as("header '%s': property should exist with null value", key)
                     .isTrue();
-            assertThat(sinkMessage.getObjectProperty(key)).isNull();
+            assertThat(sinkMessage.getObjectProperty(key))
+                    .as("header '%s': property value should be null", key)
+                    .isNull();
             return;
         }
 
         if (JmsConstants.JMS_IBM_MQMD_CORRELID.equals(key)) {
-            assertThat(sinkMessage.getJMSCorrelationID()).isEqualTo(value.toString());
+            assertThat(sinkMessage.getJMSCorrelationID())
+                    .as("header '%s': JMSCorrelationID", key)
+                    .isEqualTo(value.toString());
             return;
         }
 
@@ -149,7 +156,10 @@ public final class SourceHeaderAssertions {
         }
 
         if (MQMD_INTEGER_PROPERTIES.contains(key) || JMS_IBM_INTEGER_PROPERTIES.contains(key)) {
-            assertThat(sinkMessage.getIntProperty(key)).isEqualTo(Integer.parseInt(value.toString()));
+            final int expected = Integer.parseInt(value.toString());
+            assertThat(sinkMessage.getIntProperty(key))
+                    .as("header '%s': int property", key)
+                    .isEqualTo(expected);
             return;
         }
 
@@ -159,7 +169,9 @@ public final class SourceHeaderAssertions {
         }
 
         if (MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key)) {
-            assertThat(sinkMessage.getStringProperty(key)).isEqualTo(value.toString());
+            assertThat(sinkMessage.getStringProperty(key))
+                    .as("header '%s': string property", key)
+                    .isEqualTo(value.toString());
             return;
         }
 
@@ -168,13 +180,16 @@ public final class SourceHeaderAssertions {
             return;
         }
 
-        assertThat(sinkMessage.getStringProperty(key)).isEqualTo(value.toString());
+        assertThat(sinkMessage.getStringProperty(key))
+                .as("header '%s': default string property", key)
+                .isEqualTo(value.toString());
     }
 
     private static void assertMsgId(final Message sinkMessage, final Header header) throws JMSException {
+        final String key = header.key();
         final Object value = header.value();
         if (value instanceof byte[]) {
-            assertByteArrayProperty(sinkMessage, JmsConstants.JMS_IBM_MQMD_MSGID, (byte[]) value);
+            assertByteArrayProperty(sinkMessage, key, (byte[]) value);
             return;
         }
 
@@ -183,26 +198,44 @@ public final class SourceHeaderAssertions {
             hexString = hexString.substring(3);
         }
         final byte[] expected = HexUtils.parseHex(hexString);
-        final byte[] actual = (byte[]) sinkMessage.getObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID);
-        assertThat(actual).isEqualTo(expected);
+        final Object actual = sinkMessage.getObjectProperty(key);
+        assertThat(actual)
+                .as("header '%s': MSGID property should be byte[]", key)
+                .isInstanceOf(byte[].class);
+        assertThat((byte[]) actual)
+                .as("header '%s': MSGID bytes (expected %s)", key, formatBytes(expected))
+                .isEqualTo(expected);
     }
 
     private static void assertBooleanProperty(final Message sinkMessage, final String key, final String value)
             throws JMSException {
         if ("true".equalsIgnoreCase(value) || "1".equals(value)) {
-            assertThat(sinkMessage.getBooleanProperty(key)).isTrue();
+            assertThat(sinkMessage.getBooleanProperty(key))
+                    .as("header '%s': boolean property (expected true)", key)
+                    .isTrue();
         } else if ("false".equalsIgnoreCase(value) || "0".equals(value)) {
-            assertThat(sinkMessage.getBooleanProperty(key)).isFalse();
+            assertThat(sinkMessage.getBooleanProperty(key))
+                    .as("header '%s': boolean property (expected false)", key)
+                    .isFalse();
         } else {
-            throw new AssertionError("Unexpected boolean header value for " + key + ": " + value);
+            throw new AssertionError(String.format(
+                    "header '%s': unexpected boolean value '%s' (expected true/false or 1/0)", key, value));
         }
     }
 
     private static void assertByteArrayProperty(final Message sinkMessage, final String key, final byte[] expected)
             throws JMSException {
         final Object actual = sinkMessage.getObjectProperty(key);
-        assertThat(actual).isInstanceOf(byte[].class);
-        assertThat((byte[]) actual).isEqualTo(expected);
+        assertThat(actual)
+                .as("header '%s': property should be byte[] (expected %s)", key, formatBytes(expected))
+                .isInstanceOf(byte[].class);
+        assertThat((byte[]) actual)
+                .as("header '%s': byte[] property (expected %s)", key, formatBytes(expected))
+                .isEqualTo(expected);
+    }
+
+    private static String formatBytes(final byte[] bytes) {
+        return bytes == null ? "null" : HEX.formatHex(bytes);
     }
 
     private static byte[] decodeBytes(final Object value) {
