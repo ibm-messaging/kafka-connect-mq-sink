@@ -572,8 +572,8 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
                                                     0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
                                                     0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, (byte)0x80};
 
-        headers.addBytes("JMS_IBM_MQMD_GroupId", groupId);
-        headers.addBytes("JMS_IBM_MQMD_AccountingToken", accountingToken);
+        headers.addString("JMS_IBM_MQMD_GroupId", java.util.Base64.getEncoder().encodeToString(groupId));
+        headers.addString("JMS_IBM_MQMD_AccountingToken", java.util.Base64.getEncoder().encodeToString(accountingToken));
 
         // generate MQ message
         final Message message = mqmdBuilder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));
@@ -606,8 +606,8 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
                                             0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
 
         // Add as Base64-encoded strings (how the source connector sends them)
-        headers.addString("JMS_IBM_MQMD_MsgId", java.util.Base64.getEncoder().encodeToString(msgId));
-        headers.addString("JMS_IBM_MQMD_CorrelId", java.util.Base64.getEncoder().encodeToString(correlId));
+        headers.addBytes("JMS_IBM_MQMD_MsgId", msgId);
+        headers.addBytes("JMS_IBM_MQMD_CorrelId", correlId);
 
         // generate MQ message - should succeed but properties should be skipped
         final Message message = builder.fromSinkRecord(getJmsContext(), generateSinkRecord(headers));

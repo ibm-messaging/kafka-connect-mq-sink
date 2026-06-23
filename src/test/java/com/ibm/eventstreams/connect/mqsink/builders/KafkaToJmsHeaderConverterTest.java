@@ -115,7 +115,7 @@ public class KafkaToJmsHeaderConverterTest {
     public void skipsMqmdMsgIdByteArrayWhenMqmdWriteDisabled() throws Exception {
         converter.setMqmdWriteEnabled(false);
 
-        final String value = "messageid";
+        final String value = "ID:414141407061756C745639344C545320EBC32F6A01A00740";
         final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_MSGID, value, Schema.STRING_SCHEMA)
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
 
@@ -197,17 +197,59 @@ public class KafkaToJmsHeaderConverterTest {
         verify(message, never()).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_FORMAT), any());
     }
     @Test
-    public void skipsMqmdByteArrayHeaderWithStringValue() throws Exception {
-        // Old Source Connector sends byte arrays as toString() - should be skipped
+    public void setsMqmdMsgIdWithIdPrefix() throws Exception {
+        // Test that MSGID with "ID:" prefix is handled correctly
+        converter.setMqmdWriteEnabled(true);
+
+        final String hexValue = "414d5120514d312020202020202020205e7e5f6601c04a28";
+        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_MSGID, "ID:" + hexValue)
+                .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
+
+        converter.copyHeaderToJmsProperty(message, header);
+
+        // Verify the hex string was parsed correctly (without the "ID:" prefix)
+        final byte[] expectedBytes = java.util.HexFormat.of().parseHex(hexValue);
+        verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), eq(expectedBytes));
+    }
+
+    @Test
+    public void setsMqmdMsgIdWithoutIdPrefix() throws Exception {
+        // Test that MSGID without "ID:" prefix is handled correctly
+        converter.setMqmdWriteEnabled(true);
+
+        final String hexValue = "414d5120514d312020202020202020205e7e5f6601c04a28";
+        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_MSGID, hexValue)
+                .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
+
+        converter.copyHeaderToJmsProperty(message, header);
+
+        // Verify the hex string was parsed correctly
+        final byte[] expectedBytes = java.util.HexFormat.of().parseHex(hexValue);
+        verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), eq(expectedBytes));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsExceptionForInvalidMsgIdHex() throws Exception {
+        // Test that invalid hex string throws an exception
+        converter.setMqmdWriteEnabled(true);
+
+        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_MSGID, "ID:INVALID_HEX")
+                .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
+
+        // Should throw IllegalArgumentException due to invalid hex format
+        converter.copyHeaderToJmsProperty(message, header);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsExceptionForByteArrayToStringMsgId() throws Exception {
+        // Old Source Connector sends byte arrays as toString() - should throw exception
         converter.setMqmdWriteEnabled(true);
 
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_MSGID, "[B@42969b24")
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
 
+        // Should throw IllegalArgumentException due to invalid hex format
         converter.copyHeaderToJmsProperty(message, header);
-
-        // Verify no methods were called (invalid String value for byte[] property)
-        verify(message, never()).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), any());
     }
 
 

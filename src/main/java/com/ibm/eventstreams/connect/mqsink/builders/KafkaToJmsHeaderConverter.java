@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Set;
 
 import javax.jms.JMSException;
@@ -41,6 +42,7 @@ import javax.jms.Message;
  */
 public class KafkaToJmsHeaderConverter {
     private static final Logger log = LoggerFactory.getLogger(KafkaToJmsHeaderConverter.class);
+    private static final HexFormat HEX_FORMAT = HexFormat.of();
 
     private boolean mqmdWriteEnabled = false;
 
@@ -103,6 +105,8 @@ public class KafkaToJmsHeaderConverter {
      * IMPORTANT: AccountingToken requires WMQ_MQMD_MESSAGE_CONTEXT to be set to IDENTITY or ALL context.
      */
     private static final Set<String> MQMD_BYTES_PROPERTIES = new HashSet<>(Arrays.asList(
+            JmsConstants.JMS_IBM_MQMD_CORRELID,
+            JmsConstants.JMS_IBM_MQMD_MSGID,
             JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN,
             JmsConstants.JMS_IBM_MQMD_GROUPID
     ));
@@ -221,9 +225,15 @@ public class KafkaToJmsHeaderConverter {
         }
 
         if (JmsConstants.JMS_IBM_MQMD_MSGID.equals(key)) {
-            message.setJMSMessageID(value.toString());
+            String hexString = value.toString();
+            if (hexString.startsWith("ID:")) {
+                hexString = hexString.substring(3);
+            }
+            final byte[] msgIdBytes = HEX_FORMAT.parseHex(hexString);
+            message.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID, msgIdBytes);
             return;
         }
+
 
         final Object converted = convertToJmsType(key, value);
         message.setObjectProperty(key, converted);
@@ -260,7 +270,7 @@ public class KafkaToJmsHeaderConverter {
         }
 
         // Unknown property: pass through as string with a warning so unknown keys surface clearly.
-        log.warn("Unknown JMS property '{}' with value type '{}'; passing through as String",
+        log.debug("Unknown JMS property '{}' with value type '{}'; passing through as String",
                 key, value == null ? "null" : value.getClass().getSimpleName());
         return value == null ? null : value.toString();
     }
@@ -279,7 +289,7 @@ public class KafkaToJmsHeaderConverter {
 
     private Integer toInteger(final String key, final Object value) {
         try {
-            return Integer.parseInt((String) value);
+            return Integer.parseInt(value.toString());
         } catch (final NumberFormatException | ClassCastException e) {
             throw new IllegalArgumentException(
                     String.format("Property '%s': cannot convert '%s' to Integer", key, value), e);
