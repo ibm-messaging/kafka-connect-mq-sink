@@ -19,10 +19,10 @@ import static com.ibm.eventstreams.connect.mqsink.util.SourceHeaderAssertions.as
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
@@ -101,7 +101,12 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
 
             final List<Message> sinkMessages = getAllMessagesFromQueue(SINK_QUEUE);
             assertThat(sinkMessages).hasSize(1);
-            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), false);
+            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), false, Set.of(
+                    "facilityCountryCode",
+                    "volume",
+                    "decimalmeaning",
+                    "enabled",
+                    "createdAt"));
         }
 
         MQSourceTaskHelper.commit(sourceTask, sourceRecord);
@@ -133,7 +138,13 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
 
             final List<Message> sinkMessages = getAllMessagesFromQueue(SINK_QUEUE);
             assertThat(sinkMessages).hasSize(1);
-            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), false);
+            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), false, Set.of(
+                    "facilityCountryCode",
+                    "volume",
+                    "decimalmeaning",
+                    "enabled",
+                    "createdAt",
+                    "customBytesHex"));
         }
 
         MQSourceTaskHelper.commit(sourceTask, sourceRecord);
@@ -167,7 +178,15 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
 
             final List<Message> sinkMessages = getAllMessagesFromQueue(SINK_QUEUE);
             assertThat(sinkMessages).hasSize(1);
-            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), false);
+            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), false, Set.of(
+                    "stringProp",
+                    "intProp",
+                    "longProp",
+                    "shortProp",
+                    "byteProp",
+                    "floatProp",
+                    "doubleProp",
+                    "booleanProp"));
         }
 
         MQSourceTaskHelper.commit(sourceTask, sourceRecord);
@@ -234,7 +253,38 @@ public class ConnectKafkaHeadersRoundTripIT extends AbstractKafkaMqRoundTripIT {
 
             final List<Message> sinkMessages = getAllMessagesFromQueue(SINK_QUEUE);
             assertThat(sinkMessages).hasSize(1);
-            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), true);
+            assertSinkMatchesSourceHeaders(sinkMessages.get(0), sourceRecord.headers(), true, Set.of(
+                    JmsConstants.JMS_IBM_MQMD_CODEDCHARSETID,
+                    JmsConstants.JMS_IBM_MQMD_ENCODING,
+                    JmsConstants.JMS_IBM_MQMD_MSGSEQNUMBER,
+                    JmsConstants.JMS_IBM_MQMD_MSGFLAGS,
+                    JmsConstants.JMS_IBM_MQMD_OFFSET,
+                    JmsConstants.JMS_IBM_MQMD_REPORT,
+                    JmsConstants.JMS_IBM_MQMD_FEEDBACK,
+                    JmsConstants.JMS_IBM_MQMD_MSGTYPE,
+                    JmsConstants.JMS_IBM_MQMD_ORIGINALLENGTH,
+                    JmsConstants.JMS_IBM_ENCODING,
+                    JmsConstants.JMS_IBM_MSGTYPE,
+                    JmsConstants.JMS_IBM_FEEDBACK,
+                    JmsConstants.JMS_IBM_RETAIN,
+                    JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP,
+                    JmsConstants.JMS_IBM_REPORT_EXCEPTION,
+                    JmsConstants.JMS_IBM_REPORT_EXPIRATION,
+                    JmsConstants.JMS_IBM_REPORT_COA,
+                    JmsConstants.JMS_IBM_REPORT_COD,
+                    JmsConstants.JMS_IBM_REPORT_PAN,
+                    JmsConstants.JMS_IBM_REPORT_NAN,
+                    JmsConstants.JMS_IBM_REPORT_PASS_MSG_ID,
+                    JmsConstants.JMS_IBM_REPORT_PASS_CORREL_ID,
+                    JmsConstants.JMS_IBM_REPORT_DISCARD_MSG,
+                    JmsConstants.JMS_IBM_PUTAPPLTYPE,
+                    JmsConstants.JMS_IBM_MQMD_REPLYTOQ,
+                    JmsConstants.JMS_IBM_MQMD_REPLYTOQMGR,
+                    JmsConstants.JMS_IBM_CHARACTER_SET,
+                    JmsConstants.JMS_IBM_MQMD_CORRELID,
+                    JmsConstants.JMS_IBM_MQMD_MSGID,
+                    JmsConstants.JMSX_GROUPID,
+                    JmsConstants.JMSX_GROUPSEQ));
         }
 
         MQSourceTaskHelper.commit(sourceTask, sourceRecord);

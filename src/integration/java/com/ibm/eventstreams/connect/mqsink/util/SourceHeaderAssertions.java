@@ -18,6 +18,7 @@ package com.ibm.eventstreams.connect.mqsink.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.Iterator;
@@ -111,6 +112,21 @@ public final class SourceHeaderAssertions {
         final Iterator<Header> iterator = sourceHeaders.iterator();
         while (iterator.hasNext()) {
             final Header header = iterator.next();
+            assertHeaderApplied(sinkMessage, header, mqmdWriteEnabled);
+        }
+    }
+
+    /**
+     * Asserts only the given header keys from the source record, ignoring system headers
+     * (e.g. {@code JMSXUserID}) that MQ may add when the source task reads the message.
+     */
+    public static void assertSinkMatchesSourceHeaders(final Message sinkMessage, final Headers sourceHeaders,
+            final boolean mqmdWriteEnabled, final Collection<String> headerKeys) throws JMSException {
+        for (final String key : headerKeys) {
+            final Header header = sourceHeaders.lastWithName(key);
+            assertThat(header)
+                    .as("source record should contain header '%s'", key)
+                    .isNotNull();
             assertHeaderApplied(sinkMessage, header, mqmdWriteEnabled);
         }
     }
