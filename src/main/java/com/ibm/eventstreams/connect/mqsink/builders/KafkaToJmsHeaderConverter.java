@@ -1,5 +1,5 @@
 /**
- * Copyright 2018, 2019, 2023, 2024, 2026 IBM Corporation
+ * Copyright 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,23 +178,14 @@ public class KafkaToJmsHeaderConverter {
      *
      * @param message the target JMS message
      * @param header  the source Kafka Connect header
-     * @throws JMSException
      * @throws IllegalArgumentException if the property name is illegal or value conversion fails
      */
-    public void copyHeaderToJmsProperty(final Message message, final Header header) throws JMSException {
+    public void copyHeaderToJmsProperty(final Message message, final Header header) {
         final String key = header.key();
         final Object value = header.value();
 
         if (MQMD_PROPERTIES_TO_IGNORE.contains(key)) {
             log.debug("Skipping read-only MQMD property '{}'", key);
-            return;
-        }
-
-        if (value == null) {
-            // Set null value as property - JMS allows null values
-            // Source connector copies jms headers with null values to kafka headers.
-            message.setObjectProperty(key, null);
-            log.debug("Set property '{}' with null value", key);
             return;
         }
 
@@ -204,6 +195,14 @@ public class KafkaToJmsHeaderConverter {
         }
 
         try {
+            if (value == null) {
+                // Set null value as property - JMS allows null values
+                // Source connector copies jms headers with null values to kafka headers.
+                message.setObjectProperty(key, null);
+                log.debug("Set property '{}' with null value", key);
+                return;
+            }
+
             setJmsProperty(message, key, value);
         } catch (final JMSException e) {
             throw new IllegalArgumentException(
