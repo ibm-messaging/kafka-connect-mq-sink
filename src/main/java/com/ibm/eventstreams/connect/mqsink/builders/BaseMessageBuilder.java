@@ -128,21 +128,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      */
     public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
 
-
-    /**
-     * Sets a JMS message property from a Kafka Connect header with IBM MQ-aware type handling.
-     * Uses KafkaToJmsHeaderConverter to convert Kafka header values to the appropriate JMS property types.
-     * Supports both new Source Connector (typed values) and old Source Connector (String values).
-     *
-     * @param message the JMS message to set the property on
-     * @param header  the Kafka Connect header
-     * @throws ConnectException  if the value type is not compatible with the expected property type
-     */
-    private void setJmsProperty(final Message message, final Header header) {
-        headerConverter.copyHeaderToJmsProperty(message, header);
-    }
-
-
     /**
      * Convert a Kafka Connect SinkRecord into a JMS message.
      *
@@ -153,57 +138,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      */
     @Override public Message fromSinkRecord(final JMSContext jmsCtxt, final SinkRecord record) {
         final Message m = this.getJMSMessage(jmsCtxt, record);
-
-
-        if (keyheader != KeyHeader.NONE) {
-            final Schema s = record.keySchema();
-            final Object k = record.key();
-
-            if (k != null) {
-                if (s == null) {
-                    log.debug("No schema info {}", k);
-                    if (k instanceof byte[]) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes((byte[]) k);
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    } else if (k instanceof ByteBuffer) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    } else {
-                        try {
-                            m.setJMSCorrelationID(k.toString());
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    }
-                } else if (s.type() == Type.BYTES) {
-                    if (k instanceof byte[]) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes((byte[]) k);
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    } else if (k instanceof ByteBuffer) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    }
-                } else if (s.type() == Type.STRING) {
-                    try {
-                        m.setJMSCorrelationID((String) k);
-                    } catch (final JMSException jmse) {
-                        throw new ConnectException("Failed to write string", jmse);
-                    }
-                }
-            }
-        }
 
         if (topicPropertyName != null) {
             try {
@@ -240,6 +174,10 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             }
         }
 
+        if (keyheader != KeyHeader.NONE) {
+            setJmsCorrelationIDBasedOnKeyheader(record, m);
+        }
+
         // Set the JMSReplyTo property if a reply-to queue is configured, if it exists.
         // This overrides the reply-to queue set from the JMSReplyTo header from source Kafka Connect record.
         if (replyToQueue != null) {
@@ -251,5 +189,55 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         }
 
         return m;
+    }
+
+    private void setJmsCorrelationIDBasedOnKeyheader(final SinkRecord record, final Message m) {
+        final Schema s = record.keySchema();
+        final Object k = record.key();
+
+        if (k != null) {
+            if (s == null) {
+                log.debug("No schema info {}", k);
+                if (k instanceof byte[]) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes((byte[]) k);
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                } else if (k instanceof ByteBuffer) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                } else {
+                    try {
+                        m.setJMSCorrelationID(k.toString());
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                }
+            } else if (s.type() == Type.BYTES) {
+                if (k instanceof byte[]) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes((byte[]) k);
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                } else if (k instanceof ByteBuffer) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                }
+            } else if (s.type() == Type.STRING) {
+                try {
+                    m.setJMSCorrelationID((String) k);
+                } catch (final JMSException jmse) {
+                    throw new ConnectException("Failed to write string", jmse);
+                }
+            }
+        }
     }
 }

@@ -132,7 +132,6 @@ public class KafkaToJmsHeaderConverter {
      * Only settable properties are included here.
      */
     private static final Set<String> JMS_IBM_INTEGER_PROPERTIES = new HashSet<>(Arrays.asList(
-            JmsConstants.JMS_IBM_CHARACTER_SET,
             JmsConstants.JMS_IBM_REPORT_EXCEPTION,
             JmsConstants.JMS_IBM_REPORT_EXPIRATION,
             JmsConstants.JMS_IBM_REPORT_COA,
@@ -236,12 +235,7 @@ public class KafkaToJmsHeaderConverter {
             if (value instanceof byte[]) {
                 message.setJMSCorrelationIDAsBytes((byte[]) value);
             } else {
-                String valueString = value.toString();
-                if (valueString.startsWith("ID:")) {
-                    valueString = valueString.substring(3);
-                }
-
-                message.setJMSCorrelationID(valueString);
+                message.setJMSCorrelationID(value.toString());
             }
             return;
         }

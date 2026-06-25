@@ -289,7 +289,7 @@ public class KafkaToJmsHeaderConverterTest {
 
         converter.copyHeaderToJmsProperty(message, header);
 
-        verify(message).setObjectProperty(JmsConstants.JMS_IBM_CHARACTER_SET, 819);
+        verify(message).setObjectProperty(JmsConstants.JMS_IBM_CHARACTER_SET, "819");
     }
 
     @Test
