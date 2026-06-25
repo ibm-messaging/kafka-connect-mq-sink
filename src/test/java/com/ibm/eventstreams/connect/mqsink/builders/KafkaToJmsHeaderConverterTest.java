@@ -61,7 +61,7 @@ public class KafkaToJmsHeaderConverterTest {
         // MQMD properties require mq.message.mqmd.write=true
         converter.setMqmdWriteEnabled(true);
 
-        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_PRIORITY, "5")
+        final Header header = new ConnectHeaders().addInt(JmsConstants.JMS_IBM_MQMD_PRIORITY, 5)
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_PRIORITY);
 
         converter.copyHeaderToJmsProperty(message, header);
@@ -208,7 +208,7 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
 
         // Verify the hex string was parsed correctly (without the "ID:" prefix)
-        final byte[] expectedBytes = java.util.HexFormat.of().parseHex(hexValue);
+        final byte[] expectedBytes = HexUtils.hexStringToBytes(hexValue);
         verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), eq(expectedBytes));
     }
 
@@ -224,7 +224,7 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
 
         // Verify the hex string was parsed correctly
-        final byte[] expectedBytes = java.util.HexFormat.of().parseHex(hexValue);
+        final byte[] expectedBytes = HexUtils.hexStringToBytes(hexValue);
         verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), eq(expectedBytes));
     }
 
@@ -259,7 +259,7 @@ public class KafkaToJmsHeaderConverterTest {
 
         converter.copyHeaderToJmsProperty(message, header);
 
-        verify(message).setObjectProperty("priority", "5");
+        verify(message).setObjectProperty("priority", 5);
     }
 
     @Test
@@ -283,13 +283,13 @@ public class KafkaToJmsHeaderConverterTest {
 
 
     @Test
-    public void classifiesCharacterSetAsString() throws Exception {
+    public void classifiesCharacterSetAsInt() throws Exception {
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_CHARACTER_SET, "819")
                 .lastWithName(JmsConstants.JMS_IBM_CHARACTER_SET);
 
         converter.copyHeaderToJmsProperty(message, header);
 
-        verify(message).setObjectProperty(JmsConstants.JMS_IBM_CHARACTER_SET, "819");
+        verify(message).setObjectProperty(JmsConstants.JMS_IBM_CHARACTER_SET, 819);
     }
 
     @Test
@@ -369,45 +369,42 @@ public class KafkaToJmsHeaderConverterTest {
         // Boolean
         Header header = new ConnectHeaders().addBoolean("BoolProp", true).lastWithName("BoolProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("BoolProp", Boolean.TRUE.toString());
+        verify(message).setObjectProperty("BoolProp", Boolean.TRUE);
 
         // Byte
         header = new ConnectHeaders().addByte("ByteProp", (byte) 127).lastWithName("ByteProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("ByteProp", "127");
+        verify(message).setObjectProperty("ByteProp", (byte) 127);
 
         // Short
         header = new ConnectHeaders().addShort("ShortProp", (short) 32000).lastWithName("ShortProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("ShortProp", "32000");
+        verify(message).setObjectProperty("ShortProp", (short) 32000);
 
         // Integer
         header = new ConnectHeaders().addInt("IntProp", 42).lastWithName("IntProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("IntProp", "42");
+        verify(message).setObjectProperty("IntProp", 42);
 
         // Long
         header = new ConnectHeaders().addLong("LongProp", 1234567890L).lastWithName("LongProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("LongProp", "1234567890");
+        verify(message).setObjectProperty("LongProp", 1234567890L);
 
         // Float
         header = new ConnectHeaders().addFloat("FloatProp", 3.14f).lastWithName("FloatProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("FloatProp", "3.14");
+        verify(message).setObjectProperty("FloatProp", 3.14f);
 
         // Double
         header = new ConnectHeaders().addDouble("DoubleProp", 2.71828).lastWithName("DoubleProp");
         converter.copyHeaderToJmsProperty(message, header);
-        verify(message).setObjectProperty("DoubleProp", "2.71828");
+        verify(message).setObjectProperty("DoubleProp", 2.71828);
 
         // String
         header = new ConnectHeaders().addString("StringProp", "test").lastWithName("StringProp");
         converter.copyHeaderToJmsProperty(message, header);
         verify(message).setObjectProperty("StringProp", "test");
-
-        // Note: byte[] for non-MQMD properties are converted to String by source connector
-        // Only MQMD byte[] properties are preserved as byte[]
     }
 
     @Test
@@ -431,8 +428,8 @@ public class KafkaToJmsHeaderConverterTest {
     public void testInvalidIntegerStringIsSkipped() throws Exception {
         // Test that invalid integer strings are skipped
 
-        final Header header = new ConnectHeaders().addString("JMS_IBM_MQMD_Priority", "not-a-number")
-                .lastWithName("JMS_IBM_MQMD_Priority");
+        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_MQMD_PRIORITY, "not-a-number")
+                .lastWithName(JmsConstants.JMS_IBM_MQMD_PRIORITY);
 
         // Should not throw exception, invalid value is skipped
         converter.copyHeaderToJmsProperty(message, header);
@@ -442,8 +439,8 @@ public class KafkaToJmsHeaderConverterTest {
     public void testInvalidIntegerTypeIsSkipped() throws Exception {
         // Test that incompatible types for integer properties are skipped
 
-        final Header header = new ConnectHeaders().add("JMS_IBM_MQMD_Priority", new Object(), null)
-                .lastWithName("JMS_IBM_MQMD_Priority");
+        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_MQMD_PRIORITY, new Object(), null)
+                .lastWithName(JmsConstants.JMS_IBM_MQMD_PRIORITY);
 
         // Should not throw exception, invalid value is skipped
         converter.copyHeaderToJmsProperty(message, header);
@@ -453,8 +450,8 @@ public class KafkaToJmsHeaderConverterTest {
     public void testInvalidBooleanStringIsSkipped() throws Exception {
         // Test that invalid boolean strings are skipped
 
-        final Header header = new ConnectHeaders().addString("JMS_IBM_Report_Exception", "not-a-boolean")
-                .lastWithName("JMS_IBM_Report_Exception");
+        final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_REPORT_EXCEPTION, "not-a-boolean")
+                .lastWithName(JmsConstants.JMS_IBM_REPORT_EXCEPTION);
 
         // Should not throw exception, invalid value is skipped
         converter.copyHeaderToJmsProperty(message, header);
@@ -464,8 +461,8 @@ public class KafkaToJmsHeaderConverterTest {
     public void testInvalidBooleanTypeIsSkipped() throws Exception {
         // Test that incompatible types for boolean properties are skipped
 
-        final Header header = new ConnectHeaders().add("JMS_IBM_Report_Exception", new Object(), null)
-                .lastWithName("JMS_IBM_Report_Exception");
+        final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_REPORT_EXCEPTION, new Object(), null)
+                .lastWithName(JmsConstants.JMS_IBM_REPORT_EXCEPTION);
 
         // Should not throw exception, invalid value is skipped
         converter.copyHeaderToJmsProperty(message, header);
@@ -473,7 +470,6 @@ public class KafkaToJmsHeaderConverterTest {
 
     @Test
     public void copiesJmsDeliveryModeAsString() throws Exception {
-        // Test that JMS_DELIVERY_MODE uses dedicated setter with String value
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_DELIVERY_MODE, "2")
                 .lastWithName(JmsConstants.JMS_DELIVERY_MODE);
 
@@ -487,7 +483,6 @@ public class KafkaToJmsHeaderConverterTest {
 
     @Test
     public void copiesJmsExpirationAsString() throws Exception {
-        // Test that JMS_EXPIRATION uses dedicated setter with String value
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_EXPIRATION, "60000")
                 .lastWithName(JmsConstants.JMS_EXPIRATION);
 

@@ -251,7 +251,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
      // Test that MQMD integer headers work correctly when set as String:
      // - Enable mq.message.mqmd.write=true
      // - Enable mq.kafka.headers.copy.to.jms.properties=true
-     // - Send a message with JMS_IBM_MQMD_Priority as a String (simulating Source Connector behavior)
+     // - Send a message with JMS_IBM_MQMD_Priority as a String 
      // - Should succeed (converts String to Integer automatically)
 
         // Grant MQMD context permissions to the app user (required for mq.message.mqmd.write=true)
@@ -462,7 +462,7 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         // Test that all MQMD headers work correctly:
         // - Enable mq.message.mqmd.write=true
         // - Enable mq.kafka.headers.copy.to.jms.properties=true
-        // - Send a message with all MQMD headers as Strings (as they come from previous versions of MQ Source Connector)
+        // - Send a message with all MQMD headers as Strings 
         // - Should succeed with automatic type conversion
 
         // Grant MQMD context permissions to the app user
@@ -566,5 +566,4 @@ public class MQMDTests extends MQSinkTaskAuthIT {
         final MQMessage[] messagesInMQ = mqGet(AbstractJMSContextIT.DEFAULT_SINK_QUEUE_NAME);
         assertEquals(1, messagesInMQ.length);
     }
-
 }

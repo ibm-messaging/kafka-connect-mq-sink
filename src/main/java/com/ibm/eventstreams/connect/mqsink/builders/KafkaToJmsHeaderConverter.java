@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
-import java.util.HexFormat;
 import java.util.Set;
 
 import javax.jms.JMSException;
@@ -33,16 +33,12 @@ import javax.jms.Message;
 /**
  * Copies Kafka Connect headers to JMS message properties.
  *
- * Supports both legacy deployments where headers arrive as strings (for example from older
- * MQ source connector versions) and typed headers produced by schema-aware connectors.
- *
  * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=application-jms-message-object-properties
  * See: https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=messages-jms-fields-properties-corresponding-mqmd-fields
  * IBM MQ JMS message object properties
  */
 public class KafkaToJmsHeaderConverter {
     private static final Logger log = LoggerFactory.getLogger(KafkaToJmsHeaderConverter.class);
-    private static final HexFormat HEX_FORMAT = HexFormat.of();
 
     private boolean mqmdWriteEnabled = false;
 
@@ -61,7 +57,6 @@ public class KafkaToJmsHeaderConverter {
      * - JMS_IBM_MQMD_Priority: Values outside 0-9 range violate JMS specification
      * - JMS_IBM_MQMD_BackoutCount: Value can't be set by the connector. Any value set is ignored
      * - JMS_IBM_MQMD_PutApplType: Requires WMQ_MQMD_MESSAGE_CONTEXT to be set to ALL context
-     * - These properties are IBM MQ extensions and may not be fully JMS-compliant
      * - The connector passes values through; IBM MQ will validate/reject invalid values
      */
     private static final Set<String> MQMD_INTEGER_PROPERTIES = new HashSet<>(Arrays.asList(
@@ -94,7 +89,7 @@ public class KafkaToJmsHeaderConverter {
             JmsConstants.JMS_IBM_MQMD_USERIDENTIFIER,
             JmsConstants.JMS_IBM_MQMD_APPLIDENTITYDATA,
             JmsConstants.JMS_IBM_MQMD_PUTAPPLNAME,
-            JmsConstants.JMS_IBM_MQMD_PUTDATE,
+            JmsConstants.JMS_IBM_MQMD_PUTDATE,            
             JmsConstants.JMS_IBM_MQMD_PUTTIME,
             JmsConstants.JMS_IBM_MQMD_APPLORIGINDATA
     ));
@@ -103,9 +98,14 @@ public class KafkaToJmsHeaderConverter {
      * MQMD properties that require byte array type according to IBM MQ JMS specification.
      *
      * IMPORTANT: AccountingToken requires WMQ_MQMD_MESSAGE_CONTEXT to be set to IDENTITY or ALL context.
+     *
+     * When these properties are received from the default SimpleHeaderConverter, the source
+     * connector serializes the byte[] as Base64 (via Values.convertToString), so the connector 
+     * receives a Base64-encoded String which must be decoded back to byte[].
+     * When using ByteArrayConverter or JsonConverter, the byte[] arrives as-is.
      */
     private static final Set<String> MQMD_BYTES_PROPERTIES = new HashSet<>(Arrays.asList(
-            JmsConstants.JMS_IBM_MQMD_CORRELID,
+            // JmsConstants.JMS_IBM_MQMD_CORRELID, - this can be set by setJMSCorrelationID 
             JmsConstants.JMS_IBM_MQMD_MSGID,
             JmsConstants.JMS_IBM_MQMD_ACCOUNTINGTOKEN,
             JmsConstants.JMS_IBM_MQMD_GROUPID
@@ -132,6 +132,7 @@ public class KafkaToJmsHeaderConverter {
      * Only settable properties are included here.
      */
     private static final Set<String> JMS_IBM_INTEGER_PROPERTIES = new HashSet<>(Arrays.asList(
+            JmsConstants.JMS_IBM_CHARACTER_SET,
             JmsConstants.JMS_IBM_REPORT_EXCEPTION,
             JmsConstants.JMS_IBM_REPORT_EXPIRATION,
             JmsConstants.JMS_IBM_REPORT_COA,
@@ -149,11 +150,11 @@ public class KafkaToJmsHeaderConverter {
 
     /**
      * JMS_IBM properties (non-MQMD) that require String type.
-     * Note: JMS_IBM_PutAppl, JMS_IBM_PutDate, JMS_IBM_PutTime are read-only and cannot be set.
      */
-    @SuppressWarnings("unused")
     private static final Set<String> JMS_IBM_STRING_PROPERTIES = new HashSet<>(Arrays.asList(
             JmsConstants.JMS_IBM_FORMAT,
+            JmsConstants.JMS_IBM_PUTDATE,
+            JmsConstants.JMS_IBM_PUTTIME,
             JmsConstants.JMS_IBM_CHARACTER_SET
     ));
 
@@ -164,18 +165,31 @@ public class KafkaToJmsHeaderConverter {
             JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP
     ));
 
-    private static final Set<Object> MQMD_PROPERTIES_TO_IGNORE = new HashSet<>(Arrays.asList(
-            // Value can't be set by the connector. Any value set is ignored.
+    private static final Set<String> MQMD_PROPERTIES_TO_IGNORE = new HashSet<>(Arrays.asList(
+            // Value that should not be set by the connector
             JmsConstants.JMS_IBM_MQMD_BACKOUTCOUNT
     ));
+
+    /**
+     * Java types accepted by {@link javax.jms.Message#setObjectProperty}.
+     * Any user-defined property value whose class is not in this set must be
+     * converted to String before being passed to setObjectProperty.
+     */
+    private static final Set<Class<?>> JMS_SUPPORTED_TYPES = new HashSet<>(Arrays.asList(
+            Boolean.class, Byte.class, Short.class,
+            Integer.class, Long.class, Float.class,
+            Double.class, String.class
+    ));    
+
+
 
     /**
      * Copies a Kafka Connect header to a JMS message property with type-correct conversion.
      *
      * The IBM MQ JMS specification requires specific Java types for MQMD and JMS_IBM
-     * properties. This method handles type coercion from both string-typed legacy headers
-     * and typed headers produced by schema-aware connectors.
-     *
+     * properties. This method ensures values from Kafka headers are coerced into the
+     * correct types. 
+     * 
      * @param message the target JMS message
      * @param header  the source Kafka Connect header
      * @throws IllegalArgumentException if the property name is illegal or value conversion fails
@@ -219,36 +233,46 @@ public class KafkaToJmsHeaderConverter {
             throws JMSException {
 
         if (JmsConstants.JMS_IBM_MQMD_CORRELID.equals(key)) {
-            message.setJMSCorrelationID(value.toString());
+            if (value instanceof byte[]) {
+                message.setJMSCorrelationIDAsBytes((byte[]) value);
+            } else {
+                String valueString = value.toString();
+                if (valueString.startsWith("ID:")) {
+                    valueString = valueString.substring(3);
+                }
+
+                message.setJMSCorrelationID(valueString);
+            }
             return;
         }
 
         if (JmsConstants.JMS_IBM_MQMD_MSGID.equals(key)) {
-            String hexString = value.toString();
-            // MQ automatically appends "ID:" to JMS_IBM_MQMD_MSGID, so strip it if present
-            if (hexString.startsWith("ID:")) {
-                hexString = hexString.substring(3);
+            if (value instanceof byte[]) {
+                message.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID, value);
+            } else {
+                String hexString = value.toString();
+                if (hexString.startsWith("ID:")) {
+                    hexString = hexString.substring(3);
+                }
+                
+                final byte[] msgIdBytes = HexUtils.hexStringToBytes(hexString);
+
+                message.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID, msgIdBytes);
             }
-            final byte[] msgIdBytes = HEX_FORMAT.parseHex(hexString);
-            message.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID, msgIdBytes);
             return;
         }
 
-
         final Object converted = convertToJmsType(key, value);
         message.setObjectProperty(key, converted);
-        log.debug("Set property '{}' as {}: {}",
-                key,
-                converted == null ? null : converted.getClass().getSimpleName(),
-                converted);
+        log.debug("Set property '{}' as {}", key, converted);
     }
 
     /**
      * Converts a Kafka header value to the Java type required by the IBM MQ JMS specification
      * for the given property key.
      *
-     * If the value is already the correct type (e.g., a typed header from a schema-aware
-     * connector), it is returned as-is. String values are coerced to the required type.
+     * If the value is already the correct type, it is returned as-is. 
+     * String values are coerced to the required type.
      *
      * @param key   the JMS property name
      * @param value the raw value from the Kafka header
@@ -268,19 +292,36 @@ public class KafkaToJmsHeaderConverter {
         if (MQMD_STRING_PROPERTIES.contains(key) || JMS_IBM_STRING_PROPERTIES.contains(key)) {
             return value.toString();
         }
-
-        // Unknown property: pass through as string with a warning so unknown keys surface clearly.
-        log.debug("Unknown JMS property '{}' with value type '{}'; passing through as String",
-                key, value == null ? "null" : value.getClass().getSimpleName());
-        return value == null ? null : value.toString();
+        if (JMS_SUPPORTED_TYPES.contains(value.getClass())) {
+            return value;
+        }
+        // user-defined property that is not a supported type 
+        //  convert to String for JMS compatibility
+        return value.toString();
     }
+
 
     private byte[] toByteArray(final String key, final Object value) {
         if (value instanceof byte[]) {
+            // if the connector is paired with ByteArrayConverter
+            //  or JsonConverter (with schemas.enable=true), we will 
+            //  have a byte[] we can use directly
             return (byte[]) value;
         }
         try {
-            return java.util.Base64.getDecoder().decode((String) value);
+            // We cannot distinguish between a string that came from 
+            //  StringConverter or SimpleHeaderConverter, so we are
+            //  assuming SimpleHeaderConverter behaviour 
+            // (as it is the default converter in Connect)
+
+            // if the connector is paired with StringConverter, we 
+            //   will have a string representation of the bytes
+            // return value.toString().getBytes();
+
+            // if the connector is paired with SimpleHeaderConverter, we 
+            //   will likely have a base64-encoded string representation 
+            //   of the byte array
+            return Base64.getDecoder().decode(value.toString());
         } catch (final IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     String.format("Property '%s': value is not valid Base64: '%s'", key, value), e);
@@ -288,16 +329,38 @@ public class KafkaToJmsHeaderConverter {
     }
 
     private Integer toInteger(final String key, final Object value) {
+        if (value instanceof Integer) {
+            // if the connector is paired with ByteArrayConverter, JsonConverter (with
+            //   schemas.enable=true), IntegerConverter, or a typed header added directly,
+            //   we will have an Integer we can use directly
+            return (Integer) value;
+        }
+        if (value instanceof Number) {
+            // if the connector is paired with a numeric converter (ShortConverter,
+            //   LongConverter, FloatConverter, DoubleConverter) or JsonConverter
+            //   (with schemas.enable=true) with a non-Integer numeric type, we will
+            //   have a Number we can convert to int
+            return ((Number) value).intValue();
+        }
+        // if the connector is paired with SimpleHeaderConverter or StringConverter,
+        //   we will have a string representation of the integer
         try {
             return Integer.parseInt(value.toString());
-        } catch (final NumberFormatException | ClassCastException e) {
+        } catch (final NumberFormatException e) {
             throw new IllegalArgumentException(
                     String.format("Property '%s': cannot convert '%s' to Integer", key, value), e);
         }
     }
 
     private Boolean toBoolean(final String key, final Object value) {
-        final String s = (String) value;
+        if (value instanceof Boolean) {
+            // if the connector is paired with 
+            //  JsonConverter (with schemas.enable=true), we will 
+            //  have a boolean we can use directly
+            return (Boolean) value;
+        }
+
+        final String s = value.toString();
         if ("true".equalsIgnoreCase(s) || "1".equals(s)) return Boolean.TRUE;
         if ("false".equalsIgnoreCase(s) || "0".equals(s)) return Boolean.FALSE;
         throw new IllegalArgumentException(

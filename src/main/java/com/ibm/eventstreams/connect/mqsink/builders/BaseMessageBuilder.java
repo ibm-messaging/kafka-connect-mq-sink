@@ -113,7 +113,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             mqmdWriteEnabled = Boolean.valueOf(mqmdWrite);
         }
 
-        // Configure the header converter with MQMD write setting and context
         headerConverter.setMqmdWriteEnabled(mqmdWriteEnabled);
 
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
@@ -128,6 +127,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      * @return the JMS message
      */
     public abstract Message getJMSMessage(JMSContext jmsCtxt, SinkRecord record);
+
 
     /**
      * Sets a JMS message property from a Kafka Connect header with IBM MQ-aware type handling.
@@ -232,7 +232,7 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         if (copyJmsProperties) {
             for (final Header header : record.headers()) {
                 try {
-                    setJmsProperty(m, header);
+                    headerConverter.copyHeaderToJmsProperty(m, header);
                 } catch (final IllegalArgumentException iae) {
                     // Bad header name or unconvertible value — skip and continue
                     log.warn("Skipping header '{}': {}", header.key(), iae.getMessage());
