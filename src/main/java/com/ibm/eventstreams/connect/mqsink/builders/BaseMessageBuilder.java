@@ -1,5 +1,5 @@
 /**
- * Copyright 2018, 2019, 2023, 2024 IBM Corporation
+ * Copyright 2018, 2019, 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 package com.ibm.eventstreams.connect.mqsink.builders;
 
 import com.ibm.eventstreams.connect.mqsink.MQSinkConfig;
-
 import com.ibm.mq.jms.MQQueue;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.Map;
 
 import javax.jms.Destination;
@@ -50,6 +48,10 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
     public String partitionPropertyName;
     public String offsetPropertyName;
     public boolean copyJmsProperties;
+    public boolean mqmdWriteEnabled;
+
+    // Converter for Kafka headers to JMS properties
+    private final KafkaToJmsHeaderConverter headerConverter = new KafkaToJmsHeaderConverter();
 
     /**
      * Configure this class.
@@ -106,6 +108,13 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
             copyJmsProperties = Boolean.valueOf(copyhdr);
         }
 
+        final String mqmdWrite = props.get(MQSinkConfig.CONFIG_NAME_MQ_MQMD_WRITE_ENABLED);
+        if (mqmdWrite != null) {
+            mqmdWriteEnabled = Boolean.valueOf(mqmdWrite);
+        }
+
+        headerConverter.setMqmdWriteEnabled(mqmdWriteEnabled);
+
         log.trace("[{}]  Exit {}.configure", Thread.currentThread().getId(), this.getClass().getName());
     }
 
@@ -129,64 +138,6 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
      */
     @Override public Message fromSinkRecord(final JMSContext jmsCtxt, final SinkRecord record) {
         final Message m = this.getJMSMessage(jmsCtxt, record);
-
-        if (keyheader != KeyHeader.NONE) {
-            final Schema s = record.keySchema();
-            final Object k = record.key();
-
-            if (k != null) {
-                if (s == null) {
-                    log.debug("No schema info {}", k);
-                    if (k instanceof byte[]) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes((byte[]) k);
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    } else if (k instanceof ByteBuffer) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    } else {
-                        try {
-                            m.setJMSCorrelationID(k.toString());
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    }
-                } else if (s.type() == Type.BYTES) {
-                    if (k instanceof byte[]) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes((byte[]) k);
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    } else if (k instanceof ByteBuffer) {
-                        try {
-                            m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
-                        } catch (final JMSException jmse) {
-                            throw new ConnectException("Failed to write bytes", jmse);
-                        }
-                    }
-                } else if (s.type() == Type.STRING) {
-                    try {
-                        m.setJMSCorrelationID((String) k);
-                    } catch (final JMSException jmse) {
-                        throw new ConnectException("Failed to write string", jmse);
-                    }
-                }
-            }
-        }
-
-        if (replyToQueue != null) {
-            try {
-                m.setJMSReplyTo(replyToQueue);
-            } catch (final JMSException jmse) {
-                throw new ConnectException("Failed to set reply-to queue", jmse);
-            }
-        }
 
         if (topicPropertyName != null) {
             try {
@@ -213,16 +164,80 @@ public abstract class BaseMessageBuilder implements MessageBuilder {
         }
 
         if (copyJmsProperties) {
-            for (Iterator<Header> iterator = record.headers().iterator(); iterator.hasNext();) {
-                final Header header = iterator.next();
+            for (final Header header : record.headers()) {
                 try {
-                    m.setStringProperty(header.key(), header.value().toString());
-                } catch (final JMSException jmse) {
-                    throw new ConnectException("Failed to set header", jmse);
+                    headerConverter.copyHeaderToJmsProperty(m, header);
+                } catch (final IllegalArgumentException iae) {
+                    // Bad header name or unconvertible value — skip and continue
+                    log.warn("Skipping header '{}': {}", header.key(), iae.getMessage());
                 }
             }
         }
 
+        if (keyheader != KeyHeader.NONE) {
+            setJmsCorrelationIDBasedOnKeyheader(record, m);
+        }
+
+        // Set the JMSReplyTo property if a reply-to queue is configured, if it exists.
+        // This overrides the reply-to queue set from the JMSReplyTo header from source Kafka Connect record.
+        if (replyToQueue != null) {
+            try {
+                m.setJMSReplyTo(replyToQueue);
+            } catch (final JMSException jmse) {
+                throw new ConnectException("Failed to set reply-to queue", jmse);
+            }
+        }
+
         return m;
+    }
+
+    private void setJmsCorrelationIDBasedOnKeyheader(final SinkRecord record, final Message m) {
+        final Schema s = record.keySchema();
+        final Object k = record.key();
+
+        if (k != null) {
+            if (s == null) {
+                log.debug("No schema info {}", k);
+                if (k instanceof byte[]) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes((byte[]) k);
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                } else if (k instanceof ByteBuffer) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                } else {
+                    try {
+                        m.setJMSCorrelationID(k.toString());
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                }
+            } else if (s.type() == Type.BYTES) {
+                if (k instanceof byte[]) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes((byte[]) k);
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                } else if (k instanceof ByteBuffer) {
+                    try {
+                        m.setJMSCorrelationIDAsBytes(((ByteBuffer) k).array());
+                    } catch (final JMSException jmse) {
+                        throw new ConnectException("Failed to write bytes", jmse);
+                    }
+                }
+            } else if (s.type() == Type.STRING) {
+                try {
+                    m.setJMSCorrelationID((String) k);
+                } catch (final JMSException jmse) {
+                    throw new ConnectException("Failed to write string", jmse);
+                }
+            }
+        }
     }
 }
