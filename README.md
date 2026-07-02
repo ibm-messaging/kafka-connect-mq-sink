@@ -63,6 +63,8 @@ Once built, the output is a single JAR `target/kafka-connect-mq-sink-<version>-j
 
 **NOTE:** With the 2.0.0 release the base Kafka Connect library has been updated from 2.6.0 to 3.4.1.
 
+**NOTE:** This connector requires **Java 17 or later**. The project is compiled with `--release 17` (see `java.version` in `pom.xml`). Older JVM versions are not supported.
+
 ## Running the connector
 
 For step-by-step instructions, see the following guides for running the connector:
