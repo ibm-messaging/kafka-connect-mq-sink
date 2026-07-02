@@ -31,8 +31,8 @@ import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.storage.HeaderConverter;
 import org.apache.kafka.connect.storage.SimpleHeaderConverter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
 import com.ibm.msg.client.jms.JmsConstants;
@@ -54,7 +54,7 @@ public class MQSinkTaskHeadersDefaultIT extends AbstractJMSContextIT {
     private MessageBuilder builder;
     private HeaderConverter converter;
 
-    @Before
+    @BeforeEach
     public void before() {
         builder = new DefaultMessageBuilder();
         final HashMap<String, String> props = new HashMap<>();

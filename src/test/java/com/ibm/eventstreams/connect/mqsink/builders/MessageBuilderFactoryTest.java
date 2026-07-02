@@ -15,16 +15,14 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 
 public class MessageBuilderFactoryTest {
-
-   
 
     @Test
     public void testGetMessageBuilder_ForJsonMessageBuilder() {
@@ -40,13 +38,15 @@ public class MessageBuilderFactoryTest {
         Assertions.assertThat(messageBuilder).isInstanceOf(DefaultMessageBuilder.class);
     }
 
-    @Test(expected = MessageBuilderException.class)
+    @Test
     public void testGetMessageBuilder_JunkClass() {
-        MessageBuilderFactory.getMessageBuilder("casjsajhasdhusdo;iasd", Configs.defaultConfig());
+        assertThrows(MessageBuilderException.class,
+                () -> MessageBuilderFactory.getMessageBuilder("casjsajhasdhusdo;iasd", Configs.defaultConfig()));
     }
 
-    @Test(expected = MessageBuilderException.class)
+    @Test
     public void testGetMessageBuilder_NullProps() {
-        MessageBuilderFactory.getMessageBuilder("casjsajhasdhusdo;iasd", null);
+        assertThrows(MessageBuilderException.class,
+                () -> MessageBuilderFactory.getMessageBuilder("casjsajhasdhusdo;iasd", null));
     }
 }

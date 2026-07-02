@@ -15,9 +15,9 @@
  */
 package com.ibm.eventstreams.connect.mqsink;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -36,7 +36,7 @@ import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.eventstreams.connect.mqsink.util.MessageDescriptorBuilder;
 import com.ibm.mq.MQException;

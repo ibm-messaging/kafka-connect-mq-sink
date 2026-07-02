@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Builds messages from Kafka Connect SinkRecords. It creates a JMS TextMessage containing
  * a string representation of the payload created by a Converter.
@@ -62,7 +64,7 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
         try {
             final Class<? extends Converter> c = Class.forName(converterClass).asSubclass(Converter.class);
-            converter = c.newInstance();
+            converter = c.getDeclaredConstructor().newInstance();
 
             // Make a copy of the configuration to filter out only those that begin "mq.message.builder.value.converter."
             // since those are used to configure the converter itself
@@ -70,7 +72,9 @@ public class ConverterMessageBuilder extends BaseMessageBuilder {
 
             // Configure the Converter to convert the value, not the key (isKey == false)
             converter.configure(ac.originalsWithPrefix(MQSinkConfig.CONFIG_NAME_MQ_MESSAGE_BUILDER_VALUE_CONVERTER + "."), false);
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException exc) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException
+                | NoSuchMethodException | InvocationTargetException
+                | NullPointerException exc) {
             log.error("Could not instantiate converter for message builder {}", converterClass);
             throw new MessageBuilderException("Could not instantiate converter for message builder", exc);
         }

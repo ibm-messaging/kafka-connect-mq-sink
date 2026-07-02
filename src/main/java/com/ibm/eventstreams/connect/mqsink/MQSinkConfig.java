@@ -16,6 +16,7 @@
 package com.ibm.eventstreams.connect.mqsink;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -264,28 +265,30 @@ public class MQSinkConfig {
     private static class ValidClass implements ConfigDef.Validator {
         @Override
         public void ensureValid(final String name, final Object value) {
-            Class requiredClass = null;
+            final Class<?> requiredClass;
             final String stringValue = (String) value;
             if (name.endsWith("builder")) {
                 requiredClass = MessageBuilder.class;
             } else { // converter
                 requiredClass = Converter.class;
-
             }
             if (stringValue == null || stringValue.isEmpty()) {
                 return;
             }
             try {
-                Class.forName(stringValue).asSubclass(requiredClass).newInstance();
+                Class.forName(stringValue).asSubclass(requiredClass).getDeclaredConstructor().newInstance();
             } catch (final ClassNotFoundException exc) {
                 log.error("Failed to validate class {}", stringValue);
                 throw new ConfigException(name, value, "Class must be accessible on the classpath for Kafka Connect");
             } catch (final ClassCastException | IllegalAccessException exc) {
                 log.error("Failed to validate class {}", stringValue);
                 throw new ConfigException(name, value, "Class must be an implementation of " + requiredClass.getCanonicalName());
-            } catch (final InstantiationException exc) {
+            } catch (final InstantiationException | InvocationTargetException exc) {
                 log.error("Failed to validate class {}", stringValue);
                 throw new ConfigException(name, value, "Unable to create an instance of the class");
+            } catch (final NoSuchMethodException exc) {
+                log.error("Failed to validate class {}", stringValue);
+                throw new ConfigException(name, value, "Class must have a public no-arg constructor");
             } catch (final NullPointerException exc) {
                 throw new ConfigException(name, value, "Value must not be null");
             }

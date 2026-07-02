@@ -15,7 +15,7 @@
  */
 package com.ibm.eventstreams.connect.mqsink;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,10 +30,11 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
 import com.github.dockerjava.api.model.ExposedPort;
@@ -44,11 +45,12 @@ import com.ibm.msg.client.jms.JmsConnectionFactory;
 import com.ibm.msg.client.jms.JmsFactoryFactory;
 import com.ibm.msg.client.wmq.WMQConstants;
 
+@Testcontainers
 public class MQSinkTaskAuthIT {
 
     public static final boolean USER_AUTHENTICATION_MQCSP = true;
 
-    @ClassRule
+    @Container
     final public static GenericContainer<?> MQ_CONTAINER = new GenericContainer<>(AbstractJMSContextIT.MQ_IMAGE)
             .withEnv("LICENSE", "accept")
             .withEnv("MQ_QMGR_NAME", AbstractJMSContextIT.QMGR_NAME)

@@ -19,15 +19,15 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 
 import static com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT.DEFAULT_MESSAGE_BUILDER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +40,7 @@ public class MQSinkConnectorTest {
     public void testVersion() {
         final String version = new MQSinkConnector().version();
         final String expectedVersion = System.getProperty("connectorVersion");
-        assertEquals("Expected connector version to match version of built jar file.", expectedVersion, version);
+        assertEquals(expectedVersion, version, "Expected connector version to match version of built jar file.");
     }
 
     @Test

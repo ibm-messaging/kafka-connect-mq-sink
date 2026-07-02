@@ -24,16 +24,18 @@ import org.apache.kafka.connect.errors.ConnectException;
 
 import com.ibm.mq.MQException;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-public class ExceptionProcessorTest extends TestCase {
+public class ExceptionProcessorTest {
 
+    @Test
     public void test_getReasonWithNonMQException() {
         final ConnectException exp = new ConnectException("test text");
         final int reason = ExceptionProcessor.getReason(exp);
         assertThat(reason).isEqualTo(-1);
     }
 
+    @Test
     public void test_getReasonWithMQException() {
         final MQException exp = new MQException(1, 1, getClass());
         final MQException wrapperExp = new MQException(1, 1, exp, exp);
@@ -41,6 +43,7 @@ public class ExceptionProcessorTest extends TestCase {
         assertThat(reason).isGreaterThan(-1);
     }
 
+    @Test
     public void test_isClosableWithMQExceptionErrorNotClosable() {
         final MQException exp = new MQException(1, 1, getClass());
         final MQException wrapperExp = new MQException(1, 1, exp, exp);
@@ -48,6 +51,7 @@ public class ExceptionProcessorTest extends TestCase {
         assertThat(isClosable).isTrue();
     }
 
+    @Test
     public void test_isClosableWithMQExceptionErrorIsClosable() {
         MQException exp = new MQException(1, 2053, getClass());
         MQException wrapperExp = new MQException(1, 1, exp, exp);
@@ -60,6 +64,7 @@ public class ExceptionProcessorTest extends TestCase {
         assertThat(isClosable).isFalse();
     }
 
+    @Test
     public void test_isRetriableWithMQExceptionErrorsAreRetriable() {
         final List<Integer> reasonsRetriable = new ArrayList<>();
         reasonsRetriable.add(2003);
@@ -78,6 +83,7 @@ public class ExceptionProcessorTest extends TestCase {
         }
     }
 
+    @Test
     public void test_isRetriableWithMQExceptionErrorsAreNotRetriable() {
         createAndProcessExceptionThrough_isRetriable_andAssert(1, false);
     }

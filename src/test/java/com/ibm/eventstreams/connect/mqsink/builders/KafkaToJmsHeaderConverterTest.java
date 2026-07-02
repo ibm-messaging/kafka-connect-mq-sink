@@ -15,25 +15,28 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+
+import java.util.HexFormat;
 
 import javax.jms.Message;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.header.Header;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ibm.msg.client.jms.JmsConstants;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class KafkaToJmsHeaderConverterTest {
 
     @Mock
@@ -208,7 +211,7 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
 
         // Verify the hex string was parsed correctly (without the "ID:" prefix)
-        final byte[] expectedBytes = HexUtils.hexStringToBytes(hexValue);
+        final byte[] expectedBytes = HexFormat.of().parseHex(hexValue);
         verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), eq(expectedBytes));
     }
 
@@ -224,11 +227,11 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
 
         // Verify the hex string was parsed correctly
-        final byte[] expectedBytes = HexUtils.hexStringToBytes(hexValue);
+        final byte[] expectedBytes = HexFormat.of().parseHex(hexValue);
         verify(message).setObjectProperty(eq(JmsConstants.JMS_IBM_MQMD_MSGID), eq(expectedBytes));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void throwsExceptionForInvalidMsgIdHex() throws Exception {
         // Test that invalid hex string throws an exception
         converter.setMqmdWriteEnabled(true);
@@ -237,10 +240,11 @@ public class KafkaToJmsHeaderConverterTest {
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
 
         // Should throw IllegalArgumentException due to invalid hex format
-        converter.copyHeaderToJmsProperty(message, header);
+        assertThrows(IllegalArgumentException.class,
+                () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void throwsExceptionForByteArrayToStringMsgId() throws Exception {
         // Old Source Connector sends byte arrays as toString() - should throw exception
         converter.setMqmdWriteEnabled(true);
@@ -249,7 +253,8 @@ public class KafkaToJmsHeaderConverterTest {
                 .lastWithName(JmsConstants.JMS_IBM_MQMD_MSGID);
 
         // Should throw IllegalArgumentException due to invalid hex format
-        converter.copyHeaderToJmsProperty(message, header);
+        assertThrows(IllegalArgumentException.class,
+                () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
 
@@ -311,13 +316,14 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void booleanParseFailureSkipsProperty() throws Exception {
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP, "invalid")
                 .lastWithName(JmsConstants.JMS_IBM_LAST_MSG_IN_GROUP);
 
         // Should throw IllegalArgumentException for invalid boolean value
-        converter.copyHeaderToJmsProperty(message, header);
+        assertThrows(IllegalArgumentException.class,
+                () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
 
@@ -446,26 +452,26 @@ public class KafkaToJmsHeaderConverterTest {
         converter.copyHeaderToJmsProperty(message, header);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidBooleanStringIsSkipped() throws Exception {
         // Test that invalid boolean strings are skipped
 
         final Header header = new ConnectHeaders().addString(JmsConstants.JMS_IBM_REPORT_EXCEPTION, "not-a-boolean")
                 .lastWithName(JmsConstants.JMS_IBM_REPORT_EXCEPTION);
 
-        // Should not throw exception, invalid value is skipped
-        converter.copyHeaderToJmsProperty(message, header);
+        assertThrows(IllegalArgumentException.class,
+                () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidBooleanTypeIsSkipped() throws Exception {
         // Test that incompatible types for boolean properties are skipped
 
         final Header header = new ConnectHeaders().add(JmsConstants.JMS_IBM_REPORT_EXCEPTION, new Object(), null)
                 .lastWithName(JmsConstants.JMS_IBM_REPORT_EXCEPTION);
 
-        // Should not throw exception, invalid value is skipped
-        converter.copyHeaderToJmsProperty(message, header);
+        assertThrows(IllegalArgumentException.class,
+                () -> converter.copyHeaderToJmsProperty(message, header));
     }
 
     @Test
