@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Copyright 2017, 2020, 2023, 2024 IBM Corporation
+ * Copyright 2017, 2020, 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,17 +137,26 @@
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.3.1</version>
-          <configuration>
-            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
-            <resources>
-              <resource>
-                <directory>${project.basedir}</directory>
-                <includes>
-                  <include>LICENSE</include>
-                </includes>
-              </resource>
-            </resources>
-          </configuration>
+          <executions>
+            <execution>
+              <id>copy-license</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>${project.basedir}</directory>
+                    <includes>
+                      <include>LICENSE</include>
+                    </includes>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -164,6 +173,8 @@
         <version>3.4.0</version>
         <configuration>
           <argLine>${surefire.jacoco.args}</argLine>
+          <reuseForks>false</reuseForks>
+          <forkCount>1</forkCount>
           <systemPropertyVariables>
             <connectorVersion>${project.version}</connectorVersion>
           </systemPropertyVariables>
@@ -339,7 +350,6 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.5.0</version>
         <configuration>
-          <encoding>UTF-8</encoding>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
           <violationSeverity>warning</violationSeverity>
@@ -358,15 +368,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.4.0</version>
-        <configuration>
-            <reuseForks>false</reuseForks>
-            <forkCount>1</forkCount>
-        </configuration>
       </plugin>
     </plugins>
     <testResources>
