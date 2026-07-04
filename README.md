@@ -479,7 +479,7 @@ For issues relating specifically to this connector, please use the [GitHub issue
 
 
 ## License
-Copyright 2017, 2020, 2023, 2024 IBM Corporation
+Copyright 2017, 2020, 2023, 2024, 2026 IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
