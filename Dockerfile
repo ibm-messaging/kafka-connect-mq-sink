@@ -1,29 +1,24 @@
-FROM alpine as builder
+FROM apache/kafka:4.0.2 AS kafka-base
 
-RUN apk update
-RUN apk --no-cache add curl
+FROM ibm-semeru-runtimes:open-17-jre
 
-RUN curl -L "https://downloads.apache.org/kafka/3.4.1/kafka_2.12-3.4.1.tgz" -o kafka.tgz
+# Re-create the same non-root user that apache/kafka uses (uid/gid 1000, username esuser)
+RUN groupadd --gid 1000 esgroup && \
+    useradd  --uid 1000 --gid esgroup --no-create-home --shell /sbin/nologin esuser
 
-RUN mkdir /opt/kafka \
-    && tar -xf kafka.tgz -C /opt/kafka --strip-components=1
+# Copy the full Kafka Connect runtime from the build stage
+COPY --from=kafka-base --chown=esuser:esgroup /opt/kafka /opt/kafka
 
-FROM ibmjava:11
+# Copy the connector uber-jar into the plugins directory
+COPY --chown=esuser:esgroup target/kafka-connect-*-jar-with-dependencies.jar /opt/kafka/plugins/
 
-RUN addgroup --gid 5000 --system esgroup && \
-    adduser --uid 5000 --ingroup esgroup --system esuser
+# Ensure the logs directory exists (plugins dir already exists from the COPY above)
+RUN mkdir -p /opt/kafka/logs && chown esuser:esgroup /opt/kafka/logs
 
-COPY --chown=esuser:esgroup --from=builder /opt/kafka/bin/ /opt/kafka/bin/
-COPY --chown=esuser:esgroup --from=builder /opt/kafka/libs/ /opt/kafka/libs/
-COPY --chown=esuser:esgroup --from=builder /opt/kafka/config/ /opt/kafka/config/
-
-RUN mkdir /opt/kafka/logs && chown esuser:esgroup /opt/kafka/logs
-COPY --chown=esuser:esgroup target/kafka-connect-*-jar-with-dependencies.jar /opt/connectors/
+USER esuser
 
 WORKDIR /opt/kafka
 
 EXPOSE 8083
-
-USER esuser
 
 ENTRYPOINT ["./bin/connect-distributed.sh", "config/connect-distributed.properties"]

@@ -27,7 +27,7 @@ To build the connector, you must have the following installed:
 
 - [git](https://git-scm.com/)
 - [Maven 3.0 or later](https://maven.apache.org)
-- Java 8 or later
+- Java 17 or later
 
 Clone the repository with the following command:
 
@@ -62,6 +62,8 @@ mvn clean package
 Once built, the output is a single JAR `target/kafka-connect-mq-sink-<version>-jar-with-dependencies.jar` which contains all of the required dependencies.
 
 **NOTE:** With the 2.0.0 release the base Kafka Connect library has been updated from 2.6.0 to 3.4.1.
+
+**NOTE:** This connector requires **Java 17 or later**. The project is compiled with `--release 17` (see `java.version` in `pom.xml`). Older JVM versions are not supported.
 
 ## Running the connector
 
@@ -477,7 +479,7 @@ For issues relating specifically to this connector, please use the [GitHub issue
 
 
 ## License
-Copyright 2017, 2020, 2023, 2024 IBM Corporation
+Copyright 2017, 2020, 2023, 2024, 2026 IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

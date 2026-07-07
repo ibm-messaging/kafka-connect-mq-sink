@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -248,8 +249,8 @@ public class KafkaToJmsHeaderConverter {
                 if (hexString.startsWith("ID:")) {
                     hexString = hexString.substring(3);
                 }
-                
-                final byte[] msgIdBytes = HexUtils.hexStringToBytes(hexString);
+
+                final byte[] msgIdBytes = HexFormat.of().parseHex(hexString);
 
                 message.setObjectProperty(JmsConstants.JMS_IBM_MQMD_MSGID, msgIdBytes);
             }

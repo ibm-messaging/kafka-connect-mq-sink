@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 public class MQSinkConnector extends SinkConnector {
     private static final Logger log = LoggerFactory.getLogger(MQSinkConnector.class);
 
-    public static String version = "2.3.0";
+    public static String version = "3.0.0";
 
     private Map<String, String> configProps;
 

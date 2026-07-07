@@ -18,7 +18,7 @@ package com.ibm.eventstreams.connect.mqsink;
 import static com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper.START_CHANNEL;
 import static com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper.STOP_CHANNEL;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
@@ -41,8 +41,8 @@ import javax.jms.Message;
 
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +52,7 @@ import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 
 public class MQSinkTaskExactlyOnceIT extends AbstractJMSContextIT {
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         clearAllMessages(DEFAULT_SINK_QUEUE_NAME);
         clearAllMessages(DEFAULT_SINK_STATE_QUEUE_NAME);

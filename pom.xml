@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Copyright 2017, 2020, 2023, 2024 IBM Corporation
+ * Copyright 2017, 2020, 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
   <groupId>com.ibm.eventstreams.connect</groupId>
   <artifactId>kafka-connect-mq-sink</artifactId>
   <packaging>jar</packaging>
-  <version>2.3.0</version>
+  <version>3.0.0</version>
   <name>kafka-connect-mq-sink</name>
   <organization>
     <name>IBM Corporation</name>
@@ -40,6 +40,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <java.version>17</java.version>
+    <junit.jupiter.version>5.11.3</junit.jupiter.version>
   </properties>
   <dependencies>
     <dependency>
@@ -55,21 +57,24 @@
       <scope>provided</scope>
     </dependency>
 
-    <dependency>
-      <groupId>javax.jms</groupId>
-      <artifactId>javax.jms-api</artifactId>
-      <version>2.0.1</version>
-    </dependency>
+    <!-- IBM MQ allclient bundles the JMS 2.0 (javax.jms) API; no separate javax.jms-api needed -->
     <dependency>
       <groupId>com.ibm.mq</groupId>
       <artifactId>com.ibm.mq.allclient</artifactId>
       <version>9.4.4.1</version>
     </dependency>
 
+    <!-- JUnit 5 -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -92,11 +97,23 @@
       <version>1.21.4</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>1.21.4</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>3.1.0</version>
+      <version>5.14.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>5.14.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -120,24 +137,32 @@
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.3.1</version>
-          <configuration>
-            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
-            <resources>
-              <resource>
-                <directory>${project.basedir}</directory>
-                <includes>
-                  <include>LICENSE</include>
-                </includes>
-              </resource>
-            </resources>
-          </configuration>
+          <executions>
+            <execution>
+              <id>copy-license</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>${project.basedir}</directory>
+                    <includes>
+                      <include>LICENSE</include>
+                    </includes>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <release>${java.version}</release>
           <compilerArgument>-Xlint:unchecked</compilerArgument>
         </configuration>
       </plugin>
@@ -145,9 +170,11 @@
       <!-- run unit tests -->
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.4.0</version>
+        <version>3.5.2</version>
         <configuration>
           <argLine>${surefire.jacoco.args}</argLine>
+          <reuseForks>false</reuseForks>
+          <forkCount>1</forkCount>
           <systemPropertyVariables>
             <connectorVersion>${project.version}</connectorVersion>
           </systemPropertyVariables>
@@ -323,7 +350,6 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>3.5.0</version>
         <configuration>
-          <encoding>UTF-8</encoding>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
           <violationSeverity>warning</violationSeverity>
@@ -342,15 +368,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.4.0</version>
-        <configuration>
-            <reuseForks>false</reuseForks>
-            <forkCount>1</forkCount>
-        </configuration>
       </plugin>
     </plugins>
     <testResources>

@@ -15,7 +15,7 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +23,7 @@ import java.util.Map;
 import javax.jms.Message;
 
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
 import com.ibm.mq.jms.MQQueue;

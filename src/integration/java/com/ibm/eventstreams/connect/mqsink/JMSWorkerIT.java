@@ -23,12 +23,12 @@ import java.util.Optional;
 
 import com.ibm.eventstreams.connect.mqsink.utils.Configs;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 public class JMSWorkerIT extends AbstractJMSContextIT {
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         clearAllMessages(DEFAULT_SINK_QUEUE_NAME);
         clearAllMessages(DEFAULT_SINK_STATE_QUEUE_NAME);

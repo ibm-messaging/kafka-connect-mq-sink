@@ -15,10 +15,10 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +29,8 @@ import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.eventstreams.connect.mqsink.AbstractJMSContextIT;
 
@@ -38,7 +38,7 @@ public class DefaultMessageBuilderWithHeadersIT extends AbstractJMSContextIT {
 
     private MessageBuilder builder;
 
-    @Before
+    @BeforeEach
     public void prepareMessageBuilder() {
         builder = new DefaultMessageBuilder();
 

@@ -15,6 +15,8 @@
  */
 package com.ibm.eventstreams.connect.mqsink.builders;
 
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
@@ -40,9 +42,10 @@ public class MessageBuilderFactory {
 
         try {
             final Class<? extends MessageBuilder> c = Class.forName(builderClass).asSubclass(MessageBuilder.class);
-            builder = c.newInstance();
+            builder = c.getDeclaredConstructor().newInstance();
             builder.configure(config.originalsStrings());
         } catch (ClassNotFoundException | ClassCastException | IllegalAccessException | InstantiationException
+                | NoSuchMethodException | InvocationTargetException
                 | NullPointerException exc) {
             log.error("Could not instantiate message builder {}", builderClass);
             throw new MessageBuilderException("Could not instantiate message builder", exc);
