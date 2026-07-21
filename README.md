@@ -341,6 +341,7 @@ The configuration options for the Kafka Connect sink connector for IBM MQ are as
 | mq.message.builder.offset.property      | The JMS message property to set from the Kafka offset                                                     | string  |                | Blank or valid JMS property name  |
 | mq.reply.queue                          | The name of the reply-to queue                                                                            | string  |                | MQ queue name or queue URI        |
 | mq.retry.backoff.ms                     | Wait time, in milliseconds, before retrying after retriable exceptions                                    | long    | 60000          | [0,...]                           |
+| mq.retry.timeout.ms                     | Maximum time, in milliseconds, to continue retrying after a retriable exception before the task is killed. Set to `-1` to retry indefinitely. | long    | 300000         | [-1,...]                          |
 | mq.message.mqmd.write                   | Whether to enable a custom message builder to write MQ message descriptors                                | boolean | false          |                                   |
 | mq.message.mqmd.context                 | Message context to set on the destination queue. This is required when setting some message descriptors.  | string  |                | `IDENTITY`, `ALL`                     |
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2018, 2019, 2023, 2024 IBM Corporation
+ * Copyright 2017, 2018, 2019, 2023, 2024, 2026 IBM Corporation
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.ibm.eventstreams.connect.mqsink;
 
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -107,5 +108,24 @@ public class MQSinkConnectorTest {
         assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.defaultConfig()));
         assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(Collections.singletonMap("mq.exactly.once.state.queue", ""))));
         assertFalse(MQSinkConnector.configSupportsExactlyOnce(Configs.customConfig(Collections.singletonMap("mq.exactly.once.state.queue", null))));
+    }
+
+    @Test
+    public void testRetryTimeout() {
+        final AbstractConfig config120000 = Configs.customConfig(
+                Collections.singletonMap(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, "120000"));
+        assertEquals(120000L, config120000.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS));
+
+        final AbstractConfig config0 = Configs.customConfig(
+                Collections.singletonMap(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, "0"));
+        assertEquals(0L, config0.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS));
+
+        final AbstractConfig configDefault = Configs.defaultConfig();
+        assertEquals(MQSinkConfig.CONFIG_DEFAULT_MQ_RETRY_TIMEOUT_MS,
+                configDefault.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS));
+
+        final Map<String, String> overrides = new HashMap<>(
+                Collections.singletonMap(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, "-2"));
+        assertThrows(ConfigException.class, () -> Configs.customConfig(overrides));
     }
 }

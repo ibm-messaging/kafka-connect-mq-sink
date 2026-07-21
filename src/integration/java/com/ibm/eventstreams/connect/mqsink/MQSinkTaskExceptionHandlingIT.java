@@ -1,5 +1,5 @@
 /**
- * Copyright 2023, 2024 IBM Corporation
+ * Copyright 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package com.ibm.eventstreams.connect.mqsink;
 import static com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper.START_CHANNEL;
 import static com.ibm.eventstreams.connect.mqsink.util.MQRestAPIHelper.STOP_CHANNEL;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,6 +43,7 @@ import javax.jms.TextMessage;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -281,5 +285,94 @@ public class MQSinkTaskExceptionHandlingIT extends AbstractJMSContextIT {
 
         // Verify that context.timeout() was called with the configured backoff value (30000ms)
         verify(connectTaskSpy.getContext(), times(1)).timeout(30000L);
+    }
+
+    @Test
+    public void testRetryTimeoutDefaultAndCustomValuesAreApplied() {
+        // Default: retryBackoffMs = CONFIG_DEFAULT_MQ_RETRY_BACKOFF_MS, errorRetry = CONFIG_DEFAULT_MQ_RETRY_TIMEOUT_MS
+        final Map<String, String> defaultProps = getConnectionDetails();
+        final MQSinkTask defaultTask = spy(new MQSinkTask());
+        final JMSWorker mockWorker = mock(JMSWorker.class);
+        defaultTask.initialize(mock(SinkTaskContext.class));
+        when(defaultTask.newJMSWorker()).thenReturn(mockWorker);
+        defaultTask.start(defaultProps);
+
+        assertThat(defaultTask.retryBackoffMs).isEqualTo(MQSinkConfig.CONFIG_DEFAULT_MQ_RETRY_BACKOFF_MS);
+        assertThat(defaultTask.errorRetry).isEqualTo(MQSinkConfig.CONFIG_DEFAULT_MQ_RETRY_TIMEOUT_MS);
+
+        // Custom: override both values
+        final Map<String, String> customProps = getConnectionDetails();
+        customProps.put(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS, "5000");
+        customProps.put(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, "15000");
+        final MQSinkTask customTask = spy(new MQSinkTask());
+        final JMSWorker mockWorker2 = mock(JMSWorker.class);
+        customTask.initialize(mock(SinkTaskContext.class));
+        when(customTask.newJMSWorker()).thenReturn(mockWorker2);
+        customTask.start(customProps);
+
+        assertThat(customTask.retryBackoffMs).isEqualTo(5000L);
+        assertThat(customTask.errorRetry).isEqualTo(15000L);
+    }
+
+    @Test
+    public void testRetryTimeoutEscalatesToConnectExceptionAfterThreshold()
+            throws JsonProcessingException, JMSRuntimeException, JMSException {
+        // Use a very short timeout so the threshold is crossed within a handful of calls
+        final Map<String, String> connectorConfigProps = getExactlyOnceConnectionDetails();
+        connectorConfigProps.put(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, "1");
+
+        final MQSinkTask connectTaskSpy = spy(getMqSinkTask(connectorConfigProps));
+
+        final JMSWorker jmsWorkerSpy = spy(JMSWorker.class);
+        final MQException exp = new MQException(1, 2003, getClass());
+        when(connectTaskSpy.newJMSWorker()).thenReturn(jmsWorkerSpy);
+        doThrow(new JMSRuntimeException("Connection failure", "2003", exp))
+                .when(jmsWorkerSpy)
+                .readFromStateQueue();
+
+        connectTaskSpy.start(connectorConfigProps);
+        final List<SinkRecord> sinkRecords = createSinkRecords(1);
+
+        // First call: within timeout window — must be RetriableException
+        assertThrows(RetriableException.class, () -> connectTaskSpy.put(sinkRecords));
+
+        // Sleep past the 1ms timeout, then verify escalation
+        try { Thread.sleep(5); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); }
+
+        assertThatThrownBy(() -> connectTaskSpy.put(sinkRecords))
+                .isInstanceOf(ConnectException.class)
+                .hasMessageContaining("Retry timeout");
+    }
+
+    @Test
+    public void testRetryTimeoutResetsAfterSuccessfulPut()
+            throws JMSException, KeyManagementException, NoSuchAlgorithmException, IOException {
+        // Start with a generous timeout so the first failure window doesn't expire mid-test
+        final Map<String, String> connectorConfigProps = getConnectionDetails();
+        connectorConfigProps.put(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, "30000");
+
+        final MQSinkTask connectTaskSpy = spy(getMqSinkTask(connectorConfigProps));
+        connectTaskSpy.start(connectorConfigProps);
+
+        final List<SinkRecord> sinkRecords = createSinkRecords(3);
+
+        // First put succeeds — firstFailureTime stays null
+        connectTaskSpy.put(sinkRecords);
+
+        // Simulate transient failure by stopping the channel
+        mqRestApiHelper.sendCommand(STOP_CHANNEL);
+        assertThrows(RetriableException.class, () -> connectTaskSpy.put(sinkRecords));
+
+        // Restore the channel and put succeeds — firstFailureTime must be reset to null
+        mqRestApiHelper.sendCommand(START_CHANNEL);
+        assertDoesNotThrow(() -> connectTaskSpy.put(sinkRecords));
+
+        // Fail again: a new failure window begins, so this must be RetriableException
+        // (not an immediate ConnectException from the old window)
+        mqRestApiHelper.sendCommand(STOP_CHANNEL);
+        assertThrows(RetriableException.class, () -> connectTaskSpy.put(sinkRecords));
+
+        // Restore for cleanup
+        mqRestApiHelper.sendCommand(START_CHANNEL);
     }
 }
