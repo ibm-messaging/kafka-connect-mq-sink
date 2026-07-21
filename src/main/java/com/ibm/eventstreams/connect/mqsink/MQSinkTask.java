@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2020, 2023, 2024 IBM Corporation
+ * Copyright 2017, 2020, 2023, 2024, 2026 IBM Corporation
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,10 @@ public class MQSinkTask extends SinkTask {
 
     protected JMSWorker worker;
 
-    protected long retryBackoffMs = 60000;
+    protected long retryBackoffMs;
+    protected long errorRetry;
     private boolean isExactlyOnceMode = false;
+    private Long firstFailureTime = null;
 
     private HashMap<String, String> lastCommittedOffsetMap;
 
@@ -144,7 +146,20 @@ public class MQSinkTask extends SinkTask {
                 maybeCloseAllWorkers(e);
                 throw e;
             }
+            firstFailureTime = null;
         } catch (final RetriableException rte) {
+            if (firstFailureTime == null) {
+                firstFailureTime = System.nanoTime();
+            }
+
+            // nanoTime() is sourced from the JVM's monotonic clock, which is not affected by NTP corrections,
+            // container host clock adjustments, leap seconds, or daylight saving changes.
+            final long elapsedMs = (System.nanoTime() - firstFailureTime) / 1_000_000L;
+            if (elapsedMs >= errorRetry) {
+                firstFailureTime = null; // Reset track before killing
+                throw new ConnectException("Retry timeout of " + errorRetry + "ms exceeded. Killing task.", rte);
+            }
+
             context.timeout(retryBackoffMs);
             throw rte;
         }
@@ -185,11 +200,11 @@ public class MQSinkTask extends SinkTask {
     }
 
     /**
-     * Flush all records that have been {@link #put(Collection)} for the specified
+     * Flush all records that have been {@link #put()} for the specified
      * topic-partitions.
      *
      * @param currentOffsets the current offset state as of the last call to
-     *                       {@link #put(Collection)}}, provided for convenience but
+     *                       {@link #put()}}, provided for convenience but
      *                       could also be determined by tracking all offsets
      *                       included in the {@link SinkRecord}s passed to
      *                       {@link #put}.
@@ -209,7 +224,7 @@ public class MQSinkTask extends SinkTask {
     /**
      * Perform any cleanup to stop this task. In SinkTasks, this method is invoked
      * only once outstanding calls to other methods have completed (e.g.,
-     * {@link #put(Collection)} has returned) and a final {@link #flush(Map)} and
+     * {@link #put()} has returned) and a final {@link #flush()} and
      * offset commit has completed. Implementations of this method should only need
      * to perform final cleanup operations, such as closing network connections to
      * the sink system.
@@ -242,7 +257,8 @@ public class MQSinkTask extends SinkTask {
     private void setRetryBackoff(final AbstractConfig config) {
         // check if a custom retry time is provided
         retryBackoffMs = config.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_BACKOFF_MS);
-        log.debug("Setting retry backoff {}", retryBackoffMs);
+        errorRetry = config.getLong(MQSinkConfig.CONFIG_NAME_MQ_RETRY_TIMEOUT_MS);
+        log.debug("Setting retry backoff to {}ms and retry timeout to {}ms", retryBackoffMs, errorRetry);
     }
 
 

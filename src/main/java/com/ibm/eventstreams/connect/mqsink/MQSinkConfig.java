@@ -157,6 +157,12 @@ public class MQSinkConfig {
     public static final String CONFIG_NAME_MQ_RETRY_BACKOFF_MS = "mq.retry.backoff.ms";
     public static final String CONFIG_DOCUMENTATION_MQ_RETRY_BACKOFF_MS = "Time to wait, in milliseconds, before retrying after retriable exceptions";
     public static final String CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS = "Retry backoff (ms)";
+    public static final long CONFIG_DEFAULT_MQ_RETRY_BACKOFF_MS = 60000L;
+
+    public static final String CONFIG_NAME_MQ_RETRY_TIMEOUT_MS = "mq.retry.timeout.ms";
+    public static final String CONFIG_DOCUMENTATION_MQ_RETRY_TIMEOUT_MS = "Maximum time in milliseconds to continue retrying after a retriable exception before the task is killed. A value of -1 means retry indefinitely.";
+    public static final String CONFIG_DISPLAY_MQ_RETRY_TIMEOUT_MS = "Retry timeout (ms)";
+    public static final long CONFIG_DEFAULT_MQ_RETRY_TIMEOUT_MS = 300000L;
 
     // https://www.ibm.com/docs/en/ibm-mq/9.4?topic=amffmcja-reading-writing-message-descriptor-from-mq-classes-jms-application
     public static final String CONFIG_NAME_MQ_MQMD_WRITE_ENABLED = "mq.message.mqmd.write";
@@ -227,18 +233,20 @@ public class MQSinkConfig {
 
         config.define(CONFIG_NAME_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES, Type.BOOLEAN, Boolean.FALSE, Importance.LOW, CONFIG_DOCUMENTATION_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES, CONFIG_GROUP_MQ, 27, Width.SHORT, CONFIG_DISPLAY_KAFKA_HEADERS_COPY_TO_JMS_PROPERTIES);
 
-        config.define(CONFIG_NAME_MQ_RETRY_BACKOFF_MS, Type.LONG, 60000, Range.between(0L, 99999999900L), Importance.LOW, CONFIG_DOCUMENTATION_MQ_RETRY_BACKOFF_MS, CONFIG_GROUP_MQ, 28, Width.SHORT, CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS);
+        config.define(CONFIG_NAME_MQ_RETRY_BACKOFF_MS, Type.LONG, CONFIG_DEFAULT_MQ_RETRY_BACKOFF_MS, Range.between(0L, 99999999900L), Importance.LOW, CONFIG_DOCUMENTATION_MQ_RETRY_BACKOFF_MS, CONFIG_GROUP_MQ, 28, Width.SHORT, CONFIG_DISPLAY_MQ_RETRY_BACKOFF_MS);
 
-        config.define(CONFIG_NAME_MQ_EXACTLY_ONCE_STATE_QUEUE, Type.STRING, null, ANY_VALUE_VALID, Importance.LOW, CONFIG_DOCUMENTATION_MQ_EXACTLY_ONCE_STATE_QUEUE, CONFIG_GROUP_MQ, 29, Width.LONG, CONFIG_DISPLAY_MQ_EXACTLY_ONCE_STATE_QUEUE);
+        config.define(CONFIG_NAME_MQ_RETRY_TIMEOUT_MS, Type.LONG, CONFIG_DEFAULT_MQ_RETRY_TIMEOUT_MS, Range.atLeast(-1L), Importance.LOW, CONFIG_DOCUMENTATION_MQ_RETRY_TIMEOUT_MS, CONFIG_GROUP_MQ, 29, Width.SHORT, CONFIG_DISPLAY_MQ_RETRY_TIMEOUT_MS);
+
+        config.define(CONFIG_NAME_MQ_EXACTLY_ONCE_STATE_QUEUE, Type.STRING, null, ANY_VALUE_VALID, Importance.LOW, CONFIG_DOCUMENTATION_MQ_EXACTLY_ONCE_STATE_QUEUE, CONFIG_GROUP_MQ, 30, Width.LONG, CONFIG_DISPLAY_MQ_EXACTLY_ONCE_STATE_QUEUE);
 
         config.define(CONFIG_NAME_MQ_MQMD_WRITE_ENABLED, Type.BOOLEAN, false, Importance.LOW,
-                CONFIG_DOCUMENTATION_MQ_MQMD_WRITE_ENABLED, CONFIG_GROUP_MQ, 30, Width.LONG,
+                CONFIG_DOCUMENTATION_MQ_MQMD_WRITE_ENABLED, CONFIG_GROUP_MQ, 31, Width.LONG,
                 CONFIG_DISPLAY_MQ_MQMD_WRITE_ENABLED);
 
         config.define(CONFIG_NAME_MQ_MQMD_MESSAGE_CONTEXT, Type.STRING, null,
                 ConfigDef.ValidString.in(null, "identity", "IDENTITY", "all", "ALL"),
                 Importance.LOW,
-                CONFIG_DOCUMENTATION_MQ_MQMD_MESSAGE_CONTEXT, CONFIG_GROUP_MQ, 31, Width.LONG,
+                CONFIG_DOCUMENTATION_MQ_MQMD_MESSAGE_CONTEXT, CONFIG_GROUP_MQ, 32, Width.LONG,
                 CONFIG_DISPLAY_MQ_MQMD_MESSAGE_CONTEXT);
         return config;
     }
