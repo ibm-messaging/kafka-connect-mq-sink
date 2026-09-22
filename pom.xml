@@ -130,6 +130,23 @@
       <version>2.18.0</version>
     </dependency>
 
+    <!-- CVE-2025-14813: force Bouncy Castle transitive deps from com.ibm.mq.allclient to 1.84 -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>1.84</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk18on</artifactId>
+      <version>1.84</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcutil-jdk18on</artifactId>
+      <version>1.84</version>
+    </dependency>
+
   </dependencies>
 
   <build>
