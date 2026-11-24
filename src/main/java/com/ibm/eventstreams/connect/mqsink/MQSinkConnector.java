@@ -1,5 +1,5 @@
 /**
- * Copyright 2017, 2020, 2023, 2024 IBM Corporation
+ * Copyright 2017, 2020, 2023, 2024, 2026 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 public class MQSinkConnector extends SinkConnector {
     private static final Logger log = LoggerFactory.getLogger(MQSinkConnector.class);
 
-    public static String version = "3.1.0";
+    public static String version = "3.1.1";
 
     private Map<String, String> configProps;
 
